@@ -1,0 +1,4 @@
+.env
+snapshots/
+__pycache__/
+watch.log
