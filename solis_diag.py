@@ -300,11 +300,16 @@ def print_report(snap: dict, extra_cids: list[int]) -> None:
 
 def print_diff(previous: dict, current: dict) -> None:
     before, after = previous["cids"], current["cids"]
-    changed = [(k, before.get(k), after.get(k)) for k in sorted(set(before) | set(after), key=int)
-               if before.get(k) != after.get(k) and k != "56"]  # 56 is the clock, always changes
+    # Only compare values read successfully in both snapshots; the logger drops offline now and then.
+    # CID 56 is the clock, which always changes.
+    changed = [(k, before[k], after[k]) for k in sorted(set(before) & set(after), key=int)
+               if before[k] != after[k] and k != "56"]
+    unread = sorted(set(before) ^ set(after), key=int)
     print(f"\n-- Changes since {previous['taken_at']} --")
     if not changed:
         print("  none")
+    if unread:
+        print(f"  ({len(unread)} CIDs unreadable in one of the snapshots, not compared)")
     for cid, old, new in changed:
         name = SETTING_CIDS.get(int(cid), "")
         print(f"  CID {cid:5s} {name:40s} {old!r} -> {new!r}")
