@@ -1,0 +1,13 @@
+{
+  "pair": {
+    "intro": {
+      "title": "Anslut din Solis-växelriktare",
+      "subtitle": "Du behöver en API-nyckel från SolisCloud.",
+      "step1": "Logga in på <b>soliscloud.com</b> i en webbläsare.",
+      "step2": "Öppna <b>Konto → Grundinställningar → API-hantering</b> och aktivera API:et. Kopiera <b>Key ID</b> och <b>Key Secret</b>.",
+      "step3": "För att appen ska kunna ändra batteriets schema: be Solis support (ett ärende på solis-service.solisinverters.com) att aktivera <b>styrbehörighet</b> för din växelriktare.",
+      "safe": "Appen startar i läget <b>Endast övervaka</b>: den visar priser och planer men ändrar ingenting i växelriktaren förrän du byter till <b>Automatisk</b>.",
+      "next": "Jag har min API-nyckel"
+    }
+  }
+}

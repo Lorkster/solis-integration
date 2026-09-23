@@ -1,1 +1,13 @@
-{}
+{
+  "pair": {
+    "intro": {
+      "title": "Connect your Solis inverter",
+      "subtitle": "You need a SolisCloud API key.",
+      "step1": "Log in to <b>soliscloud.com</b> in a web browser.",
+      "step2": "Open <b>Account → Basic Settings → API Management</b> and activate the API. Copy the <b>Key ID</b> and <b>Key Secret</b>.",
+      "step3": "To let the app change the battery schedule, ask Solis support (a ticket at solis-service.solisinverters.com) to enable <b>control access</b> for your inverter.",
+      "safe": "The app starts in <b>Monitor only</b>: it shows prices and plans but does not change anything on the inverter until you switch to <b>Automatic</b>.",
+      "next": "I have my API key"
+    }
+  }
+}

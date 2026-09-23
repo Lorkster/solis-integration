@@ -59,6 +59,12 @@
   },
   "pair": [
     {
+      "id": "intro",
+      "navigation": {
+        "next": "login_credentials"
+      }
+    },
+    {
       "id": "login_credentials",
       "template": "login_credentials",
       "options": {
@@ -80,6 +86,9 @@
         "passwordPlaceholder": {
           "en": "KeySecret"
         }
+      },
+      "navigation": {
+        "prev": "intro"
       }
     },
     {

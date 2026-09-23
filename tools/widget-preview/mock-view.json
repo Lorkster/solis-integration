@@ -1,0 +1,1139 @@
+{
+ "ready": true,
+ "timeZone": "Europe/Stockholm",
+ "language": "en",
+ "controlMode": "auto",
+ "mockNow": "2026-09-23T12:10:00.000Z",
+ "live": {
+  "at": "2026-09-23T12:10:00.000Z",
+  "socPct": 38,
+  "batteryW": -1240,
+  "pvW": 3350,
+  "gridW": 180,
+  "loadW": 4770,
+  "backupHours": 1
+ },
+ "warnings": [],
+ "outageUntil": null,
+ "plan": {
+  "generatedAt": "2026-09-23T12:10:00.000Z",
+  "reserveSoc": 25,
+  "savingsSek": 21.8,
+  "warnings": [],
+  "slots": [
+   {
+    "enabled": true,
+    "start": "14:00",
+    "end": "15:45",
+    "currentA": 16,
+    "soc": 88
+   },
+   {
+    "enabled": true,
+    "start": "15:45",
+    "end": "16:45",
+    "currentA": 0,
+    "soc": 88
+   },
+   {
+    "enabled": true,
+    "start": "02:45",
+    "end": "06:30",
+    "currentA": 16,
+    "soc": 100
+   }
+  ],
+  "learnedLoad": true,
+  "solarForecast": true,
+  "intervals": [
+   {
+    "t": "2026-09-23T12:00:00.000Z",
+    "price": 2.623,
+    "action": "charge",
+    "soc": 45.1,
+    "loadKw": 2.87,
+    "pvKw": 4.2
+   },
+   {
+    "t": "2026-09-23T12:15:00.000Z",
+    "price": 2.621,
+    "action": "charge",
+    "soc": 52.2,
+    "loadKw": 2.45,
+    "pvKw": 3.98
+   },
+   {
+    "t": "2026-09-23T12:30:00.000Z",
+    "price": 2.633,
+    "action": "charge",
+    "soc": 59.3,
+    "loadKw": 2.46,
+    "pvKw": 3.75
+   },
+   {
+    "t": "2026-09-23T12:45:00.000Z",
+    "price": 2.635,
+    "action": "charge",
+    "soc": 66.4,
+    "loadKw": 2.82,
+    "pvKw": 3.48
+   },
+   {
+    "t": "2026-09-23T13:00:00.000Z",
+    "price": 2.645,
+    "action": "charge",
+    "soc": 73.6,
+    "loadKw": 2.57,
+    "pvKw": 2.59
+   },
+   {
+    "t": "2026-09-23T13:15:00.000Z",
+    "price": 2.67,
+    "action": "charge",
+    "soc": 80.7,
+    "loadKw": 2.71,
+    "pvKw": 2.34
+   },
+   {
+    "t": "2026-09-23T13:30:00.000Z",
+    "price": 2.735,
+    "action": "charge",
+    "soc": 87.8,
+    "loadKw": 2.8,
+    "pvKw": 2.09
+   },
+   {
+    "t": "2026-09-23T13:45:00.000Z",
+    "price": 2.836,
+    "action": "hold",
+    "soc": 87.8,
+    "loadKw": 2.91,
+    "pvKw": 1.88
+   },
+   {
+    "t": "2026-09-23T14:00:00.000Z",
+    "price": 2.777,
+    "action": "hold",
+    "soc": 87.8,
+    "loadKw": 2.71,
+    "pvKw": 0.95
+   },
+   {
+    "t": "2026-09-23T14:15:00.000Z",
+    "price": 2.997,
+    "action": "hold",
+    "soc": 87.8,
+    "loadKw": 2.72,
+    "pvKw": 0.85
+   },
+   {
+    "t": "2026-09-23T14:30:00.000Z",
+    "price": 3.223,
+    "action": "hold",
+    "soc": 87.8,
+    "loadKw": 2.84,
+    "pvKw": 0.75
+   },
+   {
+    "t": "2026-09-23T14:45:00.000Z",
+    "price": 3.523,
+    "action": "self_use",
+    "soc": 84.7,
+    "loadKw": 3.06,
+    "pvKw": 0.64
+   },
+   {
+    "t": "2026-09-23T15:00:00.000Z",
+    "price": 3.17,
+    "action": "self_use",
+    "soc": 81.1,
+    "loadKw": 3.25,
+    "pvKw": 0.39
+   },
+   {
+    "t": "2026-09-23T15:15:00.000Z",
+    "price": 3.378,
+    "action": "self_use",
+    "soc": 77.6,
+    "loadKw": 3.17,
+    "pvKw": 0.31
+   },
+   {
+    "t": "2026-09-23T15:30:00.000Z",
+    "price": 3.631,
+    "action": "self_use",
+    "soc": 73.7,
+    "loadKw": 3.38,
+    "pvKw": 0.24
+   },
+   {
+    "t": "2026-09-23T15:45:00.000Z",
+    "price": 3.901,
+    "action": "self_use",
+    "soc": 69.8,
+    "loadKw": 3.34,
+    "pvKw": 0.18
+   },
+   {
+    "t": "2026-09-23T16:00:00.000Z",
+    "price": 3.718,
+    "action": "self_use",
+    "soc": 66.8,
+    "loadKw": 2.92,
+    "pvKw": 0.51
+   },
+   {
+    "t": "2026-09-23T16:15:00.000Z",
+    "price": 3.791,
+    "action": "self_use",
+    "soc": 62.5,
+    "loadKw": 3.78,
+    "pvKw": 0.32
+   },
+   {
+    "t": "2026-09-23T16:30:00.000Z",
+    "price": 4.106,
+    "action": "self_use",
+    "soc": 58.2,
+    "loadKw": 3.7,
+    "pvKw": 0.18
+   },
+   {
+    "t": "2026-09-23T16:45:00.000Z",
+    "price": 4.184,
+    "action": "self_use",
+    "soc": 53.3,
+    "loadKw": 4.05,
+    "pvKw": 0.04
+   },
+   {
+    "t": "2026-09-23T17:00:00.000Z",
+    "price": 4.102,
+    "action": "self_use",
+    "soc": 49,
+    "loadKw": 3.49,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-23T17:15:00.000Z",
+    "price": 4.011,
+    "action": "self_use",
+    "soc": 45,
+    "loadKw": 3.32,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-23T17:30:00.000Z",
+    "price": 4.128,
+    "action": "self_use",
+    "soc": 41.8,
+    "loadKw": 2.64,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-23T17:45:00.000Z",
+    "price": 4.227,
+    "action": "self_use",
+    "soc": 38,
+    "loadKw": 3.07,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-23T18:00:00.000Z",
+    "price": 4.095,
+    "action": "self_use",
+    "soc": 34,
+    "loadKw": 3.28,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-23T18:15:00.000Z",
+    "price": 3.75,
+    "action": "self_use",
+    "soc": 30.3,
+    "loadKw": 3.09,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-23T18:30:00.000Z",
+    "price": 3.246,
+    "action": "self_use",
+    "soc": 26.4,
+    "loadKw": 3.24,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-23T18:45:00.000Z",
+    "price": 2.992,
+    "action": "self_use",
+    "soc": 26.4,
+    "loadKw": 2.94,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-23T19:00:00.000Z",
+    "price": 3.1,
+    "action": "self_use",
+    "soc": 26.4,
+    "loadKw": 2.82,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-23T19:15:00.000Z",
+    "price": 2.989,
+    "action": "self_use",
+    "soc": 26.4,
+    "loadKw": 2.77,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-23T19:30:00.000Z",
+    "price": 2.735,
+    "action": "self_use",
+    "soc": 26.4,
+    "loadKw": 3.21,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-23T19:45:00.000Z",
+    "price": 2.542,
+    "action": "self_use",
+    "soc": 26.4,
+    "loadKw": 3.15,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-23T20:00:00.000Z",
+    "price": 2.599,
+    "action": "self_use",
+    "soc": 26.4,
+    "loadKw": 3.01,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-23T20:15:00.000Z",
+    "price": 2.518,
+    "action": "self_use",
+    "soc": 26.4,
+    "loadKw": 3.05,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-23T20:30:00.000Z",
+    "price": 2.455,
+    "action": "self_use",
+    "soc": 26.4,
+    "loadKw": 3.05,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-23T20:45:00.000Z",
+    "price": 2.428,
+    "action": "self_use",
+    "soc": 26.4,
+    "loadKw": 2.92,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-23T21:00:00.000Z",
+    "price": 2.435,
+    "action": "self_use",
+    "soc": 26.4,
+    "loadKw": 2.86,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-23T21:15:00.000Z",
+    "price": 2.402,
+    "action": "self_use",
+    "soc": 26.4,
+    "loadKw": 3.22,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-23T21:30:00.000Z",
+    "price": 2.324,
+    "action": "self_use",
+    "soc": 26.4,
+    "loadKw": 2.75,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-23T21:45:00.000Z",
+    "price": 2.276,
+    "action": "self_use",
+    "soc": 26.4,
+    "loadKw": 3.21,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-23T22:00:00.000Z",
+    "price": 2.34,
+    "action": "self_use",
+    "soc": 26.4,
+    "loadKw": 2.94,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-23T22:15:00.000Z",
+    "price": 2.669,
+    "action": "self_use",
+    "soc": 26.4,
+    "loadKw": 3.01,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-23T22:30:00.000Z",
+    "price": 2.594,
+    "action": "self_use",
+    "soc": 26.4,
+    "loadKw": 2.93,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-23T22:45:00.000Z",
+    "price": 2.555,
+    "action": "self_use",
+    "soc": 26.4,
+    "loadKw": 2.85,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-23T23:00:00.000Z",
+    "price": 2.375,
+    "action": "self_use",
+    "soc": 26.4,
+    "loadKw": 2.82,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-23T23:15:00.000Z",
+    "price": 2.357,
+    "action": "self_use",
+    "soc": 26.4,
+    "loadKw": 2.62,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-23T23:30:00.000Z",
+    "price": 2.379,
+    "action": "self_use",
+    "soc": 26.4,
+    "loadKw": 2.61,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-23T23:45:00.000Z",
+    "price": 2.383,
+    "action": "self_use",
+    "soc": 26.4,
+    "loadKw": 2.67,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-24T00:00:00.000Z",
+    "price": 2.471,
+    "action": "self_use",
+    "soc": 26.4,
+    "loadKw": 2.43,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-24T00:15:00.000Z",
+    "price": 2.435,
+    "action": "self_use",
+    "soc": 26.4,
+    "loadKw": 2.7,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-24T00:30:00.000Z",
+    "price": 2.429,
+    "action": "self_use",
+    "soc": 26.4,
+    "loadKw": 2.87,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-24T00:45:00.000Z",
+    "price": 2.396,
+    "action": "charge",
+    "soc": 33.5,
+    "loadKw": 2.64,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-24T01:00:00.000Z",
+    "price": 2.327,
+    "action": "charge",
+    "soc": 40.6,
+    "loadKw": 2.59,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-24T01:15:00.000Z",
+    "price": 2.323,
+    "action": "charge",
+    "soc": 47.7,
+    "loadKw": 3.19,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-24T01:30:00.000Z",
+    "price": 2.301,
+    "action": "charge",
+    "soc": 54.8,
+    "loadKw": 2.85,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-24T01:45:00.000Z",
+    "price": 2.281,
+    "action": "charge",
+    "soc": 61.9,
+    "loadKw": 2.88,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-24T02:00:00.000Z",
+    "price": 2.285,
+    "action": "charge",
+    "soc": 69,
+    "loadKw": 2.96,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-24T02:15:00.000Z",
+    "price": 2.288,
+    "action": "charge",
+    "soc": 76.1,
+    "loadKw": 2.93,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-24T02:30:00.000Z",
+    "price": 2.291,
+    "action": "charge",
+    "soc": 83.2,
+    "loadKw": 2.73,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-24T02:45:00.000Z",
+    "price": 2.364,
+    "action": "charge",
+    "soc": 90.3,
+    "loadKw": 2.73,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-24T03:00:00.000Z",
+    "price": 2.414,
+    "action": "charge",
+    "soc": 97.5,
+    "loadKw": 2.68,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-24T03:15:00.000Z",
+    "price": 2.501,
+    "action": "charge",
+    "soc": 100,
+    "loadKw": 2.63,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-24T03:30:00.000Z",
+    "price": 2.566,
+    "action": "charge",
+    "soc": 100,
+    "loadKw": 2.7,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-24T03:45:00.000Z",
+    "price": 2.646,
+    "action": "charge",
+    "soc": 100,
+    "loadKw": 2.95,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-24T04:00:00.000Z",
+    "price": 2.59,
+    "action": "charge",
+    "soc": 100,
+    "loadKw": 2.76,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-24T04:15:00.000Z",
+    "price": 2.853,
+    "action": "charge",
+    "soc": 100,
+    "loadKw": 2.99,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-24T04:30:00.000Z",
+    "price": 3.023,
+    "action": "self_use",
+    "soc": 96.3,
+    "loadKw": 3.04,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-24T04:45:00.000Z",
+    "price": 3.231,
+    "action": "self_use",
+    "soc": 93,
+    "loadKw": 2.72,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-24T05:00:00.000Z",
+    "price": 3.291,
+    "action": "self_use",
+    "soc": 89.8,
+    "loadKw": 2.68,
+    "pvKw": 0.05
+   },
+   {
+    "t": "2026-09-24T05:15:00.000Z",
+    "price": 3.373,
+    "action": "self_use",
+    "soc": 86.6,
+    "loadKw": 2.74,
+    "pvKw": 0.18
+   },
+   {
+    "t": "2026-09-24T05:30:00.000Z",
+    "price": 3.456,
+    "action": "self_use",
+    "soc": 83.8,
+    "loadKw": 2.57,
+    "pvKw": 0.34
+   },
+   {
+    "t": "2026-09-24T05:45:00.000Z",
+    "price": 3.419,
+    "action": "self_use",
+    "soc": 81.3,
+    "loadKw": 2.56,
+    "pvKw": 0.53
+   },
+   {
+    "t": "2026-09-24T06:00:00.000Z",
+    "price": 3.487,
+    "action": "self_use",
+    "soc": 78.9,
+    "loadKw": 2.41,
+    "pvKw": 0.55
+   },
+   {
+    "t": "2026-09-24T06:15:00.000Z",
+    "price": 3.46,
+    "action": "self_use",
+    "soc": 76.7,
+    "loadKw": 2.41,
+    "pvKw": 0.79
+   },
+   {
+    "t": "2026-09-24T06:30:00.000Z",
+    "price": 3.436,
+    "action": "self_use",
+    "soc": 74.9,
+    "loadKw": 2.36,
+    "pvKw": 1.07
+   },
+   {
+    "t": "2026-09-24T06:45:00.000Z",
+    "price": 3.385,
+    "action": "self_use",
+    "soc": 72.8,
+    "loadKw": 2.77,
+    "pvKw": 1.36
+   },
+   {
+    "t": "2026-09-24T07:00:00.000Z",
+    "price": 3.384,
+    "action": "self_use",
+    "soc": 71.5,
+    "loadKw": 3.05,
+    "pvKw": 2.43
+   },
+   {
+    "t": "2026-09-24T07:15:00.000Z",
+    "price": 3.292,
+    "action": "self_use",
+    "soc": 70.5,
+    "loadKw": 3.11,
+    "pvKw": 2.86
+   },
+   {
+    "t": "2026-09-24T07:30:00.000Z",
+    "price": 3.198,
+    "action": "self_use",
+    "soc": 70.1,
+    "loadKw": 2.96,
+    "pvKw": 3.28
+   },
+   {
+    "t": "2026-09-24T07:45:00.000Z",
+    "price": 3.103,
+    "action": "self_use",
+    "soc": 70.2,
+    "loadKw": 2.83,
+    "pvKw": 3.7
+   },
+   {
+    "t": "2026-09-24T08:00:00.000Z",
+    "price": 3.231,
+    "action": "self_use",
+    "soc": 71,
+    "loadKw": 2.94,
+    "pvKw": 4.54
+   },
+   {
+    "t": "2026-09-24T08:15:00.000Z",
+    "price": 3.02,
+    "action": "self_use",
+    "soc": 72.1,
+    "loadKw": 2.92,
+    "pvKw": 4.92
+   },
+   {
+    "t": "2026-09-24T08:30:00.000Z",
+    "price": 2.866,
+    "action": "self_use",
+    "soc": 73.3,
+    "loadKw": 3.13,
+    "pvKw": 5.29
+   },
+   {
+    "t": "2026-09-24T08:45:00.000Z",
+    "price": 2.724,
+    "action": "self_use",
+    "soc": 75,
+    "loadKw": 2.9,
+    "pvKw": 5.64
+   },
+   {
+    "t": "2026-09-24T09:00:00.000Z",
+    "price": 2.893,
+    "action": "self_use",
+    "soc": 76,
+    "loadKw": 3.02,
+    "pvKw": 4.9
+   },
+   {
+    "t": "2026-09-24T09:15:00.000Z",
+    "price": 2.892,
+    "action": "self_use",
+    "soc": 77.3,
+    "loadKw": 2.94,
+    "pvKw": 5.13
+   },
+   {
+    "t": "2026-09-24T09:30:00.000Z",
+    "price": 2.774,
+    "action": "self_use",
+    "soc": 78.2,
+    "loadKw": 3.44,
+    "pvKw": 5.35
+   },
+   {
+    "t": "2026-09-24T09:45:00.000Z",
+    "price": 2.752,
+    "action": "self_use",
+    "soc": 79.3,
+    "loadKw": 3.44,
+    "pvKw": 5.58
+   },
+   {
+    "t": "2026-09-24T10:00:00.000Z",
+    "price": 2.838,
+    "action": "self_use",
+    "soc": 80.9,
+    "loadKw": 3.07,
+    "pvKw": 5.63
+   },
+   {
+    "t": "2026-09-24T10:15:00.000Z",
+    "price": 2.773,
+    "action": "self_use",
+    "soc": 82.7,
+    "loadKw": 2.97,
+    "pvKw": 5.81
+   },
+   {
+    "t": "2026-09-24T10:30:00.000Z",
+    "price": 2.738,
+    "action": "self_use",
+    "soc": 85.1,
+    "loadKw": 2.56,
+    "pvKw": 5.94
+   },
+   {
+    "t": "2026-09-24T10:45:00.000Z",
+    "price": 2.735,
+    "action": "self_use",
+    "soc": 87.6,
+    "loadKw": 2.57,
+    "pvKw": 6.01
+   },
+   {
+    "t": "2026-09-24T11:00:00.000Z",
+    "price": 2.73,
+    "action": "self_use",
+    "soc": 89.1,
+    "loadKw": 2.78,
+    "pvKw": 5.21
+   },
+   {
+    "t": "2026-09-24T11:15:00.000Z",
+    "price": 2.718,
+    "action": "self_use",
+    "soc": 90.6,
+    "loadKw": 2.79,
+    "pvKw": 5.19
+   },
+   {
+    "t": "2026-09-24T11:30:00.000Z",
+    "price": 2.699,
+    "action": "self_use",
+    "soc": 92.2,
+    "loadKw": 2.62,
+    "pvKw": 5.1
+   },
+   {
+    "t": "2026-09-24T11:45:00.000Z",
+    "price": 2.692,
+    "action": "self_use",
+    "soc": 93.6,
+    "loadKw": 2.64,
+    "pvKw": 4.96
+   },
+   {
+    "t": "2026-09-24T12:00:00.000Z",
+    "price": 2.719,
+    "action": "self_use",
+    "soc": 94.5,
+    "loadKw": 2.87,
+    "pvKw": 4.57
+   },
+   {
+    "t": "2026-09-24T12:15:00.000Z",
+    "price": 2.701,
+    "action": "self_use",
+    "soc": 95.6,
+    "loadKw": 2.45,
+    "pvKw": 4.32
+   },
+   {
+    "t": "2026-09-24T12:30:00.000Z",
+    "price": 2.709,
+    "action": "self_use",
+    "soc": 96.4,
+    "loadKw": 2.46,
+    "pvKw": 4.04
+   },
+   {
+    "t": "2026-09-24T12:45:00.000Z",
+    "price": 2.708,
+    "action": "self_use",
+    "soc": 96.6,
+    "loadKw": 2.82,
+    "pvKw": 3.74
+   },
+   {
+    "t": "2026-09-24T13:00:00.000Z",
+    "price": 2.571,
+    "action": "hold",
+    "soc": 96.6,
+    "loadKw": 2.57,
+    "pvKw": 2.77
+   },
+   {
+    "t": "2026-09-24T13:15:00.000Z",
+    "price": 2.586,
+    "action": "hold",
+    "soc": 96.6,
+    "loadKw": 2.71,
+    "pvKw": 2.47
+   },
+   {
+    "t": "2026-09-24T13:30:00.000Z",
+    "price": 2.637,
+    "action": "hold",
+    "soc": 96.6,
+    "loadKw": 2.8,
+    "pvKw": 2.21
+   },
+   {
+    "t": "2026-09-24T13:45:00.000Z",
+    "price": 2.669,
+    "action": "hold",
+    "soc": 96.6,
+    "loadKw": 2.91,
+    "pvKw": 2.02
+   },
+   {
+    "t": "2026-09-24T14:00:00.000Z",
+    "price": 2.706,
+    "action": "hold",
+    "soc": 96.6,
+    "loadKw": 2.71,
+    "pvKw": 1.05
+   },
+   {
+    "t": "2026-09-24T14:15:00.000Z",
+    "price": 2.736,
+    "action": "hold",
+    "soc": 96.6,
+    "loadKw": 2.72,
+    "pvKw": 0.98
+   },
+   {
+    "t": "2026-09-24T14:30:00.000Z",
+    "price": 2.824,
+    "action": "hold",
+    "soc": 96.6,
+    "loadKw": 2.84,
+    "pvKw": 0.9
+   },
+   {
+    "t": "2026-09-24T14:45:00.000Z",
+    "price": 3.032,
+    "action": "hold",
+    "soc": 96.6,
+    "loadKw": 3.06,
+    "pvKw": 0.8
+   },
+   {
+    "t": "2026-09-24T15:00:00.000Z",
+    "price": 2.987,
+    "action": "hold",
+    "soc": 96.6,
+    "loadKw": 3.25,
+    "pvKw": 0.49
+   },
+   {
+    "t": "2026-09-24T15:15:00.000Z",
+    "price": 3.227,
+    "action": "self_use",
+    "soc": 93.2,
+    "loadKw": 3.17,
+    "pvKw": 0.4
+   },
+   {
+    "t": "2026-09-24T15:30:00.000Z",
+    "price": 3.46,
+    "action": "self_use",
+    "soc": 89.4,
+    "loadKw": 3.38,
+    "pvKw": 0.31
+   },
+   {
+    "t": "2026-09-24T15:45:00.000Z",
+    "price": 3.692,
+    "action": "self_use",
+    "soc": 85.5,
+    "loadKw": 3.34,
+    "pvKw": 0.24
+   },
+   {
+    "t": "2026-09-24T16:00:00.000Z",
+    "price": 3.434,
+    "action": "self_use",
+    "soc": 82.6,
+    "loadKw": 2.92,
+    "pvKw": 0.66
+   },
+   {
+    "t": "2026-09-24T16:15:00.000Z",
+    "price": 3.74,
+    "action": "self_use",
+    "soc": 78.4,
+    "loadKw": 3.78,
+    "pvKw": 0.41
+   },
+   {
+    "t": "2026-09-24T16:30:00.000Z",
+    "price": 3.943,
+    "action": "self_use",
+    "soc": 74.2,
+    "loadKw": 3.7,
+    "pvKw": 0.21
+   },
+   {
+    "t": "2026-09-24T16:45:00.000Z",
+    "price": 4.108,
+    "action": "self_use",
+    "soc": 69.2,
+    "loadKw": 4.05,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-24T17:00:00.000Z",
+    "price": 3.919,
+    "action": "self_use",
+    "soc": 65,
+    "loadKw": 3.49,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-24T17:15:00.000Z",
+    "price": 4.063,
+    "action": "self_use",
+    "soc": 60.9,
+    "loadKw": 3.32,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-24T17:30:00.000Z",
+    "price": 3.991,
+    "action": "self_use",
+    "soc": 57.7,
+    "loadKw": 2.64,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-24T17:45:00.000Z",
+    "price": 3.966,
+    "action": "self_use",
+    "soc": 54,
+    "loadKw": 3.07,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-24T18:00:00.000Z",
+    "price": 3.969,
+    "action": "self_use",
+    "soc": 50,
+    "loadKw": 3.28,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-24T18:15:00.000Z",
+    "price": 3.953,
+    "action": "self_use",
+    "soc": 46.2,
+    "loadKw": 3.09,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-24T18:30:00.000Z",
+    "price": 3.921,
+    "action": "self_use",
+    "soc": 42.3,
+    "loadKw": 3.24,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-24T18:45:00.000Z",
+    "price": 3.82,
+    "action": "self_use",
+    "soc": 38.7,
+    "loadKw": 2.94,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-24T19:00:00.000Z",
+    "price": 3.656,
+    "action": "self_use",
+    "soc": 35.3,
+    "loadKw": 2.82,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-24T19:15:00.000Z",
+    "price": 3.318,
+    "action": "self_use",
+    "soc": 31.9,
+    "loadKw": 2.77,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-24T19:30:00.000Z",
+    "price": 3.104,
+    "action": "self_use",
+    "soc": 28,
+    "loadKw": 3.21,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-24T19:45:00.000Z",
+    "price": 2.924,
+    "action": "hold",
+    "soc": 28,
+    "loadKw": 3.15,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-24T20:00:00.000Z",
+    "price": 3.248,
+    "action": "hold",
+    "soc": 28,
+    "loadKw": 3.01,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-24T20:15:00.000Z",
+    "price": 2.873,
+    "action": "hold",
+    "soc": 28,
+    "loadKw": 3.05,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-24T20:30:00.000Z",
+    "price": 2.7,
+    "action": "hold",
+    "soc": 28,
+    "loadKw": 3.05,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-24T20:45:00.000Z",
+    "price": 2.6,
+    "action": "hold",
+    "soc": 28,
+    "loadKw": 2.92,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-24T21:00:00.000Z",
+    "price": 2.71,
+    "action": "hold",
+    "soc": 28,
+    "loadKw": 2.86,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-24T21:15:00.000Z",
+    "price": 2.583,
+    "action": "hold",
+    "soc": 28,
+    "loadKw": 3.22,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-24T21:30:00.000Z",
+    "price": 2.529,
+    "action": "hold",
+    "soc": 28,
+    "loadKw": 2.75,
+    "pvKw": 0
+   },
+   {
+    "t": "2026-09-24T21:45:00.000Z",
+    "price": 2.508,
+    "action": "hold",
+    "soc": 28,
+    "loadKw": 3.21,
+    "pvKw": 0
+   }
+  ]
+ }
+}

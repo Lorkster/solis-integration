@@ -1,0 +1,20 @@
+<header class="homey-header">
+  <h1 class="homey-title" data-i18n="pair.intro.title">Connect your Solis inverter</h1>
+  <p class="homey-subtitle" data-i18n="pair.intro.subtitle">You need a SolisCloud API key.</p>
+</header>
+
+<ol class="steps">
+  <li data-i18n="pair.intro.step1">Log in to <b>soliscloud.com</b> in a web browser.</li>
+  <li data-i18n="pair.intro.step2">Open <b>Account → Basic Settings → API Management</b> and activate the API. Copy the <b>Key ID</b> and <b>Key Secret</b>.</li>
+  <li data-i18n="pair.intro.step3">To let the app change the battery schedule, ask Solis support (a ticket at solis-service.solisinverters.com) to enable <b>control access</b> for your inverter.</li>
+</ol>
+
+<p class="note" data-i18n="pair.intro.safe">The app starts in <b>Monitor only</b>: it shows prices and plans but does not change anything on the inverter until you switch to <b>Automatic</b>.</p>
+
+<button class="homey-button-primary-full" onclick="Homey.nextView()" data-i18n="pair.intro.next">I have my API key</button>
+
+<style>
+  .steps { padding-left: 20px; margin: 16px 0; line-height: 1.5; }
+  .steps li { margin-bottom: 10px; }
+  .note { padding: 12px; border-radius: 10px; background: rgba(0, 146, 255, 0.08); line-height: 1.45; margin-bottom: 20px; }
+</style>

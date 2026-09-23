@@ -1,8 +1,56 @@
 {
-  "name": { "en": "Battery plan", "sv": "Batteriplan" },
-  "height": 260,
-  "settings": [],
+  "name": {
+    "en": "Battery plan",
+    "sv": "Batteriplan"
+  },
+  "height": 560,
+  "settings": [
+    {
+      "id": "hours",
+      "type": "dropdown",
+      "title": {
+        "en": "Time shown",
+        "sv": "Tid som visas"
+      },
+      "value": "36",
+      "values": [
+        {
+          "id": "24",
+          "title": {
+            "en": "24 hours",
+            "sv": "24 timmar"
+          }
+        },
+        {
+          "id": "36",
+          "title": {
+            "en": "36 hours",
+            "sv": "36 timmar"
+          }
+        },
+        {
+          "id": "48",
+          "title": {
+            "en": "48 hours",
+            "sv": "48 timmar"
+          }
+        }
+      ]
+    },
+    {
+      "id": "showEnergy",
+      "type": "checkbox",
+      "title": {
+        "en": "Show solar and load forecast",
+        "sv": "Visa sol- och förbrukningsprognos"
+      },
+      "value": true
+    }
+  ],
   "api": {
-    "getPlan": { "method": "GET", "path": "/" }
+    "getPlan": {
+      "method": "GET",
+      "path": "/"
+    }
   }
 }

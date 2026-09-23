@@ -22,8 +22,29 @@ inverter's own time-of-use slots, while keeping a backup reserve for power outag
 4. **Controller** (`lib/controller/BatteryController.ts`) – reads the inverter settings, writes only what
    differs (slots first, storage mode last), sets the backup reserve.
 
+5. **Solar forecast** (`lib/forecast/SolarForecast.ts`) – 15-minute irradiance from Open-Meteo for each
+   panel array, a physical PV model, and an hourly correction learned from measured production
+   (shading, orientation), bootstrapped from 14 days of history.
+6. **SMHI warnings** (`lib/warnings/SmhiWarnings.ts`) – impact-based warnings whose area contains
+   Homey's location raise the reserve to the outage level until the warning ends.
+
 The inverter connection is behind `InverterTransport` (`lib/inverter/types.ts`). `SolisCloudTransport`
 is the only implementation today; a local Modbus TCP transport can be added without touching the rest.
+
+## User interface
+
+- **Device**: battery level and power (Homey Energy home battery), solar, house and grid power,
+  current price, solar forecast today, backup reserve, backup time at current load, SMHI warning alarm,
+  plan summary and control mode. All `measure_*` values can be pinned as tile indicators.
+- **Widget "Battery plan"**: status in words, three stacked charts on one time axis (price with
+  charge/save periods, solar and load forecast, battery level with reserve), touch/keyboard
+  crosshair, and the schedule as a list.
+- **Widget "Battery status"**: animated power flow between solar, grid, house and battery (honours
+  reduced motion), backup time, reserve and current price.
+- Colours validated for colour-vision deficiencies in light and dark mode; every state also has an
+  icon and a label.
+
+Widget previews are rendered from the real widget HTML with `tools/widget-preview/` (see the scripts).
 
 ## Control modes
 
@@ -36,7 +57,8 @@ Triggers: plan updated, planned action changed.
 Conditions: planned action is …, price is among the N cheapest hours today.
 Actions: set control mode, charge from grid for N minutes, save battery charge for N minutes,
 prepare for a power outage (raise reserve to the configured level for N hours), cancel overrides,
-update plan now.
+update plan now, hand control back to the inverter.
+SMHI: a warning was issued / ended, a warning is active.
 
 ## Development
 
@@ -56,6 +78,7 @@ npx homey app install    # install permanently
 - [ ] Read the off-grid over-discharge SOC (`offGridDDepth` = 30 in SolisCloud data?) for correct backup time
 - [ ] Identify the SolisCloud field that shows the house running on the backup output
 - [x] Learned load profile from observed consumption
-- [ ] PV forecast (currently PV = 0: the plan does not yet count on solar refilling the battery midday)
-- [ ] SMHI weather warnings → automatic outage preparation
+- [x] Solar forecast with learned calibration
+- [x] SMHI weather warnings → automatic outage preparation
+- [ ] Enter the real panel orientation (the calibration suggests east-facing or afternoon shade)
 - [ ] Local Modbus TCP transport

@@ -48,6 +48,13 @@ describe('planToSchedule', () => {
     assert.ok(chargeSlots.slice(2).every((s) => !s.enabled));
   });
 
+  it('skips holds that start at the reserve', () => {
+    const actions: BatteryAction[] = [...Array(4).fill('hold'), ...Array(4).fill('self_use')];
+    const intervals = plan('2026-09-24T21:00:00+02:00', actions); // SOC 20 %
+    assert.equal(planToSchedule(intervals, { ...opts('2026-09-24T20:00:00+02:00'), reserveSocPct: 20 }).chargeSlots.filter((s) => s.enabled).length, 0);
+    assert.equal(planToSchedule(intervals, { ...opts('2026-09-24T20:00:00+02:00'), reserveSocPct: 10 }).chargeSlots.filter((s) => s.enabled).length, 1);
+  });
+
   it('splits blocks at local midnight and uses 23:59 as end of day', () => {
     const actions: BatteryAction[] = Array(8).fill('charge'); // 23:00-01:00
     const { chargeSlots } = planToSchedule(plan('2026-09-24T23:00:00+02:00', actions), opts('2026-09-24T22:00:00+02:00'));

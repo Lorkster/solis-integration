@@ -487,6 +487,12 @@
       },
       "pair": [
         {
+          "id": "intro",
+          "navigation": {
+            "next": "login_credentials"
+          }
+        },
+        {
           "id": "login_credentials",
           "template": "login_credentials",
           "options": {
@@ -508,6 +514,9 @@
             "passwordPlaceholder": {
               "en": "KeySecret"
             }
+          },
+          "navigation": {
+            "prev": "intro"
           }
         },
         {
@@ -1203,8 +1212,50 @@
         "en": "Battery plan",
         "sv": "Batteriplan"
       },
-      "height": 260,
-      "settings": [],
+      "height": 560,
+      "settings": [
+        {
+          "id": "hours",
+          "type": "dropdown",
+          "title": {
+            "en": "Time shown",
+            "sv": "Tid som visas"
+          },
+          "value": "36",
+          "values": [
+            {
+              "id": "24",
+              "title": {
+                "en": "24 hours",
+                "sv": "24 timmar"
+              }
+            },
+            {
+              "id": "36",
+              "title": {
+                "en": "36 hours",
+                "sv": "36 timmar"
+              }
+            },
+            {
+              "id": "48",
+              "title": {
+                "en": "48 hours",
+                "sv": "48 timmar"
+              }
+            }
+          ]
+        },
+        {
+          "id": "showEnergy",
+          "type": "checkbox",
+          "title": {
+            "en": "Show solar and load forecast",
+            "sv": "Visa sol- och förbrukningsprognos"
+          },
+          "value": true
+        }
+      ],
       "api": {
         "getPlan": {
           "method": "GET",
@@ -1212,6 +1263,21 @@
         }
       },
       "id": "battery-plan"
+    },
+    "battery-status": {
+      "name": {
+        "en": "Battery status",
+        "sv": "Batteristatus"
+      },
+      "height": 360,
+      "settings": [],
+      "api": {
+        "getPlan": {
+          "method": "GET",
+          "path": "/"
+        }
+      },
+      "id": "battery-status"
     }
   },
   "capabilities": {

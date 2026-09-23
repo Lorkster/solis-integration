@@ -7,12 +7,15 @@ the same day and never generates plans for the following days. This project repl
 that writes charge slots directly to the inverter based on Nord Pool day-ahead prices, while keeping a
 battery reserve for power outages.
 
+**To install the Homey app, see [INSTALL.md](INSTALL.md).**
+
 ## Status
 
 - [x] `solis_diag.py` – read-only diagnostic: firmware, live values, storage mode bits, all TOU slots,
       snapshots with change detection (`--watch`)
-- [x] Homey Pro 2023 app skeleton in [`homey-app/`](homey-app/): price planner, TOU slot writing,
-      backup reserve, flows, dashboard widget (see its README for open items)
+- [x] Homey Pro 2023 app in [`homey-app/`](homey-app/): price planner, learned load profile, solar
+      forecast, SMHI warnings, TOU slot writing, backup reserve, flows, two dashboard widgets
+      (see its README for open items)
 - [ ] Verify inverter behaviour with TOU enabled (discharges to house outside charge slots? 0 A slot = hold?)
 
 ## Diagnostic usage

@@ -112,6 +112,7 @@ export class BatteryController {
       maxChargeKw: this.config.maxChargeKw,
       maxSocPct: this.config.maxSocPct,
       slotCount: SLOT_COUNT,
+      reserveSocPct: reserveSoc,
     });
     return { generatedAt: now, reserveSoc, plan, schedule, pricesUntil: upcoming[upcoming.length - 1].end };
   }

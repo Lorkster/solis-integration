@@ -2,3 +2,4 @@
 snapshots/
 __pycache__/
 watch.log
+tools/widget-preview/*.png

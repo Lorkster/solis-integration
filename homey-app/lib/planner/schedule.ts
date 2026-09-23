@@ -9,6 +9,8 @@ export interface ScheduleOptions {
   maxChargeKw: number;
   maxSocPct: number;
   slotCount: number; // charge slots available on the inverter (6 on TOU v2 firmware)
+  /** Holds starting at or near this SOC keep nothing the reserve does not already keep. */
+  reserveSocPct?: number;
 }
 
 export interface Schedule {
@@ -38,8 +40,9 @@ interface Block {
 export function planToSchedule(plan: PlannedInterval[], opts: ScheduleOptions): Schedule {
   const warnings: string[] = [];
   const horizonEnd = addDays(opts.now, 1);
+  const pointlessHold = (b: Block) => b.action === 'hold' && b.socStartPct <= (opts.reserveSocPct ?? -Infinity) + 1.5;
   let blocks = splitAtMidnight(
-    toBlocks(plan.filter((iv) => iv.end > opts.now && iv.start < horizonEnd)),
+    toBlocks(plan.filter((iv) => iv.end > opts.now && iv.start < horizonEnd)).filter((b) => !pointlessHold(b)),
     opts.timeZone,
   );
 

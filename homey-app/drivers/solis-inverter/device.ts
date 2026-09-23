@@ -197,7 +197,8 @@ export default class SolisInverterDevice extends Homey.Device {
         intervals: state.plan.intervals.map((iv) => ({
           t: iv.start.toISOString(),
           price: round(iv.buy, 3),
-          action: iv.action,
+          // Holds at the reserve keep nothing and are not sent to the inverter; show them as self-use.
+          action: iv.action === 'hold' && iv.socStartPct <= state.reserveSoc + 1.5 ? 'self_use' : iv.action,
           soc: round(iv.socEndPct, 1),
           loadKw: round(this.loadProfile.predict(iv.start) ?? this.controller.config.avgLoadKw, 2),
           pvKw: round(this.solar?.forecastAt(iv.start) ?? 0, 2),
