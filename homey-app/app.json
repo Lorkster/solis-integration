@@ -1,0 +1,929 @@
+{
+  "_comment": "This file is generated. Please edit .homeycompose/app.json instead.",
+  "id": "com.lorkster.solisbattery",
+  "version": "0.1.0",
+  "compatibility": ">=12.4.0",
+  "sdk": 3,
+  "runtime": "nodejs",
+  "platforms": [
+    "local"
+  ],
+  "name": {
+    "en": "Solis Smart Battery",
+    "sv": "Solis Smart Batteri"
+  },
+  "description": {
+    "en": "Charge your Solis battery when electricity is cheap, keep a reserve for power outages",
+    "sv": "Ladda Solis-batteriet när elen är billig och behåll en reserv för strömavbrott"
+  },
+  "category": [
+    "energy"
+  ],
+  "permissions": [],
+  "brandColor": "#E8751A",
+  "author": {
+    "name": "Lorkster"
+  },
+  "source": "https://github.com/Lorkster/solis-integration",
+  "images": {
+    "small": "/assets/images/small.png",
+    "large": "/assets/images/large.png",
+    "xlarge": "/assets/images/xlarge.png"
+  },
+  "esm": true,
+  "flow": {
+    "triggers": [
+      {
+        "id": "plan_updated",
+        "title": {
+          "en": "The battery plan was updated",
+          "sv": "Batteriplanen uppdaterades"
+        },
+        "tokens": [
+          {
+            "name": "summary",
+            "type": "string",
+            "title": {
+              "en": "Summary"
+            },
+            "example": {
+              "en": "Charge 02:00–04:30"
+            }
+          },
+          {
+            "name": "savings",
+            "type": "number",
+            "title": {
+              "en": "Expected savings (SEK)"
+            },
+            "example": 12.5
+          }
+        ],
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=solis-inverter"
+          }
+        ]
+      },
+      {
+        "id": "action_changed",
+        "title": {
+          "en": "The planned battery action changed",
+          "sv": "Planerad batteriåtgärd ändrades"
+        },
+        "tokens": [
+          {
+            "name": "action",
+            "type": "string",
+            "title": {
+              "en": "Action"
+            },
+            "example": {
+              "en": "charge"
+            }
+          }
+        ],
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=solis-inverter"
+          }
+        ]
+      }
+    ],
+    "conditions": [
+      {
+        "id": "planned_action_is",
+        "title": {
+          "en": "Planned action !{{is|is not}}",
+          "sv": "Planerad åtgärd !{{är|är inte}}"
+        },
+        "titleFormatted": {
+          "en": "Planned action !{{is|is not}} [[action]]",
+          "sv": "Planerad åtgärd !{{är|är inte}} [[action]]"
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=solis-inverter"
+          },
+          {
+            "type": "dropdown",
+            "name": "action",
+            "values": [
+              {
+                "id": "charge",
+                "title": {
+                  "en": "charging from grid",
+                  "sv": "laddning från nätet"
+                }
+              },
+              {
+                "id": "hold",
+                "title": {
+                  "en": "holding charge",
+                  "sv": "spara laddningen"
+                }
+              },
+              {
+                "id": "self_use",
+                "title": {
+                  "en": "self-use",
+                  "sv": "egenanvändning"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "price_among_cheapest",
+        "title": {
+          "en": "Price !{{is|is not}} among the cheapest hours today",
+          "sv": "Priset !{{är|är inte}} bland dagens billigaste timmar"
+        },
+        "titleFormatted": {
+          "en": "Price !{{is|is not}} among the [[hours]] cheapest hours today",
+          "sv": "Priset !{{är|är inte}} bland dagens [[hours]] billigaste timmar"
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=solis-inverter"
+          },
+          {
+            "type": "number",
+            "name": "hours",
+            "min": 1,
+            "max": 24,
+            "step": 0.25,
+            "placeholder": {
+              "en": "4"
+            }
+          }
+        ]
+      }
+    ],
+    "actions": [
+      {
+        "id": "set_control_mode",
+        "title": {
+          "en": "Set control mode",
+          "sv": "Ändra styrläge"
+        },
+        "titleFormatted": {
+          "en": "Set control mode to [[mode]]",
+          "sv": "Ändra styrläge till [[mode]]"
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=solis-inverter"
+          },
+          {
+            "type": "dropdown",
+            "name": "mode",
+            "values": [
+              {
+                "id": "monitor",
+                "title": {
+                  "en": "Monitor only",
+                  "sv": "Endast övervaka"
+                }
+              },
+              {
+                "id": "auto",
+                "title": {
+                  "en": "Automatic",
+                  "sv": "Automatisk"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "force_charge",
+        "title": {
+          "en": "Charge from grid",
+          "sv": "Ladda från nätet"
+        },
+        "titleFormatted": {
+          "en": "Charge from grid for [[minutes]] minutes",
+          "sv": "Ladda från nätet i [[minutes]] minuter"
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=solis-inverter"
+          },
+          {
+            "type": "number",
+            "name": "minutes",
+            "min": 15,
+            "max": 1440,
+            "step": 15,
+            "placeholder": {
+              "en": "60"
+            }
+          }
+        ]
+      },
+      {
+        "id": "hold_battery",
+        "title": {
+          "en": "Save the battery charge",
+          "sv": "Spara batteriladdningen"
+        },
+        "titleFormatted": {
+          "en": "Save the battery charge for [[minutes]] minutes",
+          "sv": "Spara batteriladdningen i [[minutes]] minuter"
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=solis-inverter"
+          },
+          {
+            "type": "number",
+            "name": "minutes",
+            "min": 15,
+            "max": 1440,
+            "step": 15,
+            "placeholder": {
+              "en": "60"
+            }
+          }
+        ]
+      },
+      {
+        "id": "prepare_outage",
+        "title": {
+          "en": "Prepare for a power outage",
+          "sv": "Förbered för strömavbrott"
+        },
+        "titleFormatted": {
+          "en": "Prepare for a power outage during [[hours]] hours",
+          "sv": "Förbered för strömavbrott under [[hours]] timmar"
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=solis-inverter"
+          },
+          {
+            "type": "number",
+            "name": "hours",
+            "min": 1,
+            "max": 168,
+            "step": 1,
+            "placeholder": {
+              "en": "24"
+            }
+          }
+        ]
+      },
+      {
+        "id": "clear_overrides",
+        "title": {
+          "en": "Cancel manual battery overrides",
+          "sv": "Avbryt manuella batteriåtgärder"
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=solis-inverter"
+          }
+        ]
+      },
+      {
+        "id": "replan_now",
+        "title": {
+          "en": "Update the battery plan now",
+          "sv": "Uppdatera batteriplanen nu"
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=solis-inverter"
+          }
+        ]
+      }
+    ]
+  },
+  "drivers": [
+    {
+      "name": {
+        "en": "Solis hybrid inverter",
+        "sv": "Solis hybridväxelriktare"
+      },
+      "class": "battery",
+      "capabilities": [
+        "measure_battery",
+        "measure_power",
+        "meter_power.charged",
+        "meter_power.discharged",
+        "solis_control_mode",
+        "solis_plan_status",
+        "solis_pv_power",
+        "solis_grid_power",
+        "solis_load_power",
+        "solis_price",
+        "solis_reserve_soc",
+        "solis_backup_hours"
+      ],
+      "capabilitiesOptions": {
+        "measure_power": {
+          "title": {
+            "en": "Battery power",
+            "sv": "Batteriets effekt"
+          }
+        },
+        "meter_power.charged": {
+          "title": {
+            "en": "Energy charged",
+            "sv": "Laddad energi"
+          }
+        },
+        "meter_power.discharged": {
+          "title": {
+            "en": "Energy discharged",
+            "sv": "Urladdad energi"
+          }
+        }
+      },
+      "energy": {
+        "homeBattery": true,
+        "meterPowerImportedCapability": "meter_power.charged",
+        "meterPowerExportedCapability": "meter_power.discharged"
+      },
+      "platforms": [
+        "local"
+      ],
+      "connectivity": [
+        "cloud"
+      ],
+      "images": {
+        "small": "/drivers/solis-inverter/assets/images/small.png",
+        "large": "/drivers/solis-inverter/assets/images/large.png",
+        "xlarge": "/drivers/solis-inverter/assets/images/xlarge.png"
+      },
+      "pair": [
+        {
+          "id": "login_credentials",
+          "template": "login_credentials",
+          "options": {
+            "title": {
+              "en": "SolisCloud API key",
+              "sv": "SolisCloud API-nyckel"
+            },
+            "usernameLabel": {
+              "en": "Key ID",
+              "sv": "Nyckel-ID"
+            },
+            "usernamePlaceholder": {
+              "en": "KeyId from SolisCloud API management"
+            },
+            "passwordLabel": {
+              "en": "Key secret",
+              "sv": "Nyckelhemlighet"
+            },
+            "passwordPlaceholder": {
+              "en": "KeySecret"
+            }
+          }
+        },
+        {
+          "id": "list_devices",
+          "template": "list_devices",
+          "navigation": {
+            "next": "add_devices"
+          }
+        },
+        {
+          "id": "add_devices",
+          "template": "add_devices"
+        }
+      ],
+      "settings": [
+        {
+          "type": "group",
+          "label": {
+            "en": "SolisCloud connection",
+            "sv": "SolisCloud-anslutning"
+          },
+          "children": [
+            {
+              "id": "key_id",
+              "type": "text",
+              "label": {
+                "en": "Key ID"
+              },
+              "value": ""
+            },
+            {
+              "id": "key_secret",
+              "type": "password",
+              "label": {
+                "en": "Key secret"
+              },
+              "value": ""
+            }
+          ]
+        },
+        {
+          "type": "group",
+          "label": {
+            "en": "Battery",
+            "sv": "Batteri"
+          },
+          "children": [
+            {
+              "id": "capacity_kwh",
+              "type": "number",
+              "label": {
+                "en": "Capacity"
+              },
+              "value": 21.68,
+              "min": 1,
+              "max": 200,
+              "step": 0.01,
+              "units": {
+                "en": "kWh"
+              }
+            },
+            {
+              "id": "max_charge_kw",
+              "type": "number",
+              "label": {
+                "en": "Grid charge power"
+              },
+              "hint": {
+                "en": "Limited by the inverter's max charge current (16 A ≈ 6.7 kW at 420 V)."
+              },
+              "value": 6.5,
+              "min": 0.5,
+              "max": 20,
+              "step": 0.1,
+              "units": {
+                "en": "kW"
+              }
+            },
+            {
+              "id": "max_discharge_kw",
+              "type": "number",
+              "label": {
+                "en": "Max discharge power"
+              },
+              "value": 10,
+              "min": 0.5,
+              "max": 20,
+              "step": 0.1,
+              "units": {
+                "en": "kW"
+              }
+            },
+            {
+              "id": "max_soc",
+              "type": "number",
+              "label": {
+                "en": "Max charge level"
+              },
+              "value": 100,
+              "min": 50,
+              "max": 100,
+              "step": 1,
+              "units": {
+                "en": "%"
+              }
+            },
+            {
+              "id": "round_trip_efficiency",
+              "type": "number",
+              "label": {
+                "en": "Round-trip efficiency"
+              },
+              "value": 90,
+              "min": 50,
+              "max": 100,
+              "step": 1,
+              "units": {
+                "en": "%"
+              }
+            },
+            {
+              "id": "cycling_cost",
+              "type": "number",
+              "label": {
+                "en": "Battery wear cost"
+              },
+              "hint": {
+                "en": "Cost per kWh discharged. Qapasity Arctic: 10 years / 8000 cycles; about 240 cycles per year makes age the limit, so wear per cycle is low."
+              },
+              "value": 0.2,
+              "min": 0,
+              "max": 5,
+              "step": 0.01,
+              "units": {
+                "en": "SEK/kWh"
+              }
+            },
+            {
+              "id": "min_gain",
+              "type": "number",
+              "label": {
+                "en": "Minimum gain for grid charging"
+              },
+              "value": 0.1,
+              "min": 0,
+              "max": 5,
+              "step": 0.01,
+              "units": {
+                "en": "SEK/kWh"
+              }
+            }
+          ]
+        },
+        {
+          "type": "group",
+          "label": {
+            "en": "Backup reserve",
+            "sv": "Reservkraft"
+          },
+          "children": [
+            {
+              "id": "reserve_summer",
+              "type": "number",
+              "label": {
+                "en": "Reserve April–October"
+              },
+              "value": 25,
+              "min": 0,
+              "max": 100,
+              "step": 1,
+              "units": {
+                "en": "%"
+              }
+            },
+            {
+              "id": "reserve_winter",
+              "type": "number",
+              "label": {
+                "en": "Reserve November–March"
+              },
+              "value": 30,
+              "min": 0,
+              "max": 100,
+              "step": 1,
+              "units": {
+                "en": "%"
+              }
+            },
+            {
+              "id": "outage_target",
+              "type": "number",
+              "label": {
+                "en": "Charge level when preparing for an outage"
+              },
+              "value": 100,
+              "min": 30,
+              "max": 100,
+              "step": 1,
+              "units": {
+                "en": "%"
+              }
+            }
+          ]
+        },
+        {
+          "type": "group",
+          "label": {
+            "en": "Electricity price",
+            "sv": "Elpris"
+          },
+          "children": [
+            {
+              "id": "price_area",
+              "type": "dropdown",
+              "label": {
+                "en": "Price area"
+              },
+              "value": "SE3",
+              "values": [
+                {
+                  "id": "SE1",
+                  "label": {
+                    "en": "SE1 Luleå"
+                  }
+                },
+                {
+                  "id": "SE2",
+                  "label": {
+                    "en": "SE2 Sundsvall"
+                  }
+                },
+                {
+                  "id": "SE3",
+                  "label": {
+                    "en": "SE3 Stockholm"
+                  }
+                },
+                {
+                  "id": "SE4",
+                  "label": {
+                    "en": "SE4 Malmö"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "vat_pct",
+              "type": "number",
+              "label": {
+                "en": "VAT"
+              },
+              "value": 25,
+              "min": 0,
+              "max": 50,
+              "step": 1,
+              "units": {
+                "en": "%"
+              }
+            },
+            {
+              "id": "supplier_fee",
+              "type": "number",
+              "label": {
+                "en": "Supplier fees (ex VAT)"
+              },
+              "hint": {
+                "en": "Variable costs and markups on top of spot."
+              },
+              "value": 0.1223,
+              "min": 0,
+              "max": 5,
+              "step": 0.0001,
+              "units": {
+                "en": "SEK/kWh"
+              }
+            },
+            {
+              "id": "electricity_tax",
+              "type": "number",
+              "label": {
+                "en": "Energy tax (ex VAT)"
+              },
+              "value": 0.36,
+              "min": 0,
+              "max": 5,
+              "step": 0.0001,
+              "units": {
+                "en": "SEK/kWh"
+              }
+            },
+            {
+              "id": "grid_fee",
+              "type": "number",
+              "label": {
+                "en": "Grid transfer fee (ex VAT)"
+              },
+              "value": 0.244,
+              "min": 0,
+              "max": 5,
+              "step": 0.0001,
+              "units": {
+                "en": "SEK/kWh"
+              }
+            },
+            {
+              "id": "high_load_enabled",
+              "type": "checkbox",
+              "label": {
+                "en": "Time tariff with high-load time (Nov–Mar weekdays 06–22)"
+              },
+              "value": true
+            },
+            {
+              "id": "grid_fee_high",
+              "type": "number",
+              "label": {
+                "en": "Grid transfer fee high-load time (ex VAT)"
+              },
+              "value": 0.244,
+              "min": 0,
+              "max": 5,
+              "step": 0.0001,
+              "units": {
+                "en": "SEK/kWh"
+              }
+            },
+            {
+              "id": "export_bonus",
+              "type": "number",
+              "label": {
+                "en": "Export compensation on top of spot"
+              },
+              "value": 0.104,
+              "min": 0,
+              "max": 5,
+              "step": 0.0001,
+              "units": {
+                "en": "SEK/kWh"
+              }
+            }
+          ]
+        },
+        {
+          "type": "group",
+          "label": {
+            "en": "Planning",
+            "sv": "Planering"
+          },
+          "children": [
+            {
+              "id": "avg_load_kw",
+              "type": "number",
+              "label": {
+                "en": "Average house load"
+              },
+              "hint": {
+                "en": "Used until a load profile is learned from history."
+              },
+              "value": 2,
+              "min": 0.1,
+              "max": 20,
+              "step": 0.1,
+              "units": {
+                "en": "kW"
+              }
+            }
+          ]
+        }
+      ],
+      "id": "solis-inverter"
+    }
+  ],
+  "widgets": {
+    "battery-plan": {
+      "name": {
+        "en": "Battery plan",
+        "sv": "Batteriplan"
+      },
+      "height": 260,
+      "settings": [],
+      "api": {
+        "getPlan": {
+          "method": "GET",
+          "path": "/"
+        }
+      },
+      "id": "battery-plan"
+    }
+  },
+  "capabilities": {
+    "solis_backup_hours": {
+      "type": "number",
+      "title": {
+        "en": "Backup time at current load",
+        "sv": "Reservtid vid nuvarande last"
+      },
+      "units": {
+        "en": "h"
+      },
+      "decimals": 1,
+      "insights": true,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/icon.svg"
+    },
+    "solis_control_mode": {
+      "type": "enum",
+      "title": {
+        "en": "Control mode",
+        "sv": "Styrläge"
+      },
+      "getable": true,
+      "setable": true,
+      "uiComponent": "picker",
+      "values": [
+        {
+          "id": "monitor",
+          "title": {
+            "en": "Monitor only",
+            "sv": "Endast övervaka"
+          }
+        },
+        {
+          "id": "auto",
+          "title": {
+            "en": "Automatic",
+            "sv": "Automatisk"
+          }
+        }
+      ]
+    },
+    "solis_grid_power": {
+      "type": "number",
+      "title": {
+        "en": "Grid power",
+        "sv": "Nätets effekt"
+      },
+      "units": {
+        "en": "W"
+      },
+      "decimals": 0,
+      "insights": true,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/icon.svg"
+    },
+    "solis_load_power": {
+      "type": "number",
+      "title": {
+        "en": "House load",
+        "sv": "Husets förbrukning"
+      },
+      "units": {
+        "en": "W"
+      },
+      "decimals": 0,
+      "insights": true,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/icon.svg"
+    },
+    "solis_plan_status": {
+      "type": "string",
+      "title": {
+        "en": "Plan",
+        "sv": "Plan"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/icon.svg"
+    },
+    "solis_price": {
+      "type": "number",
+      "title": {
+        "en": "Electricity price",
+        "sv": "Elpris"
+      },
+      "units": {
+        "en": "SEK/kWh"
+      },
+      "decimals": 2,
+      "insights": true,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/icon.svg"
+    },
+    "solis_pv_power": {
+      "type": "number",
+      "title": {
+        "en": "PV power",
+        "sv": "Solelproduktion"
+      },
+      "units": {
+        "en": "W"
+      },
+      "decimals": 0,
+      "insights": true,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/icon.svg"
+    },
+    "solis_reserve_soc": {
+      "type": "number",
+      "title": {
+        "en": "Backup reserve",
+        "sv": "Reservnivå"
+      },
+      "units": {
+        "en": "%"
+      },
+      "decimals": 0,
+      "insights": true,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/icon.svg"
+    }
+  }
+}

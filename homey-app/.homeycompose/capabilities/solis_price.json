@@ -1,0 +1,11 @@
+{
+  "type": "number",
+  "title": { "en": "Electricity price", "sv": "Elpris" },
+  "units": { "en": "SEK/kWh" },
+  "decimals": 2,
+  "insights": true,
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "icon": "/assets/icon.svg"
+}

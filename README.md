@@ -11,8 +11,9 @@ battery reserve for power outages.
 
 - [x] `solis_diag.py` – read-only diagnostic: firmware, live values, storage mode bits, all TOU slots,
       snapshots with change detection (`--watch`)
-- [ ] Verify inverter behaviour with TOU enabled (discharges to house outside charge slots?)
-- [ ] Homey Pro 2023 app: daily price planning, TOU slot writing, backup reserve, flows, dashboard widget
+- [x] Homey Pro 2023 app skeleton in [`homey-app/`](homey-app/): price planner, TOU slot writing,
+      backup reserve, flows, dashboard widget (see its README for open items)
+- [ ] Verify inverter behaviour with TOU enabled (discharges to house outside charge slots? 0 A slot = hold?)
 
 ## Diagnostic usage
 

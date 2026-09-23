@@ -1,0 +1,11 @@
+{
+  "type": "number",
+  "title": { "en": "PV power", "sv": "Solelproduktion" },
+  "units": { "en": "W" },
+  "decimals": 0,
+  "insights": true,
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "icon": "/assets/icon.svg"
+}

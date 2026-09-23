@@ -1,0 +1,28 @@
+{
+  "id": "com.lorkster.solisbattery",
+  "version": "0.1.0",
+  "compatibility": ">=12.4.0",
+  "sdk": 3,
+  "runtime": "nodejs",
+  "platforms": ["local"],
+  "name": {
+    "en": "Solis Smart Battery",
+    "sv": "Solis Smart Batteri"
+  },
+  "description": {
+    "en": "Charge your Solis battery when electricity is cheap, keep a reserve for power outages",
+    "sv": "Ladda Solis-batteriet när elen är billig och behåll en reserv för strömavbrott"
+  },
+  "category": ["energy"],
+  "permissions": [],
+  "brandColor": "#E8751A",
+  "author": {
+    "name": "Lorkster"
+  },
+  "source": "https://github.com/Lorkster/solis-integration",
+  "images": {
+    "small": "/assets/images/small.png",
+    "large": "/assets/images/large.png",
+    "xlarge": "/assets/images/xlarge.png"
+  }
+}

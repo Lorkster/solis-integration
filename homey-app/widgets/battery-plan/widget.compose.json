@@ -1,0 +1,8 @@
+{
+  "name": { "en": "Battery plan", "sv": "Batteriplan" },
+  "height": 260,
+  "settings": [],
+  "api": {
+    "getPlan": { "method": "GET", "path": "/" }
+  }
+}

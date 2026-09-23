@@ -1,0 +1,94 @@
+{
+  "triggers": [
+    {
+      "id": "plan_updated",
+      "title": { "en": "The battery plan was updated", "sv": "Batteriplanen uppdaterades" },
+      "tokens": [
+        { "name": "summary", "type": "string", "title": { "en": "Summary" }, "example": { "en": "Charge 02:00–04:30" } },
+        { "name": "savings", "type": "number", "title": { "en": "Expected savings (SEK)" }, "example": 12.5 }
+      ]
+    },
+    {
+      "id": "action_changed",
+      "title": { "en": "The planned battery action changed", "sv": "Planerad batteriåtgärd ändrades" },
+      "tokens": [
+        { "name": "action", "type": "string", "title": { "en": "Action" }, "example": { "en": "charge" } }
+      ]
+    }
+  ],
+  "conditions": [
+    {
+      "id": "planned_action_is",
+      "title": { "en": "Planned action !{{is|is not}}", "sv": "Planerad åtgärd !{{är|är inte}}" },
+      "titleFormatted": { "en": "Planned action !{{is|is not}} [[action]]", "sv": "Planerad åtgärd !{{är|är inte}} [[action]]" },
+      "args": [
+        {
+          "type": "dropdown",
+          "name": "action",
+          "values": [
+            { "id": "charge", "title": { "en": "charging from grid", "sv": "laddning från nätet" } },
+            { "id": "hold", "title": { "en": "holding charge", "sv": "spara laddningen" } },
+            { "id": "self_use", "title": { "en": "self-use", "sv": "egenanvändning" } }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "price_among_cheapest",
+      "title": { "en": "Price !{{is|is not}} among the cheapest hours today", "sv": "Priset !{{är|är inte}} bland dagens billigaste timmar" },
+      "titleFormatted": { "en": "Price !{{is|is not}} among the [[hours]] cheapest hours today", "sv": "Priset !{{är|är inte}} bland dagens [[hours]] billigaste timmar" },
+      "args": [
+        { "type": "number", "name": "hours", "min": 1, "max": 24, "step": 0.25, "placeholder": { "en": "4" } }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "id": "set_control_mode",
+      "title": { "en": "Set control mode", "sv": "Ändra styrläge" },
+      "titleFormatted": { "en": "Set control mode to [[mode]]", "sv": "Ändra styrläge till [[mode]]" },
+      "args": [
+        {
+          "type": "dropdown",
+          "name": "mode",
+          "values": [
+            { "id": "monitor", "title": { "en": "Monitor only", "sv": "Endast övervaka" } },
+            { "id": "auto", "title": { "en": "Automatic", "sv": "Automatisk" } }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "force_charge",
+      "title": { "en": "Charge from grid", "sv": "Ladda från nätet" },
+      "titleFormatted": { "en": "Charge from grid for [[minutes]] minutes", "sv": "Ladda från nätet i [[minutes]] minuter" },
+      "args": [
+        { "type": "number", "name": "minutes", "min": 15, "max": 1440, "step": 15, "placeholder": { "en": "60" } }
+      ]
+    },
+    {
+      "id": "hold_battery",
+      "title": { "en": "Save the battery charge", "sv": "Spara batteriladdningen" },
+      "titleFormatted": { "en": "Save the battery charge for [[minutes]] minutes", "sv": "Spara batteriladdningen i [[minutes]] minuter" },
+      "args": [
+        { "type": "number", "name": "minutes", "min": 15, "max": 1440, "step": 15, "placeholder": { "en": "60" } }
+      ]
+    },
+    {
+      "id": "prepare_outage",
+      "title": { "en": "Prepare for a power outage", "sv": "Förbered för strömavbrott" },
+      "titleFormatted": { "en": "Prepare for a power outage during [[hours]] hours", "sv": "Förbered för strömavbrott under [[hours]] timmar" },
+      "args": [
+        { "type": "number", "name": "hours", "min": 1, "max": 168, "step": 1, "placeholder": { "en": "24" } }
+      ]
+    },
+    {
+      "id": "clear_overrides",
+      "title": { "en": "Cancel manual battery overrides", "sv": "Avbryt manuella batteriåtgärder" }
+    },
+    {
+      "id": "replan_now",
+      "title": { "en": "Update the battery plan now", "sv": "Uppdatera batteriplanen nu" }
+    }
+  ]
+}

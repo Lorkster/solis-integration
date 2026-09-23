@@ -1,0 +1,121 @@
+{
+  "name": { "en": "Solis hybrid inverter", "sv": "Solis hybridväxelriktare" },
+  "class": "battery",
+  "capabilities": [
+    "measure_battery",
+    "measure_power",
+    "meter_power.charged",
+    "meter_power.discharged",
+    "solis_control_mode",
+    "solis_plan_status",
+    "solis_pv_power",
+    "solis_grid_power",
+    "solis_load_power",
+    "solis_price",
+    "solis_reserve_soc",
+    "solis_backup_hours"
+  ],
+  "capabilitiesOptions": {
+    "measure_power": { "title": { "en": "Battery power", "sv": "Batteriets effekt" } },
+    "meter_power.charged": { "title": { "en": "Energy charged", "sv": "Laddad energi" } },
+    "meter_power.discharged": { "title": { "en": "Energy discharged", "sv": "Urladdad energi" } }
+  },
+  "energy": {
+    "homeBattery": true,
+    "meterPowerImportedCapability": "meter_power.charged",
+    "meterPowerExportedCapability": "meter_power.discharged"
+  },
+  "platforms": ["local"],
+  "connectivity": ["cloud"],
+  "images": {
+    "small": "{{driverAssetsPath}}/images/small.png",
+    "large": "{{driverAssetsPath}}/images/large.png",
+    "xlarge": "{{driverAssetsPath}}/images/xlarge.png"
+  },
+  "pair": [
+    {
+      "id": "login_credentials",
+      "template": "login_credentials",
+      "options": {
+        "title": { "en": "SolisCloud API key", "sv": "SolisCloud API-nyckel" },
+        "usernameLabel": { "en": "Key ID", "sv": "Nyckel-ID" },
+        "usernamePlaceholder": { "en": "KeyId from SolisCloud API management" },
+        "passwordLabel": { "en": "Key secret", "sv": "Nyckelhemlighet" },
+        "passwordPlaceholder": { "en": "KeySecret" }
+      }
+    },
+    {
+      "id": "list_devices",
+      "template": "list_devices",
+      "navigation": { "next": "add_devices" }
+    },
+    {
+      "id": "add_devices",
+      "template": "add_devices"
+    }
+  ],
+  "settings": [
+    {
+      "type": "group",
+      "label": { "en": "SolisCloud connection", "sv": "SolisCloud-anslutning" },
+      "children": [
+        { "id": "key_id", "type": "text", "label": { "en": "Key ID" }, "value": "" },
+        { "id": "key_secret", "type": "password", "label": { "en": "Key secret" }, "value": "" }
+      ]
+    },
+    {
+      "type": "group",
+      "label": { "en": "Battery", "sv": "Batteri" },
+      "children": [
+        { "id": "capacity_kwh", "type": "number", "label": { "en": "Capacity" }, "value": 21.68, "min": 1, "max": 200, "step": 0.01, "units": { "en": "kWh" } },
+        { "id": "max_charge_kw", "type": "number", "label": { "en": "Grid charge power" }, "hint": { "en": "Limited by the inverter's max charge current (16 A ≈ 6.7 kW at 420 V)." }, "value": 6.5, "min": 0.5, "max": 20, "step": 0.1, "units": { "en": "kW" } },
+        { "id": "max_discharge_kw", "type": "number", "label": { "en": "Max discharge power" }, "value": 10, "min": 0.5, "max": 20, "step": 0.1, "units": { "en": "kW" } },
+        { "id": "max_soc", "type": "number", "label": { "en": "Max charge level" }, "value": 100, "min": 50, "max": 100, "step": 1, "units": { "en": "%" } },
+        { "id": "round_trip_efficiency", "type": "number", "label": { "en": "Round-trip efficiency" }, "value": 90, "min": 50, "max": 100, "step": 1, "units": { "en": "%" } },
+        { "id": "cycling_cost", "type": "number", "label": { "en": "Battery wear cost" }, "hint": { "en": "Cost per kWh discharged. Qapasity Arctic: 10 years / 8000 cycles; about 240 cycles per year makes age the limit, so wear per cycle is low." }, "value": 0.2, "min": 0, "max": 5, "step": 0.01, "units": { "en": "SEK/kWh" } },
+        { "id": "min_gain", "type": "number", "label": { "en": "Minimum gain for grid charging" }, "value": 0.1, "min": 0, "max": 5, "step": 0.01, "units": { "en": "SEK/kWh" } }
+      ]
+    },
+    {
+      "type": "group",
+      "label": { "en": "Backup reserve", "sv": "Reservkraft" },
+      "children": [
+        { "id": "reserve_summer", "type": "number", "label": { "en": "Reserve April–October" }, "value": 25, "min": 0, "max": 100, "step": 1, "units": { "en": "%" } },
+        { "id": "reserve_winter", "type": "number", "label": { "en": "Reserve November–March" }, "value": 30, "min": 0, "max": 100, "step": 1, "units": { "en": "%" } },
+        { "id": "outage_target", "type": "number", "label": { "en": "Charge level when preparing for an outage" }, "value": 100, "min": 30, "max": 100, "step": 1, "units": { "en": "%" } }
+      ]
+    },
+    {
+      "type": "group",
+      "label": { "en": "Electricity price", "sv": "Elpris" },
+      "children": [
+        {
+          "id": "price_area",
+          "type": "dropdown",
+          "label": { "en": "Price area" },
+          "value": "SE3",
+          "values": [
+            { "id": "SE1", "label": { "en": "SE1 Luleå" } },
+            { "id": "SE2", "label": { "en": "SE2 Sundsvall" } },
+            { "id": "SE3", "label": { "en": "SE3 Stockholm" } },
+            { "id": "SE4", "label": { "en": "SE4 Malmö" } }
+          ]
+        },
+        { "id": "vat_pct", "type": "number", "label": { "en": "VAT" }, "value": 25, "min": 0, "max": 50, "step": 1, "units": { "en": "%" } },
+        { "id": "supplier_fee", "type": "number", "label": { "en": "Supplier fees (ex VAT)" }, "hint": { "en": "Variable costs and markups on top of spot." }, "value": 0.1223, "min": 0, "max": 5, "step": 0.0001, "units": { "en": "SEK/kWh" } },
+        { "id": "electricity_tax", "type": "number", "label": { "en": "Energy tax (ex VAT)" }, "value": 0.36, "min": 0, "max": 5, "step": 0.0001, "units": { "en": "SEK/kWh" } },
+        { "id": "grid_fee", "type": "number", "label": { "en": "Grid transfer fee (ex VAT)" }, "value": 0.244, "min": 0, "max": 5, "step": 0.0001, "units": { "en": "SEK/kWh" } },
+        { "id": "high_load_enabled", "type": "checkbox", "label": { "en": "Time tariff with high-load time (Nov–Mar weekdays 06–22)" }, "value": true },
+        { "id": "grid_fee_high", "type": "number", "label": { "en": "Grid transfer fee high-load time (ex VAT)" }, "value": 0.244, "min": 0, "max": 5, "step": 0.0001, "units": { "en": "SEK/kWh" } },
+        { "id": "export_bonus", "type": "number", "label": { "en": "Export compensation on top of spot" }, "value": 0.104, "min": 0, "max": 5, "step": 0.0001, "units": { "en": "SEK/kWh" } }
+      ]
+    },
+    {
+      "type": "group",
+      "label": { "en": "Planning", "sv": "Planering" },
+      "children": [
+        { "id": "avg_load_kw", "type": "number", "label": { "en": "Average house load" }, "hint": { "en": "Used until a load profile is learned from history." }, "value": 2.0, "min": 0.1, "max": 20, "step": 0.1, "units": { "en": "kW" } }
+      ]
+    }
+  ]
+}

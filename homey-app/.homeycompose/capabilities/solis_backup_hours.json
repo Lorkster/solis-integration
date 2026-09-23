@@ -1,0 +1,11 @@
+{
+  "type": "number",
+  "title": { "en": "Backup time at current load", "sv": "Reservtid vid nuvarande last" },
+  "units": { "en": "h" },
+  "decimals": 1,
+  "insights": true,
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "icon": "/assets/icon.svg"
+}
