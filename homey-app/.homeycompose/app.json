@@ -4,7 +4,9 @@
   "compatibility": ">=12.4.0",
   "sdk": 3,
   "runtime": "nodejs",
-  "platforms": ["local"],
+  "platforms": [
+    "local"
+  ],
   "name": {
     "en": "Solis Smart Battery",
     "sv": "Solis Smart Batteri"
@@ -13,8 +15,12 @@
     "en": "Charge your Solis battery when electricity is cheap, keep a reserve for power outages",
     "sv": "Ladda Solis-batteriet när elen är billig och behåll en reserv för strömavbrott"
   },
-  "category": ["energy"],
-  "permissions": [],
+  "category": [
+    "energy"
+  ],
+  "permissions": [
+    "homey:manager:geolocation"
+  ],
   "brandColor": "#E8751A",
   "author": {
     "name": "Lorkster"

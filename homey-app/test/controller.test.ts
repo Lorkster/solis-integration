@@ -57,6 +57,7 @@ const config: ControllerConfig = {
   reserveSocWinter: 30,
   maxSocPct: 100,
   avgLoadKw: 2,
+  pvTrust: 0.8,
 };
 
 const live = { socPct: 20, batteryVoltageV: 420 } as LiveData;
@@ -78,6 +79,24 @@ describe('BatteryController', () => {
     inverter.writes = [];
     assert.deepEqual(await controller.apply(state), []);
     assert.deepEqual(inverter.writes, []);
+  });
+
+  it('hands control back to the inverter', async () => {
+    const inverter = new FakeInverter();
+    const controller = new BatteryController(inverter, new FakePrices(), config);
+    await controller.apply(await controller.buildPlan(live, new Date('2026-09-24T00:05:00+02:00')));
+    await controller.restoreInverter();
+    assert.ok(inverter.settings.chargeSlots.every((s) => !s.enabled));
+    assert.equal(inverter.settings.storageModeRaw, 49, 'TOU off, backup + grid charge kept');
+  });
+
+  it('uses the PV forecast scaled by trust', async () => {
+    const controller = new BatteryController(new FakeInverter(), new FakePrices(), config);
+    controller.pvForecast = () => 5;
+    const state = await controller.buildPlan({ ...live, socPct: 50 }, new Date('2026-09-24T00:05:00+02:00'));
+    // 5 kW × 80 % trust = 4 kW PV against a 2 kW load: the surplus charges the battery.
+    const first = state.plan.intervals[0];
+    assert.ok(first.batteryKwh > 0.4 && first.gridKwh <= 0, `battery ${first.batteryKwh} kWh, grid ${first.gridKwh} kWh`);
   });
 
   it('raises the reserve while preparing for an outage', async () => {

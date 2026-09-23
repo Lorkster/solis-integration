@@ -1,32 +1,57 @@
 {
-  "name": { "en": "Solis hybrid inverter", "sv": "Solis hybridväxelriktare" },
+  "name": {
+    "en": "Solis hybrid inverter",
+    "sv": "Solis hybridväxelriktare"
+  },
   "class": "battery",
   "capabilities": [
     "measure_battery",
     "measure_power",
-    "meter_power.charged",
-    "meter_power.discharged",
     "solis_control_mode",
     "solis_plan_status",
-    "solis_pv_power",
-    "solis_grid_power",
-    "solis_load_power",
-    "solis_price",
-    "solis_reserve_soc",
-    "solis_backup_hours"
+    "measure_solis_price",
+    "measure_solis_pv",
+    "measure_solis_load",
+    "measure_solis_grid",
+    "measure_solis_pv_forecast",
+    "measure_solis_reserve",
+    "measure_solis_backup_hours",
+    "alarm_solis_weather",
+    "solis_warning",
+    "meter_power.charged",
+    "meter_power.discharged"
   ],
   "capabilitiesOptions": {
-    "measure_power": { "title": { "en": "Battery power", "sv": "Batteriets effekt" } },
-    "meter_power.charged": { "title": { "en": "Energy charged", "sv": "Laddad energi" } },
-    "meter_power.discharged": { "title": { "en": "Energy discharged", "sv": "Urladdad energi" } }
+    "measure_power": {
+      "title": {
+        "en": "Battery power",
+        "sv": "Batteriets effekt"
+      }
+    },
+    "meter_power.charged": {
+      "title": {
+        "en": "Energy charged",
+        "sv": "Laddad energi"
+      }
+    },
+    "meter_power.discharged": {
+      "title": {
+        "en": "Energy discharged",
+        "sv": "Urladdad energi"
+      }
+    }
   },
   "energy": {
     "homeBattery": true,
     "meterPowerImportedCapability": "meter_power.charged",
     "meterPowerExportedCapability": "meter_power.discharged"
   },
-  "platforms": ["local"],
-  "connectivity": ["cloud"],
+  "platforms": [
+    "local"
+  ],
+  "connectivity": [
+    "cloud"
+  ],
   "images": {
     "small": "{{driverAssetsPath}}/images/small.png",
     "large": "{{driverAssetsPath}}/images/large.png",
@@ -37,17 +62,32 @@
       "id": "login_credentials",
       "template": "login_credentials",
       "options": {
-        "title": { "en": "SolisCloud API key", "sv": "SolisCloud API-nyckel" },
-        "usernameLabel": { "en": "Key ID", "sv": "Nyckel-ID" },
-        "usernamePlaceholder": { "en": "KeyId from SolisCloud API management" },
-        "passwordLabel": { "en": "Key secret", "sv": "Nyckelhemlighet" },
-        "passwordPlaceholder": { "en": "KeySecret" }
+        "title": {
+          "en": "SolisCloud API key",
+          "sv": "SolisCloud API-nyckel"
+        },
+        "usernameLabel": {
+          "en": "Key ID",
+          "sv": "Nyckel-ID"
+        },
+        "usernamePlaceholder": {
+          "en": "KeyId from SolisCloud API management"
+        },
+        "passwordLabel": {
+          "en": "Key secret",
+          "sv": "Nyckelhemlighet"
+        },
+        "passwordPlaceholder": {
+          "en": "KeySecret"
+        }
       }
     },
     {
       "id": "list_devices",
       "template": "list_devices",
-      "navigation": { "next": "add_devices" }
+      "navigation": {
+        "next": "add_devices"
+      }
     },
     {
       "id": "add_devices",
@@ -57,64 +97,672 @@
   "settings": [
     {
       "type": "group",
-      "label": { "en": "SolisCloud connection", "sv": "SolisCloud-anslutning" },
+      "label": {
+        "en": "SolisCloud connection",
+        "sv": "SolisCloud-anslutning"
+      },
       "children": [
-        { "id": "key_id", "type": "text", "label": { "en": "Key ID" }, "value": "" },
-        { "id": "key_secret", "type": "password", "label": { "en": "Key secret" }, "value": "" }
+        {
+          "id": "key_id",
+          "type": "text",
+          "label": {
+            "en": "Key ID"
+          },
+          "value": ""
+        },
+        {
+          "id": "key_secret",
+          "type": "password",
+          "label": {
+            "en": "Key secret"
+          },
+          "value": ""
+        }
       ]
     },
     {
       "type": "group",
-      "label": { "en": "Battery", "sv": "Batteri" },
+      "label": {
+        "en": "Backup reserve",
+        "sv": "Reservkraft"
+      },
       "children": [
-        { "id": "capacity_kwh", "type": "number", "label": { "en": "Capacity" }, "value": 21.68, "min": 1, "max": 200, "step": 0.01, "units": { "en": "kWh" } },
-        { "id": "max_charge_kw", "type": "number", "label": { "en": "Grid charge power" }, "hint": { "en": "Limited by the inverter's max charge current (16 A ≈ 6.7 kW at 420 V)." }, "value": 6.5, "min": 0.5, "max": 20, "step": 0.1, "units": { "en": "kW" } },
-        { "id": "max_discharge_kw", "type": "number", "label": { "en": "Max discharge power" }, "value": 10, "min": 0.5, "max": 20, "step": 0.1, "units": { "en": "kW" } },
-        { "id": "max_soc", "type": "number", "label": { "en": "Max charge level" }, "value": 100, "min": 50, "max": 100, "step": 1, "units": { "en": "%" } },
-        { "id": "round_trip_efficiency", "type": "number", "label": { "en": "Round-trip efficiency" }, "value": 90, "min": 50, "max": 100, "step": 1, "units": { "en": "%" } },
-        { "id": "cycling_cost", "type": "number", "label": { "en": "Battery wear cost" }, "hint": { "en": "Cost per kWh discharged. Qapasity Arctic: 10 years / 8000 cycles; about 240 cycles per year makes age the limit, so wear per cycle is low." }, "value": 0.2, "min": 0, "max": 5, "step": 0.01, "units": { "en": "SEK/kWh" } },
-        { "id": "min_gain", "type": "number", "label": { "en": "Minimum gain for grid charging" }, "value": 0.1, "min": 0, "max": 5, "step": 0.01, "units": { "en": "SEK/kWh" } }
+        {
+          "id": "reserve_summer",
+          "type": "number",
+          "label": {
+            "en": "Reserve April–October"
+          },
+          "value": 25,
+          "min": 0,
+          "max": 100,
+          "step": 1,
+          "units": {
+            "en": "%"
+          }
+        },
+        {
+          "id": "reserve_winter",
+          "type": "number",
+          "label": {
+            "en": "Reserve November–March"
+          },
+          "value": 30,
+          "min": 0,
+          "max": 100,
+          "step": 1,
+          "units": {
+            "en": "%"
+          }
+        },
+        {
+          "id": "outage_target",
+          "type": "number",
+          "label": {
+            "en": "Charge level when preparing for an outage"
+          },
+          "value": 100,
+          "min": 30,
+          "max": 100,
+          "step": 1,
+          "units": {
+            "en": "%"
+          }
+        }
       ]
     },
     {
       "type": "group",
-      "label": { "en": "Backup reserve", "sv": "Reservkraft" },
+      "label": {
+        "en": "Solar forecast",
+        "sv": "Solprognos"
+      },
       "children": [
-        { "id": "reserve_summer", "type": "number", "label": { "en": "Reserve April–October" }, "value": 25, "min": 0, "max": 100, "step": 1, "units": { "en": "%" } },
-        { "id": "reserve_winter", "type": "number", "label": { "en": "Reserve November–March" }, "value": 30, "min": 0, "max": 100, "step": 1, "units": { "en": "%" } },
-        { "id": "outage_target", "type": "number", "label": { "en": "Charge level when preparing for an outage" }, "value": 100, "min": 30, "max": 100, "step": 1, "units": { "en": "%" } }
+        {
+          "id": "pv_forecast_enabled",
+          "type": "checkbox",
+          "label": {
+            "en": "Use solar forecast in the plan",
+            "sv": "Använd solprognos i planen"
+          },
+          "value": true,
+          "hint": {
+            "en": "Irradiance from Open-Meteo for Homey's location, calibrated against your measured production.",
+            "sv": "Solinstrålning från Open-Meteo för Homeys plats, kalibrerad mot din uppmätta produktion."
+          }
+        },
+        {
+          "id": "pv_array1_kwp",
+          "type": "number",
+          "label": {
+            "en": "Array 1 size",
+            "sv": "Yta 1 storlek"
+          },
+          "value": 11,
+          "min": 0,
+          "max": 100,
+          "step": 0.1,
+          "units": {
+            "en": "kWp"
+          }
+        },
+        {
+          "id": "pv_array1_tilt",
+          "type": "number",
+          "label": {
+            "en": "Array 1 tilt",
+            "sv": "Yta 1 lutning"
+          },
+          "value": 35,
+          "min": 0,
+          "max": 90,
+          "step": 1,
+          "units": {
+            "en": "°"
+          },
+          "hint": {
+            "en": "0° = flat, 90° = vertical",
+            "sv": "0° = platt, 90° = lodrät"
+          }
+        },
+        {
+          "id": "pv_array1_azimuth",
+          "type": "dropdown",
+          "label": {
+            "en": "Array 1 facing",
+            "sv": "Yta 1 riktning"
+          },
+          "value": "0",
+          "values": [
+            {
+              "id": "0",
+              "label": {
+                "en": "South",
+                "sv": "Söder"
+              }
+            },
+            {
+              "id": "-45",
+              "label": {
+                "en": "South-east",
+                "sv": "Sydost"
+              }
+            },
+            {
+              "id": "45",
+              "label": {
+                "en": "South-west",
+                "sv": "Sydväst"
+              }
+            },
+            {
+              "id": "-90",
+              "label": {
+                "en": "East",
+                "sv": "Öster"
+              }
+            },
+            {
+              "id": "90",
+              "label": {
+                "en": "West",
+                "sv": "Väster"
+              }
+            },
+            {
+              "id": "-135",
+              "label": {
+                "en": "North-east",
+                "sv": "Nordost"
+              }
+            },
+            {
+              "id": "135",
+              "label": {
+                "en": "North-west",
+                "sv": "Nordväst"
+              }
+            },
+            {
+              "id": "180",
+              "label": {
+                "en": "North",
+                "sv": "Norr"
+              }
+            }
+          ]
+        },
+        {
+          "id": "pv_array2_kwp",
+          "type": "number",
+          "label": {
+            "en": "Array 2 size (0 = none)",
+            "sv": "Yta 2 storlek (0 = ingen)"
+          },
+          "value": 0,
+          "min": 0,
+          "max": 100,
+          "step": 0.1,
+          "units": {
+            "en": "kWp"
+          }
+        },
+        {
+          "id": "pv_array2_tilt",
+          "type": "number",
+          "label": {
+            "en": "Array 2 tilt",
+            "sv": "Yta 2 lutning"
+          },
+          "value": 35,
+          "min": 0,
+          "max": 90,
+          "step": 1,
+          "units": {
+            "en": "°"
+          }
+        },
+        {
+          "id": "pv_array2_azimuth",
+          "type": "dropdown",
+          "label": {
+            "en": "Array 2 facing",
+            "sv": "Yta 2 riktning"
+          },
+          "value": "-90",
+          "values": [
+            {
+              "id": "0",
+              "label": {
+                "en": "South",
+                "sv": "Söder"
+              }
+            },
+            {
+              "id": "-45",
+              "label": {
+                "en": "South-east",
+                "sv": "Sydost"
+              }
+            },
+            {
+              "id": "45",
+              "label": {
+                "en": "South-west",
+                "sv": "Sydväst"
+              }
+            },
+            {
+              "id": "-90",
+              "label": {
+                "en": "East",
+                "sv": "Öster"
+              }
+            },
+            {
+              "id": "90",
+              "label": {
+                "en": "West",
+                "sv": "Väster"
+              }
+            },
+            {
+              "id": "-135",
+              "label": {
+                "en": "North-east",
+                "sv": "Nordost"
+              }
+            },
+            {
+              "id": "135",
+              "label": {
+                "en": "North-west",
+                "sv": "Nordväst"
+              }
+            },
+            {
+              "id": "180",
+              "label": {
+                "en": "North",
+                "sv": "Norr"
+              }
+            }
+          ]
+        },
+        {
+          "id": "pv_trust",
+          "type": "number",
+          "label": {
+            "en": "Forecast trust",
+            "sv": "Tillit till prognosen"
+          },
+          "value": 80,
+          "min": 0,
+          "max": 100,
+          "step": 5,
+          "units": {
+            "en": "%"
+          },
+          "hint": {
+            "en": "Share of the forecast the plan counts on. Lower = more grid charging before uncertain days.",
+            "sv": "Andel av prognosen som planen räknar med. Lägre = mer nätladdning inför osäkra dagar."
+          }
+        }
       ]
     },
     {
       "type": "group",
-      "label": { "en": "Electricity price", "sv": "Elpris" },
+      "label": {
+        "en": "SMHI weather warnings",
+        "sv": "SMHI-vädervarningar"
+      },
+      "children": [
+        {
+          "id": "warnings_enabled",
+          "type": "checkbox",
+          "label": {
+            "en": "Prepare for outages on SMHI warnings",
+            "sv": "Förbered för strömavbrott vid SMHI-varningar"
+          },
+          "value": true,
+          "hint": {
+            "en": "Charges to the outage level while a warning covers Homey's location.",
+            "sv": "Laddar till avbrottsnivån medan en varning gäller Homeys plats."
+          }
+        },
+        {
+          "id": "warnings_min_level",
+          "type": "dropdown",
+          "label": {
+            "en": "Lowest warning level",
+            "sv": "Lägsta varningsnivå"
+          },
+          "value": "YELLOW",
+          "values": [
+            {
+              "id": "YELLOW",
+              "label": {
+                "en": "Yellow",
+                "sv": "Gul"
+              }
+            },
+            {
+              "id": "ORANGE",
+              "label": {
+                "en": "Orange",
+                "sv": "Orange"
+              }
+            },
+            {
+              "id": "RED",
+              "label": {
+                "en": "Red",
+                "sv": "Röd"
+              }
+            }
+          ]
+        },
+        {
+          "id": "warnings_weather_only",
+          "type": "checkbox",
+          "label": {
+            "en": "Weather warnings only (not water levels, fire risk)",
+            "sv": "Endast vädervarningar (inte vattennivåer, brandrisk)"
+          },
+          "value": true
+        },
+        {
+          "id": "warnings_lead_hours",
+          "type": "number",
+          "label": {
+            "en": "Start preparing ahead of a warning",
+            "sv": "Börja förbereda före en varning"
+          },
+          "value": 12,
+          "min": 0,
+          "max": 48,
+          "step": 1,
+          "units": {
+            "en": "h"
+          }
+        }
+      ]
+    },
+    {
+      "type": "group",
+      "label": {
+        "en": "Battery",
+        "sv": "Batteri"
+      },
+      "children": [
+        {
+          "id": "capacity_kwh",
+          "type": "number",
+          "label": {
+            "en": "Capacity"
+          },
+          "value": 21.68,
+          "min": 1,
+          "max": 200,
+          "step": 0.01,
+          "units": {
+            "en": "kWh"
+          }
+        },
+        {
+          "id": "max_charge_kw",
+          "type": "number",
+          "label": {
+            "en": "Grid charge power"
+          },
+          "hint": {
+            "en": "Limited by the inverter's max charge current (16 A ≈ 6.7 kW at 420 V)."
+          },
+          "value": 6.5,
+          "min": 0.5,
+          "max": 20,
+          "step": 0.1,
+          "units": {
+            "en": "kW"
+          }
+        },
+        {
+          "id": "max_discharge_kw",
+          "type": "number",
+          "label": {
+            "en": "Max discharge power"
+          },
+          "value": 10,
+          "min": 0.5,
+          "max": 20,
+          "step": 0.1,
+          "units": {
+            "en": "kW"
+          }
+        },
+        {
+          "id": "max_soc",
+          "type": "number",
+          "label": {
+            "en": "Max charge level"
+          },
+          "value": 100,
+          "min": 50,
+          "max": 100,
+          "step": 1,
+          "units": {
+            "en": "%"
+          }
+        },
+        {
+          "id": "round_trip_efficiency",
+          "type": "number",
+          "label": {
+            "en": "Round-trip efficiency"
+          },
+          "value": 90,
+          "min": 50,
+          "max": 100,
+          "step": 1,
+          "units": {
+            "en": "%"
+          }
+        },
+        {
+          "id": "cycling_cost",
+          "type": "number",
+          "label": {
+            "en": "Battery wear cost"
+          },
+          "hint": {
+            "en": "Cost per kWh discharged. Qapasity Arctic: 10 years / 8000 cycles; about 240 cycles per year makes age the limit, so wear per cycle is low."
+          },
+          "value": 0.2,
+          "min": 0,
+          "max": 5,
+          "step": 0.01,
+          "units": {
+            "en": "SEK/kWh"
+          }
+        },
+        {
+          "id": "min_gain",
+          "type": "number",
+          "label": {
+            "en": "Minimum gain for grid charging"
+          },
+          "value": 0.1,
+          "min": 0,
+          "max": 5,
+          "step": 0.01,
+          "units": {
+            "en": "SEK/kWh"
+          }
+        }
+      ]
+    },
+    {
+      "type": "group",
+      "label": {
+        "en": "Electricity price",
+        "sv": "Elpris"
+      },
       "children": [
         {
           "id": "price_area",
           "type": "dropdown",
-          "label": { "en": "Price area" },
+          "label": {
+            "en": "Price area"
+          },
           "value": "SE3",
           "values": [
-            { "id": "SE1", "label": { "en": "SE1 Luleå" } },
-            { "id": "SE2", "label": { "en": "SE2 Sundsvall" } },
-            { "id": "SE3", "label": { "en": "SE3 Stockholm" } },
-            { "id": "SE4", "label": { "en": "SE4 Malmö" } }
+            {
+              "id": "SE1",
+              "label": {
+                "en": "SE1 Luleå"
+              }
+            },
+            {
+              "id": "SE2",
+              "label": {
+                "en": "SE2 Sundsvall"
+              }
+            },
+            {
+              "id": "SE3",
+              "label": {
+                "en": "SE3 Stockholm"
+              }
+            },
+            {
+              "id": "SE4",
+              "label": {
+                "en": "SE4 Malmö"
+              }
+            }
           ]
         },
-        { "id": "vat_pct", "type": "number", "label": { "en": "VAT" }, "value": 25, "min": 0, "max": 50, "step": 1, "units": { "en": "%" } },
-        { "id": "supplier_fee", "type": "number", "label": { "en": "Supplier fees (ex VAT)" }, "hint": { "en": "Variable costs and markups on top of spot." }, "value": 0.1223, "min": 0, "max": 5, "step": 0.0001, "units": { "en": "SEK/kWh" } },
-        { "id": "electricity_tax", "type": "number", "label": { "en": "Energy tax (ex VAT)" }, "value": 0.36, "min": 0, "max": 5, "step": 0.0001, "units": { "en": "SEK/kWh" } },
-        { "id": "grid_fee", "type": "number", "label": { "en": "Grid transfer fee (ex VAT)" }, "value": 0.244, "min": 0, "max": 5, "step": 0.0001, "units": { "en": "SEK/kWh" } },
-        { "id": "high_load_enabled", "type": "checkbox", "label": { "en": "Time tariff with high-load time (Nov–Mar weekdays 06–22)" }, "value": true },
-        { "id": "grid_fee_high", "type": "number", "label": { "en": "Grid transfer fee high-load time (ex VAT)" }, "value": 0.244, "min": 0, "max": 5, "step": 0.0001, "units": { "en": "SEK/kWh" } },
-        { "id": "export_bonus", "type": "number", "label": { "en": "Export compensation on top of spot" }, "value": 0.104, "min": 0, "max": 5, "step": 0.0001, "units": { "en": "SEK/kWh" } }
+        {
+          "id": "vat_pct",
+          "type": "number",
+          "label": {
+            "en": "VAT"
+          },
+          "value": 25,
+          "min": 0,
+          "max": 50,
+          "step": 1,
+          "units": {
+            "en": "%"
+          }
+        },
+        {
+          "id": "supplier_fee",
+          "type": "number",
+          "label": {
+            "en": "Supplier fees (ex VAT)"
+          },
+          "hint": {
+            "en": "Variable costs and markups on top of spot."
+          },
+          "value": 0.1223,
+          "min": 0,
+          "max": 5,
+          "step": 0.0001,
+          "units": {
+            "en": "SEK/kWh"
+          }
+        },
+        {
+          "id": "electricity_tax",
+          "type": "number",
+          "label": {
+            "en": "Energy tax (ex VAT)"
+          },
+          "value": 0.36,
+          "min": 0,
+          "max": 5,
+          "step": 0.0001,
+          "units": {
+            "en": "SEK/kWh"
+          }
+        },
+        {
+          "id": "grid_fee",
+          "type": "number",
+          "label": {
+            "en": "Grid transfer fee (ex VAT)"
+          },
+          "value": 0.244,
+          "min": 0,
+          "max": 5,
+          "step": 0.0001,
+          "units": {
+            "en": "SEK/kWh"
+          }
+        },
+        {
+          "id": "high_load_enabled",
+          "type": "checkbox",
+          "label": {
+            "en": "Time tariff with high-load time (Nov–Mar weekdays 06–22)"
+          },
+          "value": true
+        },
+        {
+          "id": "grid_fee_high",
+          "type": "number",
+          "label": {
+            "en": "Grid transfer fee high-load time (ex VAT)"
+          },
+          "value": 0.244,
+          "min": 0,
+          "max": 5,
+          "step": 0.0001,
+          "units": {
+            "en": "SEK/kWh"
+          }
+        },
+        {
+          "id": "export_bonus",
+          "type": "number",
+          "label": {
+            "en": "Export compensation on top of spot"
+          },
+          "value": 0.104,
+          "min": 0,
+          "max": 5,
+          "step": 0.0001,
+          "units": {
+            "en": "SEK/kWh"
+          }
+        }
       ]
     },
     {
       "type": "group",
-      "label": { "en": "Planning", "sv": "Planering" },
+      "label": {
+        "en": "Planning",
+        "sv": "Planering"
+      },
       "children": [
-        { "id": "avg_load_kw", "type": "number", "label": { "en": "Average house load" }, "hint": { "en": "Used until a load profile is learned from history." }, "value": 2.0, "min": 0.1, "max": 20, "step": 0.1, "units": { "en": "kW" } }
+        {
+          "id": "avg_load_kw",
+          "type": "number",
+          "label": {
+            "en": "Average house load"
+          },
+          "hint": {
+            "en": "Used until a load profile is learned from history."
+          },
+          "value": 2.0,
+          "min": 0.1,
+          "max": 20,
+          "step": 0.1,
+          "units": {
+            "en": "kW"
+          }
+        }
       ]
     }
   ]

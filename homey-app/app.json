@@ -19,7 +19,9 @@
   "category": [
     "energy"
   ],
-  "permissions": [],
+  "permissions": [
+    "homey:manager:geolocation"
+  ],
   "brandColor": "#E8751A",
   "author": {
     "name": "Lorkster"
@@ -85,6 +87,75 @@
             }
           }
         ],
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=solis-inverter"
+          }
+        ]
+      },
+      {
+        "id": "weather_warning_started",
+        "title": {
+          "en": "An SMHI warning was issued for my location",
+          "sv": "En SMHI-varning utfärdades för min plats"
+        },
+        "tokens": [
+          {
+            "name": "level",
+            "type": "string",
+            "title": {
+              "en": "Level",
+              "sv": "Nivå"
+            },
+            "example": "YELLOW"
+          },
+          {
+            "name": "title",
+            "type": "string",
+            "title": {
+              "en": "Warning",
+              "sv": "Varning"
+            },
+            "example": {
+              "en": "Strong wind",
+              "sv": "Mycket hårda vindbyar"
+            }
+          },
+          {
+            "name": "area",
+            "type": "string",
+            "title": {
+              "en": "Area",
+              "sv": "Område"
+            },
+            "example": "Uppsala län"
+          },
+          {
+            "name": "until",
+            "type": "string",
+            "title": {
+              "en": "Until",
+              "sv": "Till"
+            },
+            "example": "18:00"
+          }
+        ],
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=solis-inverter"
+          }
+        ]
+      },
+      {
+        "id": "weather_warning_ended",
+        "title": {
+          "en": "The SMHI warnings for my location ended",
+          "sv": "SMHI-varningarna för min plats upphörde"
+        },
         "args": [
           {
             "type": "device",
@@ -165,6 +236,20 @@
             "placeholder": {
               "en": "4"
             }
+          }
+        ]
+      },
+      {
+        "id": "weather_warning_active",
+        "title": {
+          "en": "An SMHI warning !{{is|is not}} active",
+          "sv": "En SMHI-varning !{{är|är inte}} aktiv"
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=solis-inverter"
           }
         ]
       }
@@ -319,6 +404,24 @@
             "filter": "driver_id=solis-inverter"
           }
         ]
+      },
+      {
+        "id": "restore_inverter",
+        "title": {
+          "en": "Hand control back to the inverter",
+          "sv": "Lämna tillbaka styrningen till växelriktaren"
+        },
+        "hint": {
+          "en": "Removes the app's schedule from the inverter and switches to Monitor only.",
+          "sv": "Tar bort appens schema från växelriktaren och byter till Endast övervaka."
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=solis-inverter"
+          }
+        ]
       }
     ]
   },
@@ -332,16 +435,19 @@
       "capabilities": [
         "measure_battery",
         "measure_power",
-        "meter_power.charged",
-        "meter_power.discharged",
         "solis_control_mode",
         "solis_plan_status",
-        "solis_pv_power",
-        "solis_grid_power",
-        "solis_load_power",
-        "solis_price",
-        "solis_reserve_soc",
-        "solis_backup_hours"
+        "measure_solis_price",
+        "measure_solis_pv",
+        "measure_solis_load",
+        "measure_solis_grid",
+        "measure_solis_pv_forecast",
+        "measure_solis_reserve",
+        "measure_solis_backup_hours",
+        "alarm_solis_weather",
+        "solis_warning",
+        "meter_power.charged",
+        "meter_power.discharged"
       ],
       "capabilitiesOptions": {
         "measure_power": {
@@ -439,6 +545,374 @@
                 "en": "Key secret"
               },
               "value": ""
+            }
+          ]
+        },
+        {
+          "type": "group",
+          "label": {
+            "en": "Backup reserve",
+            "sv": "Reservkraft"
+          },
+          "children": [
+            {
+              "id": "reserve_summer",
+              "type": "number",
+              "label": {
+                "en": "Reserve April–October"
+              },
+              "value": 25,
+              "min": 0,
+              "max": 100,
+              "step": 1,
+              "units": {
+                "en": "%"
+              }
+            },
+            {
+              "id": "reserve_winter",
+              "type": "number",
+              "label": {
+                "en": "Reserve November–March"
+              },
+              "value": 30,
+              "min": 0,
+              "max": 100,
+              "step": 1,
+              "units": {
+                "en": "%"
+              }
+            },
+            {
+              "id": "outage_target",
+              "type": "number",
+              "label": {
+                "en": "Charge level when preparing for an outage"
+              },
+              "value": 100,
+              "min": 30,
+              "max": 100,
+              "step": 1,
+              "units": {
+                "en": "%"
+              }
+            }
+          ]
+        },
+        {
+          "type": "group",
+          "label": {
+            "en": "Solar forecast",
+            "sv": "Solprognos"
+          },
+          "children": [
+            {
+              "id": "pv_forecast_enabled",
+              "type": "checkbox",
+              "label": {
+                "en": "Use solar forecast in the plan",
+                "sv": "Använd solprognos i planen"
+              },
+              "value": true,
+              "hint": {
+                "en": "Irradiance from Open-Meteo for Homey's location, calibrated against your measured production.",
+                "sv": "Solinstrålning från Open-Meteo för Homeys plats, kalibrerad mot din uppmätta produktion."
+              }
+            },
+            {
+              "id": "pv_array1_kwp",
+              "type": "number",
+              "label": {
+                "en": "Array 1 size",
+                "sv": "Yta 1 storlek"
+              },
+              "value": 11,
+              "min": 0,
+              "max": 100,
+              "step": 0.1,
+              "units": {
+                "en": "kWp"
+              }
+            },
+            {
+              "id": "pv_array1_tilt",
+              "type": "number",
+              "label": {
+                "en": "Array 1 tilt",
+                "sv": "Yta 1 lutning"
+              },
+              "value": 35,
+              "min": 0,
+              "max": 90,
+              "step": 1,
+              "units": {
+                "en": "°"
+              },
+              "hint": {
+                "en": "0° = flat, 90° = vertical",
+                "sv": "0° = platt, 90° = lodrät"
+              }
+            },
+            {
+              "id": "pv_array1_azimuth",
+              "type": "dropdown",
+              "label": {
+                "en": "Array 1 facing",
+                "sv": "Yta 1 riktning"
+              },
+              "value": "0",
+              "values": [
+                {
+                  "id": "0",
+                  "label": {
+                    "en": "South",
+                    "sv": "Söder"
+                  }
+                },
+                {
+                  "id": "-45",
+                  "label": {
+                    "en": "South-east",
+                    "sv": "Sydost"
+                  }
+                },
+                {
+                  "id": "45",
+                  "label": {
+                    "en": "South-west",
+                    "sv": "Sydväst"
+                  }
+                },
+                {
+                  "id": "-90",
+                  "label": {
+                    "en": "East",
+                    "sv": "Öster"
+                  }
+                },
+                {
+                  "id": "90",
+                  "label": {
+                    "en": "West",
+                    "sv": "Väster"
+                  }
+                },
+                {
+                  "id": "-135",
+                  "label": {
+                    "en": "North-east",
+                    "sv": "Nordost"
+                  }
+                },
+                {
+                  "id": "135",
+                  "label": {
+                    "en": "North-west",
+                    "sv": "Nordväst"
+                  }
+                },
+                {
+                  "id": "180",
+                  "label": {
+                    "en": "North",
+                    "sv": "Norr"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "pv_array2_kwp",
+              "type": "number",
+              "label": {
+                "en": "Array 2 size (0 = none)",
+                "sv": "Yta 2 storlek (0 = ingen)"
+              },
+              "value": 0,
+              "min": 0,
+              "max": 100,
+              "step": 0.1,
+              "units": {
+                "en": "kWp"
+              }
+            },
+            {
+              "id": "pv_array2_tilt",
+              "type": "number",
+              "label": {
+                "en": "Array 2 tilt",
+                "sv": "Yta 2 lutning"
+              },
+              "value": 35,
+              "min": 0,
+              "max": 90,
+              "step": 1,
+              "units": {
+                "en": "°"
+              }
+            },
+            {
+              "id": "pv_array2_azimuth",
+              "type": "dropdown",
+              "label": {
+                "en": "Array 2 facing",
+                "sv": "Yta 2 riktning"
+              },
+              "value": "-90",
+              "values": [
+                {
+                  "id": "0",
+                  "label": {
+                    "en": "South",
+                    "sv": "Söder"
+                  }
+                },
+                {
+                  "id": "-45",
+                  "label": {
+                    "en": "South-east",
+                    "sv": "Sydost"
+                  }
+                },
+                {
+                  "id": "45",
+                  "label": {
+                    "en": "South-west",
+                    "sv": "Sydväst"
+                  }
+                },
+                {
+                  "id": "-90",
+                  "label": {
+                    "en": "East",
+                    "sv": "Öster"
+                  }
+                },
+                {
+                  "id": "90",
+                  "label": {
+                    "en": "West",
+                    "sv": "Väster"
+                  }
+                },
+                {
+                  "id": "-135",
+                  "label": {
+                    "en": "North-east",
+                    "sv": "Nordost"
+                  }
+                },
+                {
+                  "id": "135",
+                  "label": {
+                    "en": "North-west",
+                    "sv": "Nordväst"
+                  }
+                },
+                {
+                  "id": "180",
+                  "label": {
+                    "en": "North",
+                    "sv": "Norr"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "pv_trust",
+              "type": "number",
+              "label": {
+                "en": "Forecast trust",
+                "sv": "Tillit till prognosen"
+              },
+              "value": 80,
+              "min": 0,
+              "max": 100,
+              "step": 5,
+              "units": {
+                "en": "%"
+              },
+              "hint": {
+                "en": "Share of the forecast the plan counts on. Lower = more grid charging before uncertain days.",
+                "sv": "Andel av prognosen som planen räknar med. Lägre = mer nätladdning inför osäkra dagar."
+              }
+            }
+          ]
+        },
+        {
+          "type": "group",
+          "label": {
+            "en": "SMHI weather warnings",
+            "sv": "SMHI-vädervarningar"
+          },
+          "children": [
+            {
+              "id": "warnings_enabled",
+              "type": "checkbox",
+              "label": {
+                "en": "Prepare for outages on SMHI warnings",
+                "sv": "Förbered för strömavbrott vid SMHI-varningar"
+              },
+              "value": true,
+              "hint": {
+                "en": "Charges to the outage level while a warning covers Homey's location.",
+                "sv": "Laddar till avbrottsnivån medan en varning gäller Homeys plats."
+              }
+            },
+            {
+              "id": "warnings_min_level",
+              "type": "dropdown",
+              "label": {
+                "en": "Lowest warning level",
+                "sv": "Lägsta varningsnivå"
+              },
+              "value": "YELLOW",
+              "values": [
+                {
+                  "id": "YELLOW",
+                  "label": {
+                    "en": "Yellow",
+                    "sv": "Gul"
+                  }
+                },
+                {
+                  "id": "ORANGE",
+                  "label": {
+                    "en": "Orange",
+                    "sv": "Orange"
+                  }
+                },
+                {
+                  "id": "RED",
+                  "label": {
+                    "en": "Red",
+                    "sv": "Röd"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "warnings_weather_only",
+              "type": "checkbox",
+              "label": {
+                "en": "Weather warnings only (not water levels, fire risk)",
+                "sv": "Endast vädervarningar (inte vattennivåer, brandrisk)"
+              },
+              "value": true
+            },
+            {
+              "id": "warnings_lead_hours",
+              "type": "number",
+              "label": {
+                "en": "Start preparing ahead of a warning",
+                "sv": "Börja förbereda före en varning"
+              },
+              "value": 12,
+              "min": 0,
+              "max": 48,
+              "step": 1,
+              "units": {
+                "en": "h"
+              }
             }
           ]
         },
@@ -551,57 +1025,6 @@
               "step": 0.01,
               "units": {
                 "en": "SEK/kWh"
-              }
-            }
-          ]
-        },
-        {
-          "type": "group",
-          "label": {
-            "en": "Backup reserve",
-            "sv": "Reservkraft"
-          },
-          "children": [
-            {
-              "id": "reserve_summer",
-              "type": "number",
-              "label": {
-                "en": "Reserve April–October"
-              },
-              "value": 25,
-              "min": 0,
-              "max": 100,
-              "step": 1,
-              "units": {
-                "en": "%"
-              }
-            },
-            {
-              "id": "reserve_winter",
-              "type": "number",
-              "label": {
-                "en": "Reserve November–March"
-              },
-              "value": 30,
-              "min": 0,
-              "max": 100,
-              "step": 1,
-              "units": {
-                "en": "%"
-              }
-            },
-            {
-              "id": "outage_target",
-              "type": "number",
-              "label": {
-                "en": "Charge level when preparing for an outage"
-              },
-              "value": 100,
-              "min": 30,
-              "max": 100,
-              "step": 1,
-              "units": {
-                "en": "%"
               }
             }
           ]
@@ -792,21 +1215,137 @@
     }
   },
   "capabilities": {
-    "solis_backup_hours": {
+    "alarm_solis_weather": {
+      "type": "boolean",
+      "title": {
+        "en": "Weather warning",
+        "sv": "Vädervarning"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/icons/warning.svg",
+      "insights": true,
+      "insightsTitleTrue": {
+        "en": "SMHI warning issued",
+        "sv": "SMHI-varning utfärdad"
+      },
+      "insightsTitleFalse": {
+        "en": "SMHI warning ended",
+        "sv": "SMHI-varning upphörd"
+      }
+    },
+    "measure_solis_backup_hours": {
       "type": "number",
       "title": {
         "en": "Backup time at current load",
-        "sv": "Reservtid vid nuvarande last"
+        "sv": "Reservtid vid nuvarande förbrukning"
       },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/icons/backup.svg",
       "units": {
         "en": "h"
       },
       "decimals": 1,
-      "insights": true,
+      "insights": true
+    },
+    "measure_solis_grid": {
+      "type": "number",
+      "title": {
+        "en": "Grid power (+ import)",
+        "sv": "Nätets effekt (+ köp)"
+      },
       "getable": true,
       "setable": false,
       "uiComponent": "sensor",
-      "icon": "/assets/icon.svg"
+      "icon": "/assets/icons/grid.svg",
+      "units": {
+        "en": "W"
+      },
+      "decimals": 0,
+      "insights": true
+    },
+    "measure_solis_load": {
+      "type": "number",
+      "title": {
+        "en": "House load",
+        "sv": "Husets förbrukning"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/icons/load.svg",
+      "units": {
+        "en": "W"
+      },
+      "decimals": 0,
+      "insights": true
+    },
+    "measure_solis_price": {
+      "type": "number",
+      "title": {
+        "en": "Electricity price now",
+        "sv": "Elpris just nu"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/icons/price.svg",
+      "units": {
+        "en": "kr/kWh"
+      },
+      "decimals": 2,
+      "insights": true
+    },
+    "measure_solis_pv": {
+      "type": "number",
+      "title": {
+        "en": "Solar power",
+        "sv": "Solelproduktion"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/icons/pv.svg",
+      "units": {
+        "en": "W"
+      },
+      "decimals": 0,
+      "insights": true
+    },
+    "measure_solis_pv_forecast": {
+      "type": "number",
+      "title": {
+        "en": "Solar forecast today",
+        "sv": "Solprognos idag"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/icons/forecast.svg",
+      "units": {
+        "en": "kWh"
+      },
+      "decimals": 1,
+      "insights": true
+    },
+    "measure_solis_reserve": {
+      "type": "number",
+      "title": {
+        "en": "Backup reserve",
+        "sv": "Reservnivå"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/icons/reserve.svg",
+      "units": {
+        "en": "%"
+      },
+      "decimals": 0,
+      "insights": true
     },
     "solis_control_mode": {
       "type": "enum",
@@ -832,39 +1371,8 @@
             "sv": "Automatisk"
           }
         }
-      ]
-    },
-    "solis_grid_power": {
-      "type": "number",
-      "title": {
-        "en": "Grid power",
-        "sv": "Nätets effekt"
-      },
-      "units": {
-        "en": "W"
-      },
-      "decimals": 0,
-      "insights": true,
-      "getable": true,
-      "setable": false,
-      "uiComponent": "sensor",
-      "icon": "/assets/icon.svg"
-    },
-    "solis_load_power": {
-      "type": "number",
-      "title": {
-        "en": "House load",
-        "sv": "Husets förbrukning"
-      },
-      "units": {
-        "en": "W"
-      },
-      "decimals": 0,
-      "insights": true,
-      "getable": true,
-      "setable": false,
-      "uiComponent": "sensor",
-      "icon": "/assets/icon.svg"
+      ],
+      "icon": "/assets/icons/mode.svg"
     },
     "solis_plan_status": {
       "type": "string",
@@ -875,55 +1383,18 @@
       "getable": true,
       "setable": false,
       "uiComponent": "sensor",
-      "icon": "/assets/icon.svg"
+      "icon": "/assets/icons/plan.svg"
     },
-    "solis_price": {
-      "type": "number",
+    "solis_warning": {
+      "type": "string",
       "title": {
-        "en": "Electricity price",
-        "sv": "Elpris"
+        "en": "SMHI warning",
+        "sv": "SMHI-varning"
       },
-      "units": {
-        "en": "SEK/kWh"
-      },
-      "decimals": 2,
-      "insights": true,
       "getable": true,
       "setable": false,
       "uiComponent": "sensor",
-      "icon": "/assets/icon.svg"
-    },
-    "solis_pv_power": {
-      "type": "number",
-      "title": {
-        "en": "PV power",
-        "sv": "Solelproduktion"
-      },
-      "units": {
-        "en": "W"
-      },
-      "decimals": 0,
-      "insights": true,
-      "getable": true,
-      "setable": false,
-      "uiComponent": "sensor",
-      "icon": "/assets/icon.svg"
-    },
-    "solis_reserve_soc": {
-      "type": "number",
-      "title": {
-        "en": "Backup reserve",
-        "sv": "Reservnivå"
-      },
-      "units": {
-        "en": "%"
-      },
-      "decimals": 0,
-      "insights": true,
-      "getable": true,
-      "setable": false,
-      "uiComponent": "sensor",
-      "icon": "/assets/icon.svg"
+      "icon": "/assets/icons/warning.svg"
     }
   }
 }

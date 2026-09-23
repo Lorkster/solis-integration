@@ -1,4 +1,4 @@
-import { controlledStorageMode, describeStorageMode } from '../inverter/storageMode.js';
+import { controlledStorageMode, describeStorageMode, withFlag } from '../inverter/storageMode.js';
 import { DISABLED_SLOT, type InverterSettings, type InverterTransport, type LiveData, type TouSlot } from '../inverter/types.js';
 import { type BatteryAction, planBattery, type PlanInterval, type PlanResult } from '../planner/planner.js';
 import { planToSchedule, type Schedule } from '../planner/schedule.js';
@@ -20,6 +20,7 @@ export interface ControllerConfig {
   reserveSocWinter: number; // November–March
   maxSocPct: number;
   avgLoadKw: number;
+  pvTrust: number; // 0..1, share of the PV forecast the plan relies on
 }
 
 export interface Override {
@@ -48,6 +49,8 @@ export class BatteryController {
   outage: OutagePreparation | null = null;
   /** Expected house load in kW at a time, e.g. from a learned profile; null = use the average. */
   loadForecast: (time: Date) => number | null = () => null;
+  /** Expected PV power in kW at a time; null = unknown (treated as no PV). */
+  pvForecast: (time: Date) => number | null = () => null;
 
   constructor(
     private readonly transport: InverterTransport,
@@ -79,7 +82,7 @@ export class BatteryController {
       buy: buyPrice(p.sekPerKwh, p.start, this.config.timeZone, this.config.tariff),
       sell: sellPrice(p.sekPerKwh, this.config.tariff),
       loadKw: this.loadForecast(p.start) ?? this.config.avgLoadKw,
-      pvKw: 0, // TODO: PV forecast (e.g. forecast.solar); without it the plan under-uses solar
+      pvKw: (this.pvForecast(p.start) ?? 0) * this.config.pvTrust,
     }));
 
     const fixedActions = new Map<number, BatteryAction>();
@@ -142,6 +145,32 @@ export class BatteryController {
       changes.push(`storage mode ${describeStorageMode(current.storageModeRaw)} → ${describeStorageMode(desired.storageModeRaw)}`);
     }
     if (changes.length > 0) this.log('Applied', changes);
+    return changes;
+  }
+
+  /**
+   * Hands control back to the inverter: disables all time-of-use slots and the time-of-use
+   * switch, so the inverter runs plain self-use. The reserve (backup) setting is kept.
+   */
+  async restoreInverter(): Promise<string[]> {
+    const current = await this.transport.readSettings();
+    const changes: string[] = [];
+    for (let i = 0; i < SLOT_COUNT; i++) {
+      if (current.chargeSlots[i].enabled) {
+        await this.transport.writeChargeSlot(i, { ...current.chargeSlots[i], enabled: false }, current.chargeSlots[i]);
+        changes.push(`charge slot ${i + 1}: off`);
+      }
+      if (current.dischargeSlots[i].enabled) {
+        await this.transport.writeDischargeSlot(i, { ...current.dischargeSlots[i], enabled: false }, current.dischargeSlots[i]);
+        changes.push(`discharge slot ${i + 1}: off`);
+      }
+    }
+    const mode = withFlag(current.storageModeRaw, 'timeOfUse', false);
+    if (mode !== current.storageModeRaw) {
+      await this.transport.writeStorageMode(mode, current.storageModeRaw);
+      changes.push(`storage mode ${describeStorageMode(current.storageModeRaw)} → ${describeStorageMode(mode)}`);
+    }
+    this.log('Restored inverter', changes);
     return changes;
   }
 

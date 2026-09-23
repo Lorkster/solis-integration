@@ -1,0 +1,16 @@
+{
+  "type": "number",
+  "title": {
+    "en": "House load",
+    "sv": "Husets förbrukning"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "icon": "/assets/icons/load.svg",
+  "units": {
+    "en": "W"
+  },
+  "decimals": 0,
+  "insights": true
+}

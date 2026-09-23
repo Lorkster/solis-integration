@@ -117,12 +117,27 @@ function scaled(detail: Record<string, unknown>, key: string, units: Record<stri
   return value * (units[unit] ?? units[fallbackUnit]);
 }
 
+/** DC PV power as the sum of voltage × current over all MPPT inputs, or NaN if not reported. */
+export function dcPvPowerW(record: Record<string, unknown>): number {
+  let total = 0;
+  let found = false;
+  for (let i = 1; i <= 32; i++) {
+    const u = Number(record[`uPv${i}`]);
+    const a = Number(record[`iPv${i}`]);
+    if (Number.isFinite(u) && Number.isFinite(a)) {
+      total += u * a;
+      found = true;
+    }
+  }
+  return found ? total : NaN;
+}
+
 /** History records carry power in W unless a unit field says otherwise. */
 export function parseHistorySample(record: Record<string, unknown>): HistorySample | null {
   const time = new Date(Number(record.dataTimestamp));
   const loadW = scaled(record, 'familyLoadPower', POWER_UNITS, 'W');
   if (Number.isNaN(time.getTime()) || !Number.isFinite(loadW)) return null;
-  return { time, loadW };
+  return { time, loadW, pvW: dcPvPowerW(record) };
 }
 
 export function parseLiveData(detail: Record<string, unknown>): LiveData {
@@ -138,12 +153,13 @@ export function parseLiveData(detail: Record<string, unknown>): LiveData {
   else if (discharging > 0) batteryPowerW = -discharging;
   else batteryPowerW = powerW('batteryPower') * (Number(detail.batteryDirection) === 2 ? -1 : 1);
 
-  const pvW = powerW('dcPac');
+  const dcW = dcPvPowerW(detail);
+  const pvW = Number.isFinite(dcW) ? dcW : powerW('dcPac');
   return {
     timestamp: new Date(Number(detail.dataTimestamp)),
     socPct: Number(detail.batteryCapacitySoc),
     batteryPowerW,
-    pvPowerW: Number.isFinite(pvW) ? pvW : Number(detail.powTotal ?? 0),
+    pvPowerW: Number.isFinite(pvW) ? pvW : 0,
     gridPowerW: -powerW('psum'), // psum is negative when importing
     loadPowerW: powerW('familyLoadPower'),
     batteryVoltageV: Number(detail.batteryVoltage),

@@ -50,12 +50,13 @@ export interface InverterSummary {
 export interface HistorySample {
   time: Date;
   loadW: number;
+  pvW: number;
 }
 
 export interface InverterTransport {
   readonly kind: 'soliscloud' | 'modbus';
   getLiveData(): Promise<LiveData>;
-  /** Past load samples for a local day, if the transport can provide history. */
+  /** Past load and PV samples for a local day, if the transport can provide history. */
   getHistory?(date: string, timeZone: string): Promise<HistorySample[]>;
   readSettings(): Promise<InverterSettings>;
   writeStorageMode(raw: number, previous?: number): Promise<void>;

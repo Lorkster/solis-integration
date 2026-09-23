@@ -1,11 +1,11 @@
 {
   "type": "string",
   "title": {
-    "en": "Plan",
-    "sv": "Plan"
+    "en": "SMHI warning",
+    "sv": "SMHI-varning"
   },
   "getable": true,
   "setable": false,
   "uiComponent": "sensor",
-  "icon": "/assets/icons/plan.svg"
+  "icon": "/assets/icons/warning.svg"
 }

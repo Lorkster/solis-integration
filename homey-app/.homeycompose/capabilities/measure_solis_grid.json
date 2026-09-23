@@ -1,0 +1,16 @@
+{
+  "type": "number",
+  "title": {
+    "en": "Grid power (+ import)",
+    "sv": "Nätets effekt (+ köp)"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "icon": "/assets/icons/grid.svg",
+  "units": {
+    "en": "W"
+  },
+  "decimals": 0,
+  "insights": true
+}

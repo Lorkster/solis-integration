@@ -1,0 +1,16 @@
+{
+  "type": "number",
+  "title": {
+    "en": "Backup reserve",
+    "sv": "Reservnivå"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "icon": "/assets/icons/reserve.svg",
+  "units": {
+    "en": "%"
+  },
+  "decimals": 0,
+  "insights": true
+}

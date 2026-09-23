@@ -1,11 +1,27 @@
 {
   "type": "enum",
-  "title": { "en": "Control mode", "sv": "Styrläge" },
+  "title": {
+    "en": "Control mode",
+    "sv": "Styrläge"
+  },
   "getable": true,
   "setable": true,
   "uiComponent": "picker",
   "values": [
-    { "id": "monitor", "title": { "en": "Monitor only", "sv": "Endast övervaka" } },
-    { "id": "auto", "title": { "en": "Automatic", "sv": "Automatisk" } }
-  ]
+    {
+      "id": "monitor",
+      "title": {
+        "en": "Monitor only",
+        "sv": "Endast övervaka"
+      }
+    },
+    {
+      "id": "auto",
+      "title": {
+        "en": "Automatic",
+        "sv": "Automatisk"
+      }
+    }
+  ],
+  "icon": "/assets/icons/mode.svg"
 }

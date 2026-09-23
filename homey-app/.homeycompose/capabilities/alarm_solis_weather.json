@@ -1,0 +1,20 @@
+{
+  "type": "boolean",
+  "title": {
+    "en": "Weather warning",
+    "sv": "Vädervarning"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "icon": "/assets/icons/warning.svg",
+  "insights": true,
+  "insightsTitleTrue": {
+    "en": "SMHI warning issued",
+    "sv": "SMHI-varning utfärdad"
+  },
+  "insightsTitleFalse": {
+    "en": "SMHI warning ended",
+    "sv": "SMHI-varning upphörd"
+  }
+}

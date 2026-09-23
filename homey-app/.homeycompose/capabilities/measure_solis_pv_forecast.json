@@ -1,0 +1,16 @@
+{
+  "type": "number",
+  "title": {
+    "en": "Solar forecast today",
+    "sv": "Solprognos idag"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "icon": "/assets/icons/forecast.svg",
+  "units": {
+    "en": "kWh"
+  },
+  "decimals": 1,
+  "insights": true
+}
