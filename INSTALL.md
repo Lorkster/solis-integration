@@ -58,7 +58,8 @@ npx homey select
 npx homey app install
 ```
 
-The CLI builds the app and uploads it to your Homey. When it reports that the app is installed, you can
+The first time, the CLI asks **Choose an active Homey**: pick yours with the arrow keys and press Enter.
+The CLI then builds the app and uploads it to your Homey. When it reports that the app is installed, you can
 close the terminal. The app now appears in the Homey app under **More → Apps → Solis Smart Battery**.
 
 > Use `npx homey app install`, not `npx homey app run`. `run` is for development: the app stops as soon
