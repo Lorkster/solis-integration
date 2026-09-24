@@ -12,6 +12,9 @@ const WORDS: Record<Language, Record<DisplayState | 'now' | 'until' | 'none', st
 
 /** A quarter-hour counts as "use" when the battery is planned to deliver at least this (kWh). */
 const MIN_USE_KWH_PER_QUARTER = 0.05;
+/** A "use" period is only worth showing when it lasts and delivers this much. */
+export const MIN_USE_MINUTES = 30;
+export const MIN_USE_KWH = 0.5;
 
 /**
  * A "save" only makes sense with a meaningful amount of energy above the reserve (5 percentage
@@ -39,17 +42,36 @@ interface Block {
   action: DisplayState;
   start: Date;
   end: Date;
+  kwh: number; // energy delivered by the battery (use blocks)
 }
 
 function blocks(intervals: PlannedInterval[], reserveSoc: number): Block[] {
   const out: Block[] = [];
   for (const iv of intervals) {
     const action = displayState(iv, reserveSoc);
+    const kwh = Math.max(0, -iv.batteryKwh);
     const last = out[out.length - 1];
-    if (last && last.action === action && last.end.getTime() === iv.start.getTime()) last.end = iv.end;
-    else out.push({ action, start: iv.start, end: iv.end });
+    if (last && last.action === action && last.end.getTime() === iv.start.getTime()) {
+      last.end = iv.end;
+      last.kwh += kwh;
+    } else {
+      out.push({ action, start: iv.start, end: iv.end, kwh });
+    }
   }
-  return out;
+  // Brief dips where the house slightly exceeds solar are noise: show them as self-use.
+  const merged: Block[] = [];
+  for (const b of out) {
+    const minutes = (b.end.getTime() - b.start.getTime()) / 60_000;
+    const action = b.action === 'use' && (minutes < MIN_USE_MINUTES || b.kwh < MIN_USE_KWH) ? 'self_use' : b.action;
+    const last = merged[merged.length - 1];
+    if (last && last.action === action) {
+      last.end = b.end;
+      last.kwh += b.kwh;
+    } else {
+      merged.push({ ...b, action });
+    }
+  }
+  return merged;
 }
 
 /**

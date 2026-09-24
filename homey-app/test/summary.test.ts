@@ -35,6 +35,11 @@ describe('planSummary', () => {
     assert.equal(planSummary(evening2, new Date('2026-09-24T18:16:00+02:00'), 25, TZ), 'Use battery until 21:45 · Save 21:45–07:15');
   });
 
+  it('leaves out brief dips where the battery helps a little', () => {
+    const morning = withBattery(plan('2026-09-25T09:00:00+02:00', [['self_use', 16, 26]]), -0.1, 0, 2); // 0.2 kWh in 30 min
+    assert.equal(planSummary(morning, new Date('2026-09-25T09:00:00+02:00'), 25, TZ), 'Self-use now · no charging or saving needed');
+  });
+
   it('says until when the current action lasts', () => {
     const night = plan('2026-09-25T02:00:00+02:00', [['charge', 13, 30], ['hold', 7, 80], ['self_use', 4, 80]]);
     assert.equal(planSummary(night, new Date('2026-09-25T02:05:00+02:00'), 25, TZ), 'Charge until 05:15 · Save 05:15–07:00');

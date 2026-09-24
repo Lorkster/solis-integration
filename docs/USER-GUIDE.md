@@ -54,6 +54,8 @@ Dark mode: [battery plan](images/battery-plan-dark.png), [battery status](images
 - **Touch and drag** across the charts (or use the arrow keys) to see price, action, solar, load and
   battery level for any quarter-hour.
 - **Next 24 hours** lists the charge, save and use periods with the battery level they end at.
+  Brief dips (under 30 minutes or 0.5 kWh) are left out. Between the periods the battery runs
+  self-use: it stores surplus solar and covers the house down to the reserve.
 - **Bottom line**: how much the plan saves compared with plain self-use, and when it was updated.
 
 Widget settings: *Time shown* (24, 36 or 48 hours) and *Show solar and load forecast*.

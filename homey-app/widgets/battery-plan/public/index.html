@@ -72,6 +72,7 @@
     .row .when { font-variant-numeric: tabular-nums; }
     .row .target { color: var(--c-muted); font-variant-numeric: tabular-nums; min-width: 44px; text-align: right; }
     .empty { color: var(--c-muted); font-size: 13px; padding: 6px 0; }
+    .note { color: var(--c-muted); font-size: 11px; line-height: 1.4; padding-top: 6px; border-top: 1px solid var(--c-grid); }
 
     .footer { display: flex; justify-content: space-between; gap: 8px; margin-top: var(--homey-su-2, 8px); font-size: 11px; color: var(--c-muted); }
     .footer b { color: var(--c-ink); font-weight: 600; }
@@ -99,6 +100,7 @@
         price: 'Price kr/kWh', energy: 'Solar & load kW', battery: 'Battery %',
         solar: 'Solar', load: 'Load', reserve: 'Reserve', now: 'Now',
         next24: 'Next 24 hours', noSlots: 'Nothing planned – the battery runs on self-use.',
+        between: 'Between these periods the battery runs self-use: it stores surplus solar and covers the house down to the reserve.',
         saves: (kr) => `≈ <b>${kr} kr</b> cheaper than plain self-use`,
         updated: (t) => `Updated ${t}`,
         waiting: 'Waiting for the first plan…', notPaired: 'Add your Solis inverter in Homey to see the plan.',
@@ -118,6 +120,7 @@
         price: 'Pris kr/kWh', energy: 'Sol & förbrukning kW', battery: 'Batteri %',
         solar: 'Sol', load: 'Förbrukning', reserve: 'Reserv', now: 'Nu',
         next24: 'Kommande 24 timmar', noSlots: 'Inget planerat – batteriet går på egenanvändning.',
+        between: 'Mellan perioderna går batteriet på egenanvändning: det lagrar solöverskott och försörjer huset ner till reserven.',
         saves: (kr) => `≈ <b>${kr} kr</b> billigare än vanlig egenanvändning`,
         updated: (t) => `Uppdaterad ${t}`,
         waiting: 'Väntar på den första planen…', notPaired: 'Lägg till din Solis-växelriktare i Homey för att se planen.',
@@ -170,14 +173,27 @@
       return view.plan.intervals.filter((iv) => new Date(iv.t).getTime() < end);
     }
 
-    /** Groups consecutive intervals with the same action into blocks. */
+    /**
+     * Groups consecutive intervals with the same action into blocks. Brief "use" dips (under
+     * 30 minutes or 0.5 kWh) are shown as self-use, like on the device tile.
+     */
     function blocks(intervals) {
       const out = [];
       intervals.forEach((iv, i) => {
+        const kwh = Math.max(0, -(iv.batteryKw || 0) / 4);
         const last = out[out.length - 1];
-        if (last && last.action === iv.action) { last.to = i; last.soc = iv.soc; } else out.push({ action: iv.action, from: i, to: i, soc: iv.soc });
+        if (last && last.action === iv.action) { last.to = i; last.soc = iv.soc; last.kwh += kwh; }
+        else out.push({ action: iv.action, from: i, to: i, soc: iv.soc, kwh });
       });
-      return out;
+      const merged = [];
+      for (const b of out) {
+        const minutes = (b.to - b.from + 1) * 15;
+        const action = b.action === 'use' && (minutes < 30 || b.kwh < 0.5) ? 'self_use' : b.action;
+        const last = merged[merged.length - 1];
+        if (last && last.action === action) { last.to = b.to; last.soc = b.soc; last.kwh += b.kwh; }
+        else merged.push({ ...b, action });
+      }
+      return merged;
     }
 
     function renderHeader(root, intervals) {
@@ -457,6 +473,12 @@
         row.querySelector('.when').textContent = `${fmtTime(intervals[b.from].t)}–${fmtTime(end)}`;
         row.querySelector('.target').textContent = `${Math.round(b.soc)} %`;
         section.appendChild(row);
+      }
+      if (upcoming.length) {
+        const note = document.createElement('div');
+        note.className = 'note';
+        note.textContent = T.between;
+        section.appendChild(note);
       }
       root.appendChild(section);
     }
