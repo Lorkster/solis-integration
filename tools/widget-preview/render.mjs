@@ -17,6 +17,7 @@ const vars = theme === 'dark'
   : '--homey-background-color:#ffffff;--homey-text-color:#1c1c1e;--homey-text-color-light:#8a8a8e;--homey-color-warning:#fab219;--homey-color-highlight:#007aff;';
 const inject = `<style>:root{${vars}--homey-su-2:8px;--homey-su-3:12px;--homey-su-4:16px}
   html{background:${theme === 'dark' ? '#000' : '#f2f2f7'}}
+  .line-flow{animation-play-state:paused!important;animation-delay:0s!important}
   body.homey-widget{width:${Number(width) - 24}px;box-sizing:border-box;padding:16px;margin:12px;border-radius:20px;background:var(--homey-background-color);box-shadow:0 1px 3px rgba(0,0,0,.1)}</style>`;
 const mock = `<script>
   const VIEW = ${JSON.stringify(view)};
