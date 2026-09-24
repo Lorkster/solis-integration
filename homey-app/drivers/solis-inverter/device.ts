@@ -107,6 +107,7 @@ export default class SolisInverterDevice extends Homey.Device {
       this.setStoreValue('solarCalibration', this.solar.calibration.toJSON()).catch(this.error);
     });
     await this.migrateCapabilities();
+    await this.migrateSettings();
     this.createController();
 
     if (!this.getCapabilityValue('solis_control_mode')) {
@@ -419,6 +420,21 @@ export default class SolisInverterDevice extends Homey.Device {
   }
 
   // --- internals -----------------------------------------------------------------------------
+
+  /**
+   * Early versions used the normal grid fee (0.244) as a placeholder for the high-load fee. A device
+   * still holding both at exactly that value never had its high-load fee filled in, so it gets
+   * Vattenfall's 2026 high-load fee (0.612 ex VAT). Runs once; a value set by the user is kept.
+   */
+  private async migrateSettings(): Promise<void> {
+    if (this.getStoreValue('highLoadFeeMigrated')) return;
+    const s = this.getSettings() as Settings;
+    if (Number(s.grid_fee_high) === 0.244 && Number(s.grid_fee) === 0.244) {
+      await this.setSettings({ grid_fee_high: 0.612 });
+      this.log('High-load grid fee set to 0.612 (was the 0.244 placeholder)');
+    }
+    await this.setStoreValue('highLoadFeeMigrated', true);
+  }
 
   /** Capabilities were renamed during development; keep existing devices in line with the driver. */
   private async migrateCapabilities(): Promise<void> {
