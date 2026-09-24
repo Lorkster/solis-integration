@@ -14,7 +14,14 @@ export const Cid = {
   maxDischargeCurrent: 7226,
   clock: 56,
   touV2Marker: 6798,
+  /** Export to the grid: "0" = allowed, "1" = blocked (a bit of a shared register). */
+  exportBlocked: 6962,
+  /** Export power limit in units of 100 W. */
+  exportLimit: 499,
 } as const;
+
+/** "Old value" SolisCloud needs when switching export: the register as it is now. */
+export const EXPORT_REGISTER = { allowed: '80', blocked: '88' } as const;
 
 /** Value of CID 6798 when the firmware uses the 6+6 slot schedule (0xAA55). */
 export const TOU_V2_MARKER = '43605';

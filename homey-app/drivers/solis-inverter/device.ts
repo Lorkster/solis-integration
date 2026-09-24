@@ -9,9 +9,11 @@ import { extraPowerCost, houseSupply, type HouseSupply, usesSource } from '../..
 import { type PeakData, PeakTracker, type PowerTariffConfig } from '../../lib/energy/PowerTariff.js';
 import { type SavingsData, SavingsTracker } from '../../lib/energy/Savings.js';
 import { LockDetector } from '../../lib/inverter/LockDetector.js';
+import { type ExportIssue, exportSettingIssue, ThrottleDetector } from '../../lib/inverter/ExportCheck.js';
 import { type Deviation, type Expectation, PlanMonitor } from '../../lib/inverter/PlanMonitor.js';
 import { type PowerCutEvent, type PowerCutState, PowerCutTracker } from '../../lib/inverter/PowerCut.js';
 import { type InverterInfo, type InverterTransport, type LiveData, supportLevel } from '../../lib/inverter/types.js';
+import { bestWindow, type BestWindow, isBestTimeNow } from '../../lib/planner/bestTime.js';
 import type { BatteryAction } from '../../lib/planner/planner.js';
 import { displayAction, intervalState, planPeriods, planSummary } from '../../lib/planner/summary.js';
 import {
@@ -23,6 +25,7 @@ import { fetchMetNoWarnings } from '../../lib/warnings/MetNoWarnings.js';
 import { fetchWarnings, type WarningLevel, type WeatherWarning } from '../../lib/warnings/SmhiWarnings.js';
 
 type ControlMode = 'monitor' | 'auto';
+export interface BestTimeArgs { minutes: number; power: number; deadline: string }
 type Settings = Record<string, number | string | boolean>;
 
 const LIVE_INTERVAL_MS = 5 * 60_000;
@@ -78,7 +81,10 @@ export default class SolisInverterDevice extends Homey.Device {
   private info: InverterInfo | null = null;
   private powerCut!: PowerCutTracker;
   private readonly monitor = new PlanMonitor();
-  private offPlan: Deviation | null = null;
+  private offPlan: Deviation | ExportIssue | null = null;
+  private readonly throttle = new ThrottleDetector();
+  /** Best-time triggers already fired: flow arguments → until when (the run's deadline). */
+  private readonly bestTimeFired = new Map<string, number>();
   private peaks!: PeakTracker; // actual import peaks
   private peaksWithoutBattery!: PeakTracker; // what the peaks would have been without the battery
   private savings!: SavingsTracker;
@@ -174,7 +180,7 @@ export default class SolisInverterDevice extends Homey.Device {
   }
 
   private async readInverterLimits(): Promise<void> {
-    const settings = await this.transport.readSettings();
+    const settings = await this.controller.readSettings();
     this.offGridFloorSoc = settings.offGridOverDischargeSoc;
     await this.setStoreValue('offGridFloorSoc', this.offGridFloorSoc);
   }
@@ -288,6 +294,47 @@ export default class SolisInverterDevice extends Homey.Device {
     return this.peakRisk;
   }
 
+  /** Cheapest window for an appliance run, from the current plan. */
+  bestWindow(args: BestTimeArgs): BestWindow | null {
+    const intervals = this.planState?.plan.intervals ?? [];
+    return bestWindow(intervals, new Date(), Number(args.minutes), Number(args.power), args.deadline, this.homey.clock.getTimezone());
+  }
+
+  isBestTimeNow(args: BestTimeArgs): boolean {
+    return isBestTimeNow(this.bestWindow(args), new Date());
+  }
+
+  /** Tokens for the "Find the best time" action. */
+  findBestTime(args: BestTimeArgs): { start: string; end: string; minutes_until: number; cost: number } {
+    const best = this.bestWindow(args);
+    if (!best) throw new Error(this.homey.__('bestTime.unknown'));
+    const tz = this.homey.clock.getTimezone();
+    return {
+      start: localHHMM(best.start, tz),
+      end: localHHMM(best.end, tz),
+      minutes_until: Math.max(0, Math.round((best.start.getTime() - Date.now()) / 60_000)),
+      cost: Math.round(best.costPerKwh * 100) / 100,
+    };
+  }
+
+  /** Fires "It is the best time to run…" for every flow whose best window starts now (once per run). */
+  private async checkBestTimeTriggers(): Promise<void> {
+    if (!this.planState) return;
+    const card = this.homey.flow.getDeviceTriggerCard('best_time_to_run');
+    const all = await card.getArgumentValues(this) as BestTimeArgs[];
+    const now = Date.now();
+    for (const [key, until] of this.bestTimeFired) if (until <= now) this.bestTimeFired.delete(key);
+    const tz = this.homey.clock.getTimezone();
+    for (const args of all) {
+      const key = `${args.minutes}|${args.power}|${args.deadline}`;
+      if (this.bestTimeFired.has(key)) continue;
+      const best = this.bestWindow(args);
+      if (!best || !isBestTimeNow(best, new Date())) continue;
+      this.bestTimeFired.set(key, best.end.getTime());
+      await card.trigger(this, { end: localHHMM(best.end, tz), cost: Math.round(best.costPerKwh * 100) / 100 }, args).catch(this.error);
+    }
+  }
+
   isPriceAmongCheapest(hours: number): boolean {
     const now = new Date();
     const tz = this.homey.clock.getTimezone();
@@ -335,6 +382,7 @@ export default class SolisInverterDevice extends Homey.Device {
       },
       extraPowerCost: round(this.extraPowerCost() ?? NaN, 2),
       powerCut: this.powerCut.since && { since: this.powerCut.since.toISOString() },
+      exportPaused: this.controller.exportBlockedByApp,
       offPlan: this.offPlan && this.deviationText(this.offPlan),
       savings: { today: round(this.savedToday(), 2), month: round(this.savedThisMonth(), 0) },
       peak: this.powerTariff().enabled ? {
@@ -400,6 +448,13 @@ export default class SolisInverterDevice extends Homey.Device {
         gridFeeSekPerKwh: Number(s.grid_fee),
         gridFeeHighLoadSekPerKwh: Number(s.grid_fee_high),
         highLoadEnabled: Boolean(s.high_load_enabled),
+        highLoad: {
+          fromHour: num(s.high_load_from, 6),
+          toHour: num(s.high_load_to, 22),
+          weekdaysOnly: s.high_load_weekdays !== false,
+          winterOnly: s.high_load_winter !== false,
+          holidaysExcluded: s.high_load_holidays !== false,
+        },
         exportBonusSekPerKwh: Number(s.export_bonus),
       },
       capacityKwh: Number(s.capacity_kwh),
@@ -441,6 +496,8 @@ export default class SolisInverterDevice extends Homey.Device {
     this.controller.loadForecast = (time) => this.loadProfile.predict(time);
     this.controller.pvForecast = (time) => this.solar?.forecastAt(time) ?? null;
     this.controller.peakThresholdKw = () => this.peaks?.thresholdKw() ?? 0;
+    this.controller.exportBlockedByApp = previous?.exportBlockedByApp ?? Boolean(this.getStoreValue('exportBlockedByApp'));
+    this.controller.lastRead = previous?.lastRead ?? null;
     if (previous) {
       this.controller.overrides = previous.overrides;
       this.controller.outage = previous.outage;
@@ -501,9 +558,14 @@ export default class SolisInverterDevice extends Homey.Device {
         this.loadProfile.addSample(live.timestamp, live.loadPowerW / 1000);
         const curtailed = looksCurtailed(live.pvPowerW / 1000, live.loadPowerW / 1000, live.gridPowerW / 1000, live.batteryPowerW / 1000);
         this.pvQuarters.add(live.timestamp, curtailed ? NaN : live.pvPowerW / 1000);
+        // Throttling the app asked for (negative export price) is not a problem.
+        const expected = this.controller.exportBlockedByApp ? null : this.solar?.forecastAt(live.timestamp) ?? null;
+        this.throttle.update(live.timestamp, curtailed, expected, live.pvPowerW / 1000);
         await this.setStoreValue('loadProfile', this.loadProfile.toJSON());
       }
       await this.setAvailable();
+      await this.updateExport().catch((err) => this.error('Export control failed:', err));
+      await this.checkBestTimeTriggers().catch(this.error);
       await this.updateLock(live);
       await this.updateEnergyFlow(live);
       const set = (cap: string, value: number) => (Number.isFinite(value) ? this.setCapabilityValue(cap, value) : undefined);
@@ -635,6 +697,19 @@ export default class SolisInverterDevice extends Homey.Device {
     await this.replan();
   }
 
+  // --- export at negative prices ------------------------------------------------------------
+
+  /** Switches export off while selling costs money (Automatic mode), and back on afterwards. */
+  private async updateExport(): Promise<void> {
+    this.controller.exportControl = this.controlMode === 'auto' && this.canControl() && !this.powerCut.active
+      && this.getSetting('negative_export_block') !== false;
+    const change = await this.controller.applyExport(new Date(), this.planState);
+    if (!change) return;
+    this.log('Export:', change);
+    await this.setStoreValue('exportBlockedByApp', this.controller.exportBlockedByApp);
+    this.homey.api.realtime('live', null);
+  }
+
   // --- power cuts ----------------------------------------------------------------------------
 
   private async updatePowerCut(live: LiveData): Promise<void> {
@@ -694,7 +769,10 @@ export default class SolisInverterDevice extends Homey.Device {
     const sample = live && { time: live.timestamp, socPct: live.socPct, batteryW: live.batteryPowerW, gridW: live.gridPowerW };
     this.monitor.update(new Date(), sample, this.expectation());
     // A battery locked by SolisCloud has its own alarm and instructions.
-    const deviation = this.monitor.deviation === 'not_covering_house' && this.lock.locked ? null : this.monitor.deviation;
+    const planDeviation = this.monitor.deviation === 'not_covering_house' && this.lock.locked ? null : this.monitor.deviation;
+    const exportIssue = exportSettingIssue(this.controller.lastRead, this.controller.exportBlockedByApp)
+      ?? (this.throttle.throttled ? 'solar_throttled' : null);
+    const deviation = planDeviation ?? exportIssue;
     if (deviation === this.offPlan) return;
     this.offPlan = deviation;
     await this.setCapabilityValue('alarm_solis_off_plan', deviation !== null);
@@ -708,9 +786,10 @@ export default class SolisInverterDevice extends Homey.Device {
     if (this.getSetting('notify_off_plan') ?? true) await this.notify(this.homey.__('offPlan.notification', { reason }));
   }
 
-  private deviationText(deviation: Deviation): string {
+  private deviationText(deviation: Deviation | ExportIssue): string {
     const since = this.live ? localHHMM(this.live.timestamp, this.homey.clock.getTimezone()) : '–';
-    return this.homey.__(`offPlan.${deviation}`, { time: since });
+    const limit = this.controller.lastRead?.exportLimitW ?? 0;
+    return this.homey.__(`offPlan.${deviation}`, { time: since, limit: String(limit) });
   }
 
   /** The device's warning line: the most important current problem, if any. */
@@ -917,11 +996,14 @@ export default class SolisInverterDevice extends Homey.Device {
       await this.solar?.refresh().catch((err) => this.error('Solar forecast failed:', err));
       await this.updateSolarCapability(now);
 
+      this.controller.exportControl = this.controlMode === 'auto' && this.canControl() && !this.powerCut.active
+        && this.getSetting('negative_export_block') !== false;
       const state = await this.controller.buildPlan(this.live, now);
       this.planState = state;
       await this.updatePlanCapabilities(state, now);
       await this.updatePowerCost();
 
+      if (this.controlMode !== 'auto' || !this.canControl()) await this.readInverterLimits().catch(this.error);
       if (this.controlMode === 'auto' && this.canControl() && !this.powerCut.active) {
         const changes = await this.controller.apply(state);
         if (changes.length > 0) this.log('Inverter updated:', changes.join('; '));

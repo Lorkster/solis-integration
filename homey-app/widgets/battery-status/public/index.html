@@ -40,6 +40,7 @@
     .pill { display: flex; align-items: center; gap: 6px; margin-bottom: var(--homey-su-2, 8px); padding: 6px 10px; border-radius: 10px; font-size: 12px;
       background: color-mix(in srgb, var(--homey-color-warning, #fab219) 22%, transparent); }
     .pill svg { width: 16px; height: 16px; flex: none; }
+    .pill.info { background: var(--c-node); color: var(--c-muted); }
     .pill.alert { font-weight: 600; background: color-mix(in srgb, var(--homey-color-danger, #f44336) 22%, transparent); }
     .tile.risk { box-shadow: inset 0 0 0 1.5px var(--homey-color-warning, #fab219); }
 
@@ -69,6 +70,7 @@
         poweredBy: 'House powered by', fromSolar: 'solar', fromBattery: 'battery', fromGrid: 'grid',
         locked: 'Battery locked by SolisCloud – release it with Quick Control → Discharge (short duration)',
         powerCut: (t) => `Power cut since ${t} – the battery powers the backup output`,
+        exportPaused: 'Export paused – selling would cost money right now',
         savedMonth: 'Saved this month', savedToday: 'Saved today', peak: 'Power peak this month',
         updated: (t) => `Data from ${t}`, waiting: 'Waiting for data…', notPaired: 'Add your Solis inverter in Homey to see its status.',
       },
@@ -79,6 +81,7 @@
         poweredBy: 'Huset drivs av', fromSolar: 'sol', fromBattery: 'batteri', fromGrid: 'nät',
         locked: 'Batteriet låst av SolisCloud – frigör med Snabbkontroll → Urladdning (kort tid)',
         powerCut: (t) => `Strömavbrott sedan ${t} – batteriet driver reservutgången`,
+        exportPaused: 'Export pausad – det kostar att sälja just nu',
         savedMonth: 'Sparat denna månad', savedToday: 'Sparat i dag', peak: 'Effekttopp denna månad',
         updated: (t) => `Data från ${t}`, waiting: 'Väntar på data…', notPaired: 'Lägg till din Solis-växelriktare i Homey för att se status.',
       },
@@ -214,6 +217,7 @@
       }
       const fmtTime = (iso) => new Date(iso).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit', timeZone: view.timeZone });
       const notices = (view.warnings || []).map((w) => ['warning', `${w.title} · ${w.area}`]);
+      if (view.exportPaused) notices.push(['tag', t.exportPaused, 'info']);
       if (view.offPlan) notices.unshift(['warning', view.offPlan]);
       if (view.batteryLocked) notices.unshift(['warning', t.locked]);
       if (view.powerCut) notices.unshift(['plugOff', t.powerCut(fmtTime(view.powerCut.since)), 'alert']);

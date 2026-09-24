@@ -3,7 +3,7 @@ import type {
 } from '../inverter/types.js';
 import { gridLost } from '../inverter/PowerCut.js';
 import { utcOffsetHours } from '../time.js';
-import { CHARGE_SLOT_CIDS, Cid, DISCHARGE_SLOT_CIDS, SETTINGS_CIDS, type SlotCids, TOU_V2_MARKER } from './cids.js';
+import { CHARGE_SLOT_CIDS, Cid, DISCHARGE_SLOT_CIDS, EXPORT_REGISTER, SETTINGS_CIDS, type SlotCids, TOU_V2_MARKER } from './cids.js';
 import { SolisApiError, SolisCloudClient, type SolisCredentials } from './SolisCloudClient.js';
 
 const BATCH_SIZE = 20;
@@ -80,6 +80,9 @@ export class SolisCloudTransport implements InverterTransport {
       batch.forEach((value, cid) => values.set(cid, value));
     }
     const marker = await this.client.read(this.serialNumber, Cid.touV2Marker);
+    const exportValues = await this.client.readBatch(this.serialNumber, [Cid.exportBlocked, Cid.exportLimit]).catch(() => new Map<number, string>());
+    const exportFlag = exportValues.get(Cid.exportBlocked);
+    const exportLimit = Number(exportValues.get(Cid.exportLimit));
     const num = (cid: number): number => {
       const value = Number(values.get(cid));
       if (!Number.isFinite(value)) throw new SolisApiError(`CID ${cid} unreadable: ${values.get(cid)}`);
@@ -105,6 +108,8 @@ export class SolisCloudTransport implements InverterTransport {
       maxChargeCurrentA: num(Cid.maxChargeCurrent),
       maxDischargeCurrentA: num(Cid.maxDischargeCurrent),
       touV2: marker === TOU_V2_MARKER,
+      exportAllowed: exportFlag === '0' ? true : exportFlag === '1' ? false : null,
+      exportLimitW: Number.isFinite(exportLimit) ? exportLimit * 100 : null,
       chargeSlots: CHARGE_SLOT_CIDS.map(slot),
       dischargeSlots: DISCHARGE_SLOT_CIDS.map(slot),
     };
@@ -132,6 +137,11 @@ export class SolisCloudTransport implements InverterTransport {
    * new register value from the "old value" sent along, so that must be the whole bit field as it is
    * now - sending just the slot's own old value clears every other slot.
    */
+  writeExportAllowed(allowed: boolean, previous: boolean): Promise<void> {
+    return this.client.control(this.serialNumber, Cid.exportBlocked, allowed ? '0' : '1',
+      previous ? EXPORT_REGISTER.allowed : EXPORT_REGISTER.blocked);
+  }
+
   private async switchBitField(): Promise<string> {
     const cids = [...CHARGE_SLOT_CIDS, ...DISCHARGE_SLOT_CIDS].map((s) => s.switch);
     const values = await this.client.readBatch(this.serialNumber, cids);

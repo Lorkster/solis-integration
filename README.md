@@ -7,7 +7,7 @@ the same day and never generates plans for the following days. This project repl
 that writes charge slots directly to the inverter based on Nord Pool day-ahead prices, while keeping a
 battery reserve for power outages.
 
-**Homey app:** [user guide](docs/USER-GUIDE.md) · [install, update, uninstall](INSTALL.md) · [developer notes](homey-app/README.md)
+**Homey app:** [user guide](docs/USER-GUIDE.md) · [install, update, uninstall](INSTALL.md) · [developer notes](homey-app/README.md) · [local Modbus plan](docs/LOCAL-MODBUS.md)
 
 ## Status
 

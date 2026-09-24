@@ -968,9 +968,14 @@
           "id": "high_load_enabled",
           "type": "checkbox",
           "label": {
-            "en": "Time tariff with high-load time (Nov–Mar weekdays 06–22)"
+            "en": "Grid fee has a high-load time",
+            "sv": "Nätavgiften har höglasttid"
           },
-          "value": true
+          "value": true,
+          "hint": {
+            "en": "A higher transfer fee at certain hours, e.g. Vattenfall's time tariff: November–March, weekdays 06–22, not on public holidays.",
+            "sv": "En högre överföringsavgift vissa timmar, t.ex. Vattenfalls tidstariff: november–mars, vardagar 06–22, inte helgdagar."
+          }
         },
         {
           "id": "grid_fee_high",
@@ -978,13 +983,358 @@
           "label": {
             "en": "Grid transfer fee high-load time (ex VAT)"
           },
-          "value": 0.244,
+          "value": 0.612,
           "min": 0,
           "max": 5,
           "step": 0.0001,
           "units": {
             "en": "per kWh",
             "sv": "per kWh"
+          },
+          "hint": {
+            "en": "Vattenfall Tidstariff 2026: 0.612 (76.5 öre incl. VAT). The fee outside high-load time is 0.244 (30.5 öre incl. VAT).",
+            "sv": "Vattenfall Tidstariff 2026: 0,612 (76,5 öre inkl. moms). Avgiften övrig tid är 0,244 (30,5 öre inkl. moms)."
+          }
+        },
+        {
+          "id": "high_load_from",
+          "type": "dropdown",
+          "label": {
+            "en": "High-load time from",
+            "sv": "Höglasttid från"
+          },
+          "value": "6",
+          "values": [
+            {
+              "id": "0",
+              "label": {
+                "en": "00:00"
+              }
+            },
+            {
+              "id": "1",
+              "label": {
+                "en": "01:00"
+              }
+            },
+            {
+              "id": "2",
+              "label": {
+                "en": "02:00"
+              }
+            },
+            {
+              "id": "3",
+              "label": {
+                "en": "03:00"
+              }
+            },
+            {
+              "id": "4",
+              "label": {
+                "en": "04:00"
+              }
+            },
+            {
+              "id": "5",
+              "label": {
+                "en": "05:00"
+              }
+            },
+            {
+              "id": "6",
+              "label": {
+                "en": "06:00"
+              }
+            },
+            {
+              "id": "7",
+              "label": {
+                "en": "07:00"
+              }
+            },
+            {
+              "id": "8",
+              "label": {
+                "en": "08:00"
+              }
+            },
+            {
+              "id": "9",
+              "label": {
+                "en": "09:00"
+              }
+            },
+            {
+              "id": "10",
+              "label": {
+                "en": "10:00"
+              }
+            },
+            {
+              "id": "11",
+              "label": {
+                "en": "11:00"
+              }
+            },
+            {
+              "id": "12",
+              "label": {
+                "en": "12:00"
+              }
+            },
+            {
+              "id": "13",
+              "label": {
+                "en": "13:00"
+              }
+            },
+            {
+              "id": "14",
+              "label": {
+                "en": "14:00"
+              }
+            },
+            {
+              "id": "15",
+              "label": {
+                "en": "15:00"
+              }
+            },
+            {
+              "id": "16",
+              "label": {
+                "en": "16:00"
+              }
+            },
+            {
+              "id": "17",
+              "label": {
+                "en": "17:00"
+              }
+            },
+            {
+              "id": "18",
+              "label": {
+                "en": "18:00"
+              }
+            },
+            {
+              "id": "19",
+              "label": {
+                "en": "19:00"
+              }
+            },
+            {
+              "id": "20",
+              "label": {
+                "en": "20:00"
+              }
+            },
+            {
+              "id": "21",
+              "label": {
+                "en": "21:00"
+              }
+            },
+            {
+              "id": "22",
+              "label": {
+                "en": "22:00"
+              }
+            },
+            {
+              "id": "23",
+              "label": {
+                "en": "23:00"
+              }
+            }
+          ]
+        },
+        {
+          "id": "high_load_to",
+          "type": "dropdown",
+          "label": {
+            "en": "High-load time until",
+            "sv": "Höglasttid till"
+          },
+          "value": "22",
+          "values": [
+            {
+              "id": "1",
+              "label": {
+                "en": "01:00"
+              }
+            },
+            {
+              "id": "2",
+              "label": {
+                "en": "02:00"
+              }
+            },
+            {
+              "id": "3",
+              "label": {
+                "en": "03:00"
+              }
+            },
+            {
+              "id": "4",
+              "label": {
+                "en": "04:00"
+              }
+            },
+            {
+              "id": "5",
+              "label": {
+                "en": "05:00"
+              }
+            },
+            {
+              "id": "6",
+              "label": {
+                "en": "06:00"
+              }
+            },
+            {
+              "id": "7",
+              "label": {
+                "en": "07:00"
+              }
+            },
+            {
+              "id": "8",
+              "label": {
+                "en": "08:00"
+              }
+            },
+            {
+              "id": "9",
+              "label": {
+                "en": "09:00"
+              }
+            },
+            {
+              "id": "10",
+              "label": {
+                "en": "10:00"
+              }
+            },
+            {
+              "id": "11",
+              "label": {
+                "en": "11:00"
+              }
+            },
+            {
+              "id": "12",
+              "label": {
+                "en": "12:00"
+              }
+            },
+            {
+              "id": "13",
+              "label": {
+                "en": "13:00"
+              }
+            },
+            {
+              "id": "14",
+              "label": {
+                "en": "14:00"
+              }
+            },
+            {
+              "id": "15",
+              "label": {
+                "en": "15:00"
+              }
+            },
+            {
+              "id": "16",
+              "label": {
+                "en": "16:00"
+              }
+            },
+            {
+              "id": "17",
+              "label": {
+                "en": "17:00"
+              }
+            },
+            {
+              "id": "18",
+              "label": {
+                "en": "18:00"
+              }
+            },
+            {
+              "id": "19",
+              "label": {
+                "en": "19:00"
+              }
+            },
+            {
+              "id": "20",
+              "label": {
+                "en": "20:00"
+              }
+            },
+            {
+              "id": "21",
+              "label": {
+                "en": "21:00"
+              }
+            },
+            {
+              "id": "22",
+              "label": {
+                "en": "22:00"
+              }
+            },
+            {
+              "id": "23",
+              "label": {
+                "en": "23:00"
+              }
+            },
+            {
+              "id": "24",
+              "label": {
+                "en": "24:00"
+              }
+            }
+          ]
+        },
+        {
+          "id": "high_load_weekdays",
+          "type": "checkbox",
+          "label": {
+            "en": "High-load time on weekdays only",
+            "sv": "Höglasttid endast vardagar"
+          },
+          "value": true
+        },
+        {
+          "id": "high_load_winter",
+          "type": "checkbox",
+          "label": {
+            "en": "High-load time November–March only",
+            "sv": "Höglasttid endast november–mars"
+          },
+          "value": true
+        },
+        {
+          "id": "high_load_holidays",
+          "type": "checkbox",
+          "label": {
+            "en": "Public holidays count as other time",
+            "sv": "Helgdagar räknas som övrig tid"
+          },
+          "value": true,
+          "hint": {
+            "en": "New Year's Day, Epiphany, Good Friday, Easter Monday, Christmas Eve, Christmas Day, Boxing Day and New Year's Eve.",
+            "sv": "Nyårsdagen, trettondedag jul, långfredag, annandag påsk, julafton, juldagen, annandag jul och nyårsafton."
           }
         },
         {
@@ -1000,6 +1350,19 @@
           "units": {
             "en": "per kWh",
             "sv": "per kWh"
+          }
+        },
+        {
+          "id": "negative_export_block",
+          "type": "checkbox",
+          "label": {
+            "en": "Stop exporting when the export price is negative",
+            "sv": "Sluta exportera när exportpriset är negativt"
+          },
+          "value": true,
+          "hint": {
+            "en": "In Automatic mode the app switches off export to the grid while selling would cost money, and switches it back on afterwards. Surplus solar is then used in the house and battery, or the panels are throttled.",
+            "sv": "I automatiskt läge stänger appen av export till nätet medan det skulle kosta pengar att sälja, och slår på den igen efteråt. Solöverskottet används då i huset och batteriet, annars stryps panelerna."
           }
         }
       ]

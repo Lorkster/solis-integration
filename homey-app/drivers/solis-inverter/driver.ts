@@ -1,7 +1,9 @@
 import Homey from 'homey';
 
 import { supportLevel } from '../../lib/inverter/types.js';
+import { suggestPriceArea } from '../../lib/prices/areas.js';
 import { discoverInverters, listInverters } from '../../lib/solis/SolisCloudTransport.js';
+import type { BestTimeArgs } from './device.js';
 import type SolisInverterDevice from './device.js';
 
 type DeviceArgs<T = object> = T & { device: SolisInverterDevice };
@@ -42,6 +44,14 @@ export default class SolisInverterDriver extends Homey.Driver {
       .registerRunListener(async ({ device }: DeviceArgs) => device.isPowerCut());
     flow.getConditionCard('peak_risk_active')
       .registerRunListener(async ({ device }: DeviceArgs) => device.isPeakRisk());
+    const sameRun = (a: BestTimeArgs, b: BestTimeArgs) => Number(a.minutes) === Number(b.minutes)
+      && Number(a.power) === Number(b.power) && a.deadline === b.deadline;
+    flow.getDeviceTriggerCard('best_time_to_run')
+      .registerRunListener(async (args: DeviceArgs<BestTimeArgs>, state: BestTimeArgs) => sameRun(args, state));
+    flow.getConditionCard('best_time_now')
+      .registerRunListener(async ({ device, ...args }: DeviceArgs<BestTimeArgs>) => device.isBestTimeNow(args));
+    flow.getActionCard('find_best_time')
+      .registerRunListener(async ({ device, ...args }: DeviceArgs<BestTimeArgs>) => device.findBestTime(args));
     flow.getActionCard('set_prices')
       .registerRunListener(async ({ device, prices }: DeviceArgs<{ prices: string }>) => device.setFlowPrices(prices));
     flow.getActionCard('replan_now')
@@ -64,10 +74,13 @@ export default class SolisInverterDriver extends Homey.Driver {
       if (inverters.length === 0) throw new Error(this.homey.__('device.noHybrid'));
       // A plain name for everyday use; the model and firmware are in the device settings.
       const name = this.homey.__('device.name');
+      // Start from the price area where Homey is; the user can change it in the settings.
+      const guess = suggestPriceArea(this.homey.clock.getTimezone(), this.homey.geolocation.getLatitude(), this.homey.geolocation.getLongitude());
+      const prices = guess ? { price_area: guess.area, price_source: guess.source } : {};
       return inverters.map((inv) => ({
         name: inverters.length > 1 ? `${name} (${inv.name})` : name,
         data: { id: inv.serialNumber },
-        settings: { key_id: keyId, key_secret: keySecret },
+        settings: { key_id: keyId, key_secret: keySecret, ...prices },
       }));
     });
   }

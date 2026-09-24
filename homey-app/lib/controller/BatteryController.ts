@@ -42,6 +42,8 @@ export interface PlanState {
   plan: PlanResult;
   schedule: Schedule;
   pricesUntil: Date;
+  /** Periods where selling costs money (export price below zero). */
+  negativeExport: Array<{ start: Date; end: Date }>;
 }
 
 const SLOT_COUNT = 6;
@@ -55,6 +57,12 @@ export class BatteryController {
   pvForecast: (time: Date) => number | null = () => null;
   /** Weighted import level (kW) above which the month's power fee rises; 0 = unknown. */
   peakThresholdKw: () => number = () => 0;
+  /** Block export while the export price is negative (Automatic mode with the setting on). */
+  exportControl = false;
+  /** True while export is switched off by the app (not by the user). Kept across restarts by the device. */
+  exportBlockedByApp = false;
+  /** Settings as last read from the inverter. */
+  lastRead: InverterSettings | null = null;
   /** True when the last apply found settings changed outside the app since the app wrote them. */
   externalChange = false;
   private lastApplied: InverterSettings | null = null;
@@ -84,11 +92,19 @@ export class BatteryController {
     if (upcoming.length === 0) throw new Error('No price data available');
 
     const tariff = this.config.powerTariff ?? NO_POWER_TARIFF;
+    const negativeExport: Array<{ start: Date; end: Date }> = [];
+    for (const p of upcoming) {
+      if (sellPrice(p.perKwh, this.config.tariff) >= 0) continue;
+      const last = negativeExport[negativeExport.length - 1];
+      if (last && last.end.getTime() === p.start.getTime()) last.end = p.end;
+      else negativeExport.push({ start: p.start, end: p.end });
+    }
     const intervals: PlanInterval[] = upcoming.map((p) => ({
       start: p.start,
       end: p.end,
       buy: buyPrice(p.perKwh, p.start, this.config.timeZone, this.config.tariff),
-      sell: sellPrice(p.perKwh, this.config.tariff),
+      // With export blocked at negative prices, surplus is throttled instead of sold at a loss.
+      sell: this.exportControl ? Math.max(0, sellPrice(p.perKwh, this.config.tariff)) : sellPrice(p.perKwh, this.config.tariff),
       loadKw: this.loadForecast(p.start) ?? this.config.avgLoadKw,
       pvKw: (this.pvForecast(p.start) ?? 0) * this.config.pvTrust,
       peakWeight: peakWeight(p.start, this.config.timeZone, tariff),
@@ -128,7 +144,35 @@ export class BatteryController {
       slotCount: SLOT_COUNT,
       reserveSocPct: reserveSoc,
     });
-    return { generatedAt: now, reserveSoc, plan, schedule, pricesUntil: upcoming[upcoming.length - 1].end };
+    return { generatedAt: now, reserveSoc, plan, schedule, pricesUntil: upcoming[upcoming.length - 1].end, negativeExport };
+  }
+
+  async readSettings(): Promise<InverterSettings> {
+    this.lastRead = await this.transport.readSettings();
+    return this.lastRead;
+  }
+
+  /**
+   * Switches export off while the export price is negative and back on afterwards. Only undoes
+   * what the app did itself: export switched off by the user stays off. Returns what changed.
+   */
+  async applyExport(now: Date, state: PlanState | null): Promise<string | null> {
+    if (!this.transport.writeExportAllowed) return null;
+    const negative = state?.negativeExport.some((p) => p.start <= now && p.end > now) ?? false;
+    const block = this.exportControl && negative;
+    if (block && !this.exportBlockedByApp) {
+      const current = await this.readSettings();
+      if (current.exportAllowed !== true) return null; // already off (or unknown): leave it
+      await this.transport.writeExportAllowed(false, true);
+      this.exportBlockedByApp = true;
+      return 'export off (negative export price)';
+    }
+    if (!block && this.exportBlockedByApp) {
+      await this.transport.writeExportAllowed(true, false);
+      this.exportBlockedByApp = false;
+      return 'export on again';
+    }
+    return null;
   }
 
   /** Forgets what was written last, e.g. after monitor mode, so earlier values are not taken as outside changes. */
@@ -138,7 +182,7 @@ export class BatteryController {
 
   /** Writes the schedule to the inverter. Only changed values are written. Returns what changed. */
   async apply(state: PlanState): Promise<string[]> {
-    const current = await this.transport.readSettings();
+    const current = await this.readSettings();
     if (!current.touV2) {
       throw new Error('Inverter firmware does not use the 6-slot schedule; not supported yet');
     }
@@ -177,8 +221,13 @@ export class BatteryController {
    */
   async restoreInverter(): Promise<string[]> {
     this.lastApplied = null;
-    const current = await this.transport.readSettings();
+    const current = await this.readSettings();
     const changes: string[] = [];
+    if (this.exportBlockedByApp && this.transport.writeExportAllowed) {
+      await this.transport.writeExportAllowed(true, false);
+      this.exportBlockedByApp = false;
+      changes.push('export on again');
+    }
     for (let i = 0; i < SLOT_COUNT; i++) {
       if (current.chargeSlots[i].enabled) {
         await this.transport.writeChargeSlot(i, { ...current.chargeSlots[i], enabled: false }, current.chargeSlots[i]);

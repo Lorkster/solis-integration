@@ -338,10 +338,28 @@ what is wrong, and you get a notification:
 | The battery is above the reserve but not powering the house | A SolisCloud command holding the battery (see [Troubleshooting](#troubleshooting)) |
 | The battery is charging from the grid without a plan | A SolisCloud energy-management strategy or the inverter's own force-charge level |
 | The inverter settings were changed outside the app | Someone changed the schedule in SolisCloud; the app has written its own again |
+| Export to the grid is switched off in the inverter | Switched off in SolisCloud (or left off by its energy management): surplus solar is thrown away |
+| Export is limited to … W in the inverter | A low export limit in SolisCloud, often left behind by its energy management |
+| Solar seems throttled | Production has followed the house load for 30 minutes while the forecast expected clearly more |
 | No new data from the inverter since … | The data logger is offline (Wi-Fi, power) or SolisCloud is down |
 
 The flow cards **The inverter stopped following the plan** (with the reason as a token) and **The
-inverter follows the plan again** let you act on it.
+inverter follows the plan again** let you act on it. The export messages also show in *Monitor
+only* mode, since they cost money whoever controls the battery.
+
+---
+
+## Negative export prices
+
+When the export price (spot price plus your export compensation) is below zero, selling costs
+money. With **Stop exporting when the export price is negative** on (the default) and the app in
+*Automatic* mode, the app switches off export to the grid for those quarter-hours and switches it
+back on afterwards. Surplus solar then goes to the house and the battery; when both are full, the
+inverter holds the panels back. The widget shows *Export paused* meanwhile, and the plan counts that
+surplus as worth nothing instead of a loss.
+
+The app only switches export back on if it switched it off itself: if you turned export off in
+SolisCloud, it stays off (and the plan check tells you so).
 
 ---
 
@@ -391,6 +409,25 @@ So the rule becomes one condition: **Extra power costs less than 2.00 kr/kWh now
 > **When** The battery was locked by SolisCloud
 > **Then** send a notification (see [Troubleshooting](#troubleshooting))
 
+### Best time to run an appliance
+
+Three flow cards answer *"when should the dishwasher run?"*. You give how long it runs, roughly how
+much power it draws, and when it must be done:
+
+- **It is the best time to run [120] min at [2] kW, done by [07:00]** (trigger): fires once, at the
+  start of the cheapest window. Put the appliance's start in the *Then* part.
+- **It is / is not the best time to run …** (condition), for flows that already run regularly.
+- **Find the best time to run …** (action) gives the start and end time, the minutes until the start
+  and the cost per kWh, for a notification or a timer.
+
+The cost of each quarter-hour comes from the plan: solar that would otherwise be sold costs only the
+export price, grid power the import price, and battery power what that energy is worth later. So
+a sunny noon can beat a cheap night. If the time is too close for the run, the same time the next
+day is used. Windows only reach as far as the known prices (tomorrow's arrive around 13:00).
+
+> **When** It is the best time to run *150* min at *1.5* kW, done by *07:00*
+> **Then** turn on the dishwasher's smart plug
+
 ### Prices from another service
 
 If your prices come from elsewhere (for example your electricity company's Homey app), set
@@ -429,6 +466,7 @@ everything. Send today's and tomorrow's prices; the plan updates right away.
 | The inverter follows the plan again |  |
 | This hour's power is heading above the month's peak | Fires once per period when the expected average import would raise this month's power fee. Switch something off to avoid it. Tokens: Expected (kW), Month's peak level (kW) |
 | Daily summary | Fires just after midnight with what the battery saved the day before. Tokens: Saved yesterday, Saved this month, Power peak this month (kW) |
+| It is the best time to run *[minutes]* min at *[power]* kW, done by *[deadline]* | Finds the start (on a quarter-hour) where running for that long at that power costs least and is done by the given time, using the plan: solar that would be sold costs the export price, grid power the import price, and battery power what it is worth later. If the time is too close, the same time tomorrow is used. Tokens: Done at, Cost per kWh |
 
 **And… (conditions)**
 
@@ -442,6 +480,7 @@ everything. Send today's and tomorrow's prices; the plan updates right away.
 | A weather warning is / is not active | True while a weather warning at the chosen level covers Homey's location. |
 | There is / is not a power cut |  |
 | This hour's power is / is not heading above the month's peak | Use it to hold back loads such as car charging or water heating while it is true. |
+| It is / is not the best time to run *[minutes]* min at *[power]* kW, done by *[deadline]* | Finds the start (on a quarter-hour) where running for that long at that power costs least and is done by the given time, using the plan: solar that would be sold costs the export price, grid power the import price, and battery power what it is worth later. If the time is too close, the same time tomorrow is used. |
 
 **Then… (actions)**
 
@@ -455,6 +494,7 @@ everything. Send today's and tomorrow's prices; the plan updates right away.
 | Update the battery plan now | Fetches prices and forecasts and makes a new plan right away (normally every 30 minutes). |
 | Set electricity prices to *[prices]* | Only used when the price source is 'From a flow'. A JSON list of spot prices per kWh before fees, one entry per hour or quarter: start time and price. Also accepts 'startsAt', 'time_start' and 'total', 'value' or 'SEK_per_kWh'. Send today's and tomorrow's prices; later entries replace earlier ones. |
 | Hand control back to the inverter | Removes the app's schedule from the inverter and switches to Monitor only. |
+| Find the best time to run *[minutes]* min at *[power]* kW, done by *[deadline]* | Finds the start (on a quarter-hour) where running for that long at that power costs least and is done by the given time, using the plan: solar that would be sold costs the export price, grid power the import price, and battery power what it is worth later. If the time is too close, the same time tomorrow is used. |
 
 <!-- /generated:flows -->
 
@@ -530,9 +570,15 @@ Open the device and tap the gear icon.
 | Supplier fees (ex VAT) | 0.1223 per kWh | Variable costs and markups on top of spot. |
 | Energy tax (ex VAT) | 0.36 per kWh |  |
 | Grid transfer fee (ex VAT) | 0.244 per kWh |  |
-| Time tariff with high-load time (Nov–Mar weekdays 06–22) | on |  |
-| Grid transfer fee high-load time (ex VAT) | 0.244 per kWh |  |
+| Grid fee has a high-load time | on | A higher transfer fee at certain hours, e.g. Vattenfall's time tariff: November–March, weekdays 06–22, not on public holidays. |
+| Grid transfer fee high-load time (ex VAT) | 0.612 per kWh | Vattenfall Tidstariff 2026: 0.612 (76.5 öre incl. VAT). The fee outside high-load time is 0.244 (30.5 öre incl. VAT). |
+| High-load time from | 06:00 |  |
+| High-load time until | 22:00 |  |
+| High-load time on weekdays only | on |  |
+| High-load time November–March only | on |  |
+| Public holidays count as other time | on | New Year's Day, Epiphany, Good Friday, Easter Monday, Christmas Eve, Christmas Day, Boxing Day and New Year's Eve. |
 | Export compensation on top of spot | 0.104 per kWh |  |
+| Stop exporting when the export price is negative | on | In Automatic mode the app switches off export to the grid while selling would cost money, and switches it back on afterwards. Surplus solar is then used in the house and battery, or the panels are throttled. |
 
 **Power fee (effektavgift)**
 

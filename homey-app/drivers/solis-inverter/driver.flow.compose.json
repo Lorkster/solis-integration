@@ -403,6 +403,75 @@
           "example": 4.1
         }
       ]
+    },
+    {
+      "id": "best_time_to_run",
+      "title": {
+        "en": "It is the best time to run an appliance",
+        "sv": "Det är bästa tiden att köra en apparat"
+      },
+      "titleFormatted": {
+        "en": "It is the best time to run [[minutes]] min at [[power]] kW, done by [[deadline]]",
+        "sv": "Det är bästa tiden att köra [[minutes]] min med [[power]] kW, klar till [[deadline]]"
+      },
+      "args": [
+        {
+          "type": "number",
+          "name": "minutes",
+          "min": 15,
+          "max": 720,
+          "step": 15,
+          "placeholder": {
+            "en": "120",
+            "sv": "120"
+          }
+        },
+        {
+          "type": "number",
+          "name": "power",
+          "min": 0.1,
+          "max": 22,
+          "step": 0.1,
+          "placeholder": {
+            "en": "2",
+            "sv": "2"
+          }
+        },
+        {
+          "type": "time",
+          "name": "deadline",
+          "placeholder": {
+            "en": "07:00",
+            "sv": "07:00"
+          }
+        }
+      ],
+      "hint": {
+        "en": "Finds the start (on a quarter-hour) where running for that long at that power costs least and is done by the given time, using the plan: solar that would be sold costs the export price, grid power the import price, and battery power what it is worth later. If the time is too close, the same time tomorrow is used.",
+        "sv": "Hittar starten (på en kvart) där det kostar minst att köra så länge med den effekten och vara klar till angiven tid, utifrån planen: sol som annars säljs kostar exportpriset, nätel importpriset och batteriel vad den är värd senare. Om tiden är för nära används samma tid i morgon."
+      },
+      "tokens": [
+        {
+          "name": "end",
+          "type": "string",
+          "title": {
+            "en": "Done at",
+            "sv": "Klar kl."
+          },
+          "example": {
+            "en": "05:15"
+          }
+        },
+        {
+          "name": "cost",
+          "type": "number",
+          "title": {
+            "en": "Cost per kWh",
+            "sv": "Kostnad per kWh"
+          },
+          "example": 0.85
+        }
+      ]
     }
   ],
   "conditions": [
@@ -603,6 +672,53 @@
         "en": "Use it to hold back loads such as car charging or water heating while it is true.",
         "sv": "Använd det för att hålla tillbaka laster som billaddning eller varmvatten medan det är sant."
       }
+    },
+    {
+      "id": "best_time_now",
+      "title": {
+        "en": "It !{{is|is not}} the best time to run an appliance",
+        "sv": "Det !{{är|är inte}} bästa tiden att köra en apparat"
+      },
+      "titleFormatted": {
+        "en": "It !{{is|is not}} the best time to run [[minutes]] min at [[power]] kW, done by [[deadline]]",
+        "sv": "Det !{{är|är inte}} bästa tiden att köra [[minutes]] min med [[power]] kW, klar till [[deadline]]"
+      },
+      "args": [
+        {
+          "type": "number",
+          "name": "minutes",
+          "min": 15,
+          "max": 720,
+          "step": 15,
+          "placeholder": {
+            "en": "120",
+            "sv": "120"
+          }
+        },
+        {
+          "type": "number",
+          "name": "power",
+          "min": 0.1,
+          "max": 22,
+          "step": 0.1,
+          "placeholder": {
+            "en": "2",
+            "sv": "2"
+          }
+        },
+        {
+          "type": "time",
+          "name": "deadline",
+          "placeholder": {
+            "en": "07:00",
+            "sv": "07:00"
+          }
+        }
+      ],
+      "hint": {
+        "en": "Finds the start (on a quarter-hour) where running for that long at that power costs least and is done by the given time, using the plan: solar that would be sold costs the export price, grid power the import price, and battery power what it is worth later. If the time is too close, the same time tomorrow is used.",
+        "sv": "Hittar starten (på en kvart) där det kostar minst att köra så länge med den effekten och vara klar till angiven tid, utifrån planen: sol som annars säljs kostar exportpriset, nätel importpriset och batteriel vad den är värd senare. Om tiden är för nära används samma tid i morgon."
+      }
     }
   ],
   "actions": [
@@ -780,6 +896,95 @@
         "en": "Removes the app's schedule from the inverter and switches to Monitor only.",
         "sv": "Tar bort appens schema från växelriktaren och byter till Endast övervaka."
       }
+    },
+    {
+      "id": "find_best_time",
+      "title": {
+        "en": "Find the best time to run an appliance",
+        "sv": "Hitta bästa tiden att köra en apparat"
+      },
+      "titleFormatted": {
+        "en": "Find the best time to run [[minutes]] min at [[power]] kW, done by [[deadline]]",
+        "sv": "Hitta bästa tiden att köra [[minutes]] min med [[power]] kW, klar till [[deadline]]"
+      },
+      "args": [
+        {
+          "type": "number",
+          "name": "minutes",
+          "min": 15,
+          "max": 720,
+          "step": 15,
+          "placeholder": {
+            "en": "120",
+            "sv": "120"
+          }
+        },
+        {
+          "type": "number",
+          "name": "power",
+          "min": 0.1,
+          "max": 22,
+          "step": 0.1,
+          "placeholder": {
+            "en": "2",
+            "sv": "2"
+          }
+        },
+        {
+          "type": "time",
+          "name": "deadline",
+          "placeholder": {
+            "en": "07:00",
+            "sv": "07:00"
+          }
+        }
+      ],
+      "hint": {
+        "en": "Finds the start (on a quarter-hour) where running for that long at that power costs least and is done by the given time, using the plan: solar that would be sold costs the export price, grid power the import price, and battery power what it is worth later. If the time is too close, the same time tomorrow is used.",
+        "sv": "Hittar starten (på en kvart) där det kostar minst att köra så länge med den effekten och vara klar till angiven tid, utifrån planen: sol som annars säljs kostar exportpriset, nätel importpriset och batteriel vad den är värd senare. Om tiden är för nära används samma tid i morgon."
+      },
+      "tokens": [
+        {
+          "name": "start",
+          "type": "string",
+          "title": {
+            "en": "Start at",
+            "sv": "Starta kl."
+          },
+          "example": {
+            "en": "02:45"
+          }
+        },
+        {
+          "name": "end",
+          "type": "string",
+          "title": {
+            "en": "Done at",
+            "sv": "Klar kl."
+          },
+          "example": {
+            "en": "04:45"
+          }
+        },
+        {
+          "name": "minutes_until",
+          "type": "number",
+          "title": {
+            "en": "Minutes until start",
+            "sv": "Minuter till start"
+          },
+          "example": 95
+        },
+        {
+          "name": "cost",
+          "type": "number",
+          "title": {
+            "en": "Cost per kWh",
+            "sv": "Kostnad per kWh"
+          },
+          "example": 0.85
+        }
+      ]
     }
   ]
 }

@@ -24,6 +24,8 @@ export interface InverterSettings {
   maxChargeCurrentA: number;
   maxDischargeCurrentA: number;
   touV2: boolean; // 6+6 slot schedule firmware
+  exportAllowed?: boolean | null; // null = not reported
+  exportLimitW?: number | null;
   chargeSlots: TouSlot[];
   dischargeSlots: TouSlot[];
 }
@@ -95,4 +97,5 @@ export interface InverterTransport {
   writeReserveSoc(pct: number, previous?: number): Promise<void>;
   writeChargeSlot(index: number, slot: TouSlot, previous?: TouSlot): Promise<void>;
   writeDischargeSlot(index: number, slot: TouSlot, previous?: TouSlot): Promise<void>;
+  writeExportAllowed?(allowed: boolean, previous: boolean): Promise<void>;
 }

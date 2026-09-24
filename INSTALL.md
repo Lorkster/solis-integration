@@ -87,7 +87,7 @@ Open the device and tap the gear icon (settings). The most important groups:
 | **Solar forecast** | Size (kWp), tilt and direction of your panels. With two directions (e.g. east and west roofs), fill in both arrays. The forecast comes from Open-Meteo by default; Forecast.Solar and Solcast can be chosen instead. |
 | **Weather warnings** | On by default: the battery is charged to the outage level when a warning covers your location. Choose SMHI (Sweden) or MET Norway (Norway). |
 | **Battery** | Capacity and charge power. The defaults match a 21.68 kWh Qapasity Arctic. |
-| **Electricity price** | Price source, price area and the fees from your electricity and grid invoices. elprisetjustnu.se covers Sweden; Nord Pool covers the Nordics, the Baltics and much of Western Europe. |
+| **Electricity price** | Price source, price area (guessed from Homey's location when you add the device – check it) and the fees from your electricity and grid invoices, including the grid fee during high-load time (Vattenfall's time tariff: November–March, weekdays 06–22). elprisetjustnu.se covers Sweden; Nord Pool covers the Nordics, the Baltics and much of Western Europe. |
 | **Power fee** | Only if your grid company charges per kW of your peaks (effektavgift): switch it on and copy the terms from its price list. |
 | **Notifications** | Timeline notifications for power cuts and for an inverter that stops following the plan are on; a daily savings summary can be switched on. |
 | **Inverter** | Read only: model, rated power, firmware and whether the app can control this inverter. |
