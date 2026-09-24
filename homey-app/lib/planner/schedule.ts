@@ -37,7 +37,7 @@ interface Block {
  *
  * "hold" is expressed as a charge slot with 0 A: while a charge slot is active the inverter does
  * not discharge, so the house runs on grid power and the battery keeps its energy.
- * TODO: verify on the inverter that a 0 A charge slot blocks discharge on TOU v2 firmware.
+ * Verified on an S6-EH3P20K-H (TOU v2) on 24 Sep 2026: a 0 A charge slot holds the battery.
  */
 export function planToSchedule(plan: PlannedInterval[], opts: ScheduleOptions): Schedule {
   const warnings: string[] = [];

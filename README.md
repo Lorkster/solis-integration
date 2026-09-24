@@ -17,7 +17,8 @@ battery reserve for power outages.
       forecast (Open-Meteo, Forecast.Solar, Solcast), weather warnings (SMHI, MET Norway),
       prices (elprisetjustnu.se, Nord Pool, flow), TOU slot writing, backup reserve, flows, two dashboard widgets
       (see its README for open items)
-- [ ] Verify inverter behaviour with TOU enabled (discharges to house outside charge slots? 0 A slot = hold?)
+- [x] Verify inverter behaviour with TOU enabled: the battery discharges to the house outside charge slots,
+      and a 0 A charge slot holds it (both confirmed on 24 Sep 2026)
 
 ## Diagnostic usage
 

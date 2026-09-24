@@ -83,10 +83,10 @@ npx homey app install    # install permanently
 
 ## Open items before switching to Automatic
 
-- [ ] Verify on the inverter that a 0 A charge slot blocks discharge (hold) on TOU v2 firmware
-- [ ] Verify the battery discharges to the house outside charge slots with time-of-use enabled
-- [x] Read the off-grid over-discharge SOC (CID 469, 30 % on this inverter) for backup time and reserve warning
-- [ ] Identify the SolisCloud field that shows the house running on the backup output
+- [x] Verify on the inverter that a 0 A charge slot blocks discharge (hold) on TOU v2 firmware (24 Sep 2026)
+- [x] Verify the battery discharges to the house outside charge slots with time-of-use enabled (24 Sep 2026)
+- [x] Read the off-grid over-discharge SOC (CID 469, now 15 % on this inverter) for backup time and reserve warning
+- [ ] Confirm power-cut detection (grid voltage uAc1–3, `lib/inverter/PowerCut.ts`) during a real cut
 - [x] Learned load profile from observed consumption
 - [x] Solar forecast with learned calibration
 - [x] SMHI weather warnings → automatic outage preparation
