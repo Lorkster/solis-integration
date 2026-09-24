@@ -32,7 +32,7 @@ describe('planSummary', () => {
   });
 
   it('hides saves at the reserve level and says when nothing is planned', () => {
-    const idle = plan('2026-09-24T22:00:00+02:00', [['self_use', 4, 26], ['hold', 8, 25]]);
+    const idle = plan('2026-09-24T22:00:00+02:00', [['self_use', 4, 29], ['hold', 8, 27]]); // 2 points above the reserve
     assert.equal(planSummary(idle, new Date('2026-09-24T22:00:00+02:00'), 25, TZ), 'Self-use now · no charging or saving needed');
   });
 });

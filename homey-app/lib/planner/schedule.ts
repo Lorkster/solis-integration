@@ -1,6 +1,7 @@
 import { DISABLED_SLOT, type TouSlot } from '../inverter/types.js';
 import { addDays, localDate, localHHMM } from '../time.js';
 import type { BatteryAction, PlannedInterval } from './planner.js';
+import { isPointlessSave } from './summary.js';
 
 export interface ScheduleOptions {
   now: Date;
@@ -40,7 +41,7 @@ interface Block {
 export function planToSchedule(plan: PlannedInterval[], opts: ScheduleOptions): Schedule {
   const warnings: string[] = [];
   const horizonEnd = addDays(opts.now, 1);
-  const pointlessHold = (b: Block) => b.action === 'hold' && b.socStartPct <= (opts.reserveSocPct ?? -Infinity) + 1.5;
+  const pointlessHold = (b: Block) => opts.reserveSocPct !== undefined && isPointlessSave(b.action, b.socStartPct, opts.reserveSocPct);
   let blocks = splitAtMidnight(
     toBlocks(plan.filter((iv) => iv.end > opts.now && iv.start < horizonEnd)).filter((b) => !pointlessHold(b)),
     opts.timeZone,

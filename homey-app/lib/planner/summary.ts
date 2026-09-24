@@ -9,11 +9,19 @@ const WORDS = {
 };
 
 /**
- * Display action of an interval. A "save" that starts at the reserve keeps nothing the reserve
- * does not already keep; it is not sent to the inverter, so it is shown as self-use.
+ * A "save" only makes sense with a meaningful amount of energy above the reserve (5 percentage
+ * points, about 1 kWh on a 21.7 kWh battery). Smaller saves are not sent to the inverter and are
+ * shown as self-use.
  */
+export const MIN_SAVE_ABOVE_RESERVE_PCT = 5;
+
+export function isPointlessSave(action: BatteryAction, socStartPct: number, reserveSoc: number): boolean {
+  return action === 'hold' && socStartPct < reserveSoc + MIN_SAVE_ABOVE_RESERVE_PCT;
+}
+
+/** Display action of an interval, with pointless saves shown as self-use. */
 export function displayAction(iv: PlannedInterval, reserveSoc: number): BatteryAction {
-  return iv.action === 'hold' && iv.socStartPct <= reserveSoc + 1.5 ? 'self_use' : iv.action;
+  return isPointlessSave(iv.action, iv.socStartPct, reserveSoc) ? 'self_use' : iv.action;
 }
 
 interface Block {

@@ -455,6 +455,7 @@
     }
 
     function render() {
+      setTimeout(() => window.dispatchEvent(new Event('rendered')), 0);
       const root = document.getElementById('root');
       root.replaceChildren();
       root.classList.remove('refreshing');
@@ -490,7 +491,19 @@
           console.error(err);
         });
       };
-      load().finally(() => Homey.ready());
+      const fit = () => {
+        const height = Math.ceil(document.body.scrollHeight);
+        if (height !== lastHeight) {
+          lastHeight = height;
+          Homey.setHeight(height);
+        }
+      };
+      let lastHeight = 0;
+      window.addEventListener('rendered', fit);
+      load().finally(() => {
+        lastHeight = Math.ceil(document.body.scrollHeight);
+        Homey.ready({ height: lastHeight });
+      });
       Homey.on('plan', load);
       Homey.on('live', load);
       setInterval(load, 10 * 60e3);

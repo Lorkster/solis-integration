@@ -22,7 +22,7 @@ const mock = `<script>
   const VIEW = ${JSON.stringify(view)};
   window.addEventListener('load', () => onHomeyReady({
     getSettings: () => ({ hours: '36', showEnergy: true }),
-    api: async () => VIEW, on: () => {}, ready: () => {}, __: (k) => k,
+    api: async () => VIEW, on: () => {}, ready: () => {}, setHeight: async () => {}, __: (k) => k,
   }));
   ${hover ? `setTimeout(() => {
     const chart = document.querySelector('.chart');
