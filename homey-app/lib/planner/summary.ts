@@ -3,10 +3,15 @@ import type { BatteryAction, PlannedInterval } from './planner.js';
 
 export type Language = 'en' | 'sv';
 
-const WORDS = {
-  en: { charge: 'Charge', hold: 'Save', self_use: 'Self-use', now: 'now', until: 'until', none: 'no charging or saving needed' },
-  sv: { charge: 'Ladda', hold: 'Spara', self_use: 'Egenanvändning', now: 'nu', until: 'till', none: 'ingen laddning eller sparning behövs' },
+export type DisplayState = BatteryAction | 'use';
+
+const WORDS: Record<Language, Record<DisplayState | 'now' | 'until' | 'none', string>> = {
+  en: { charge: 'Charge', hold: 'Save', use: 'Use battery', self_use: 'Self-use', now: 'now', until: 'until', none: 'no charging or saving needed' },
+  sv: { charge: 'Ladda', hold: 'Spara', use: 'Använd batteri', self_use: 'Egenanvändning', now: 'nu', until: 'till', none: 'ingen laddning eller sparning behövs' },
 };
+
+/** A quarter-hour counts as "use" when the battery is planned to deliver at least this (kWh). */
+const MIN_USE_KWH_PER_QUARTER = 0.05;
 
 /**
  * A "save" only makes sense with a meaningful amount of energy above the reserve (5 percentage
@@ -24,8 +29,14 @@ export function displayAction(iv: PlannedInterval, reserveSoc: number): BatteryA
   return isPointlessSave(iv.action, iv.socStartPct, reserveSoc) ? 'self_use' : iv.action;
 }
 
+/** Like displayAction, but self-use where the battery covers the house is "use". */
+export function displayState(iv: PlannedInterval, reserveSoc: number): DisplayState {
+  const action = displayAction(iv, reserveSoc);
+  return action === 'self_use' && iv.batteryKwh <= -MIN_USE_KWH_PER_QUARTER ? 'use' : action;
+}
+
 interface Block {
-  action: BatteryAction;
+  action: DisplayState;
   start: Date;
   end: Date;
 }
@@ -33,7 +44,7 @@ interface Block {
 function blocks(intervals: PlannedInterval[], reserveSoc: number): Block[] {
   const out: Block[] = [];
   for (const iv of intervals) {
-    const action = displayAction(iv, reserveSoc);
+    const action = displayState(iv, reserveSoc);
     const last = out[out.length - 1];
     if (last && last.action === action && last.end.getTime() === iv.start.getTime()) last.end = iv.end;
     else out.push({ action, start: iv.start, end: iv.end });

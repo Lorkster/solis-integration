@@ -17,6 +17,10 @@ function plan(start: string, spec: Array<[BatteryAction, number, number]>): Plan
   return out;
 }
 
+function withBattery(intervals: PlannedInterval[], kwhPerQuarter: number, from: number, to: number): PlannedInterval[] {
+  return intervals.map((iv, i) => (i >= from && i < to ? { ...iv, batteryKwh: kwhPerQuarter } : iv));
+}
+
 describe('planSummary', () => {
   // 24 Sep 18:15: self-use until 21:45, then save overnight until 07:15 (crosses midnight).
   const evening = plan('2026-09-24T18:15:00+02:00', [['self_use', 14, 67], ['hold', 38, 40], ['self_use', 8, 40]]);
@@ -24,6 +28,11 @@ describe('planSummary', () => {
   it('merges periods across midnight and starts with what happens now', () => {
     assert.equal(planSummary(evening, new Date('2026-09-24T18:16:00+02:00'), 25, TZ), 'Self-use now · Save 21:45–07:15');
     assert.equal(planSummary(evening, new Date('2026-09-24T18:16:00+02:00'), 25, TZ, 'sv'), 'Egenanvändning nu · Spara 21:45–07:15');
+  });
+
+  it('names periods where the battery covers the house', () => {
+    const evening2 = withBattery(evening, -0.6, 0, 14); // 2.4 kW out of the battery until 21:45
+    assert.equal(planSummary(evening2, new Date('2026-09-24T18:16:00+02:00'), 25, TZ), 'Use battery until 21:45 · Save 21:45–07:15');
   });
 
   it('says until when the current action lasts', () => {

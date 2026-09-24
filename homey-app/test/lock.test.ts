@@ -31,6 +31,14 @@ describe('LockDetector', () => {
     assert.equal(d.locked, false);
   });
 
+  it('does not mistake a planned save period for a lock', () => {
+    const d = new LockDetector();
+    // 24 Sep 18:42: planned save, the active 0 A slot shows as a 0 A limit.
+    d.update(locked('18:42', { gridW: 3818, socPct: 61 }), 25, true);
+    d.update(locked('19:15', { gridW: 3500, socPct: 61 }), 25, true);
+    assert.equal(d.locked, false);
+  });
+
   it('ignores inverters that do not report the remote limit', () => {
     const d = new LockDetector();
     d.update(locked('10:00', { remoteEnabled: null, remoteCurrentA: null }), 40);

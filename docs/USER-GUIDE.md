@@ -41,18 +41,19 @@ Dark mode: [battery plan](images/battery-plan-dark.png), [battery status](images
 ### Battery plan
 
 - **Top line**: what the battery does right now, in words (*Charging from the grid*, *Saving the
-  battery*, *Battery covers the house*), until when, and the battery level.
+  battery*, *Battery covers the house*, *Self-use*), until when, and the battery level.
 - **Notices** (when relevant): SMHI warning, preparing for an outage, battery locked by SolisCloud,
   or *Monitor only – the app is not controlling the inverter*.
 - **Three charts on one time axis**:
-  - **Price kr/kWh** – what you pay per kWh. Blue periods are *Charge* (from the grid), pink periods
-    are *Save* (the battery keeps its charge for more expensive hours). Unmarked time is self-use:
-    the battery runs the house.
+  - **Price kr/kWh** – what you pay per kWh, with the plan marked on top: blue is *Charge* (from the
+    grid), pink is *Save* (the battery keeps its charge for more expensive hours), green is *Use* (the
+    battery runs the house). Unmarked time is plain self-use where the battery is idle, for example
+    because solar covers the house or the battery is at its reserve.
   - **Solar & load kW** – expected solar production (yellow) and house consumption (grey).
   - **Battery %** – the expected battery level, the dot is the level now, the dashed line the reserve.
 - **Touch and drag** across the charts (or use the arrow keys) to see price, action, solar, load and
   battery level for any quarter-hour.
-- **Next 24 hours** lists the charge and save periods with the battery level they end at.
+- **Next 24 hours** lists the charge, save and use periods with the battery level they end at.
 - **Bottom line**: how much the plan saves compared with plain self-use, and when it was updated.
 
 Widget settings: *Time shown* (24, 36 or 48 hours) and *Show solar and load forecast*.

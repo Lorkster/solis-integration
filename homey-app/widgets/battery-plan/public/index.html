@@ -8,6 +8,7 @@
       --c-charge: #2a78d6;
       --c-hold: #e87ba4;
       --c-solar: #eda100;
+      --c-use: #008300;
       --c-ink: var(--homey-text-color, #1a1a1a);
       --c-muted: var(--homey-text-color-light, #8a8a8e);
       --c-grid: rgba(0, 0, 0, 0.08);
@@ -85,36 +86,38 @@
 
     const TEXT = {
       en: {
-        charge: 'Charging from the grid', hold: 'Saving the battery', self_use: 'Battery covers the house',
+        charge: 'Charging from the grid', hold: 'Saving the battery', use: 'Battery covers the house', self_use: 'Self-use',
         chargeSub: (until, soc) => `until ${until} · to ${soc} %`,
         holdSub: (until) => `until ${until}, for higher prices`,
+        useSub: (until, soc) => `until ${until} · down to ${soc} %`,
         selfSubNext: (what, at) => `next: ${what} at ${at}`,
         selfSubNone: 'no grid charging needed',
-        chargeShort: 'Charge', holdShort: 'Save', selfShort: 'Self-use',
+        chargeShort: 'Charge', holdShort: 'Save', useShort: 'Use', selfShort: 'Self-use',
         monitor: 'Monitor only – the app is not controlling the inverter',
         locked: 'Battery locked by SolisCloud – release it with Quick Control → Discharge (short duration)',
         outage: (until) => `Preparing for a power outage until ${until}`,
         price: 'Price kr/kWh', energy: 'Solar & load kW', battery: 'Battery %',
         solar: 'Solar', load: 'Load', reserve: 'Reserve', now: 'Now',
-        next24: 'Next 24 hours', noSlots: 'No grid charging or saving needed – the battery runs on self-use.',
+        next24: 'Next 24 hours', noSlots: 'Nothing planned – the battery runs on self-use.',
         saves: (kr) => `≈ <b>${kr} kr</b> cheaper than plain self-use`,
         updated: (t) => `Updated ${t}`,
         waiting: 'Waiting for the first plan…', notPaired: 'Add your Solis inverter in Homey to see the plan.',
         today: 'Today', tomorrow: 'Tomorrow', soc: 'charged',
       },
       sv: {
-        charge: 'Laddar från nätet', hold: 'Sparar batteriet', self_use: 'Batteriet försörjer huset',
+        charge: 'Laddar från nätet', hold: 'Sparar batteriet', use: 'Batteriet försörjer huset', self_use: 'Egenanvändning',
         chargeSub: (until, soc) => `till ${until} · upp till ${soc} %`,
         holdSub: (until) => `till ${until}, inför dyrare priser`,
+        useSub: (until, soc) => `till ${until} · ner till ${soc} %`,
         selfSubNext: (what, at) => `nästa: ${what} kl. ${at}`,
         selfSubNone: 'ingen nätladdning behövs',
-        chargeShort: 'Ladda', holdShort: 'Spara', selfShort: 'Egenanvändning',
+        chargeShort: 'Ladda', holdShort: 'Spara', useShort: 'Använd', selfShort: 'Egenanvändning',
         monitor: 'Endast övervakning – appen styr inte växelriktaren',
         locked: 'Batteriet låst av SolisCloud – frigör med Snabbkontroll → Urladdning (kort tid)',
         outage: (until) => `Förbereder för strömavbrott till ${until}`,
         price: 'Pris kr/kWh', energy: 'Sol & förbrukning kW', battery: 'Batteri %',
         solar: 'Sol', load: 'Förbrukning', reserve: 'Reserv', now: 'Nu',
-        next24: 'Kommande 24 timmar', noSlots: 'Ingen nätladdning eller sparning behövs – batteriet går på egenanvändning.',
+        next24: 'Kommande 24 timmar', noSlots: 'Inget planerat – batteriet går på egenanvändning.',
         saves: (kr) => `≈ <b>${kr} kr</b> billigare än vanlig egenanvändning`,
         updated: (t) => `Uppdaterad ${t}`,
         waiting: 'Väntar på den första planen…', notPaired: 'Lägg till din Solis-växelriktare i Homey för att se planen.',
@@ -126,6 +129,7 @@
       charge: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
       hold: '<rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>',
       self_use: '<path d="M3 11l9-7.5 9 7.5"/><path d="M5.5 9.5V20h13V9.5"/>',
+      use: '<rect x="6" y="4" width="12" height="17" rx="2"/><path d="M10 2h4M12 16V9M9 12l3-3 3 3"/>',
       warning: '<path d="M10.3 3.7L2.4 17.5A2 2 0 004.1 20.5h15.8a2 2 0 001.7-3L13.7 3.7a2 2 0 00-3.4 0z"/><path d="M12 9v4.5M12 16.8v.1"/>',
       shield: '<path d="M12 21.5s7.5-3.2 7.5-9.5V5.5L12 2.5 4.5 5.5V12c0 6.3 7.5 9.5 7.5 9.5z"/>',
       eye: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
@@ -133,7 +137,8 @@
     const icon = (name, color) =>
       `<svg viewBox="0 0 24 24" fill="none" stroke="${color || 'currentColor'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[name]}</svg>`;
 
-    const ACTION_COLOR = { charge: 'var(--c-charge)', hold: 'var(--c-hold)', self_use: 'transparent' };
+    const ACTION_COLOR = { charge: 'var(--c-charge)', hold: 'var(--c-hold)', use: 'var(--c-use)', self_use: 'transparent' };
+    const SHORT = (T, action) => ({ charge: T.chargeShort, hold: T.holdShort, use: T.useShort, self_use: T.selfShort })[action];
 
     let view = null;
     let hoursShown = 36;
@@ -184,9 +189,10 @@
       let sub;
       if (first.action === 'charge') sub = T.chargeSub(fmtTime(endIso(first)), Math.round(first.soc));
       else if (first.action === 'hold') sub = T.holdSub(fmtTime(endIso(first)));
+      else if (first.action === 'use') sub = T.useSub(fmtTime(endIso(first)), Math.round(first.soc));
       else {
         const next = bl.find((b) => b.action !== 'self_use');
-        sub = next ? T.selfSubNext(next.action === 'charge' ? T.chargeShort.toLowerCase() : T.holdShort.toLowerCase(), fmtTime(intervals[next.from].t)) : T.selfSubNone;
+        sub = next ? T.selfSubNext(SHORT(T, next.action).toLowerCase(), fmtTime(intervals[next.from].t)) : T.selfSubNone;
       }
       const soc = view.live ? view.live.socPct : Math.round(current.soc);
       const header = document.createElement('div');
@@ -267,9 +273,9 @@
       for (const b of blocks(intervals)) {
         if (b.action === 'self_use') continue;
         const x0 = x(b.from), x1 = x(b.to + 1);
-        svg.appendChild(el('rect', { x: x0, y: top, width: Math.max(x1 - x0, 1), height: bottom - top, fill: ACTION_COLOR[b.action], opacity: 0.1 }));
+        svg.appendChild(el('rect', { x: x0, y: top, width: Math.max(x1 - x0, 1), height: bottom - top, fill: ACTION_COLOR[b.action], opacity: b.action === 'use' ? 0.07 : 0.1 }));
         svg.appendChild(el('rect', { x: x0, y: top, width: Math.max(x1 - x0 - 2, 1), height: 3, rx: 1.5, fill: ACTION_COLOR[b.action] }));
-        const label = b.action === 'charge' ? T.chargeShort : T.holdShort;
+        const label = SHORT(T, b.action);
         if (x1 - x0 > label.length * 6 + 8) svg.appendChild(el('text', { x: x0 + 4, y: top + 14, class: 'band-label' }, label));
       }
 
@@ -382,7 +388,7 @@
           tip.appendChild(r);
         };
         row('var(--c-ink)', `${fmtNum(iv.price, 2)} kr`, '/kWh');
-        row(iv.action === 'self_use' ? 'var(--c-muted)' : ACTION_COLOR[iv.action], T[iv.action === 'charge' ? 'chargeShort' : iv.action === 'hold' ? 'holdShort' : 'selfShort'], '');
+        row(iv.action === 'self_use' ? 'var(--c-muted)' : ACTION_COLOR[iv.action], SHORT(T, iv.action), '');
         if (showEnergy) {
           row('var(--c-solar)', `${fmtNum(iv.pvKw, 1)} kW`, T.solar);
           row('var(--c-muted)', `${fmtNum(iv.loadKw, 1)} kW`, T.load);
@@ -418,6 +424,7 @@
       const item = (html) => { const s = document.createElement('span'); s.innerHTML = html; legend.appendChild(s); };
       item(`<i class="swatch" style="background:var(--c-charge)"></i>${T.chargeShort}`);
       item(`<i class="swatch" style="background:var(--c-hold)"></i>${T.holdShort}`);
+      item(`<i class="swatch" style="background:var(--c-use)"></i>${T.useShort}`);
       if (showEnergy) {
         item(`<i class="key" style="background:var(--c-solar)"></i>${T.solar}`);
         item(`<i class="key" style="background:var(--c-muted)"></i>${T.load}`);
@@ -433,7 +440,7 @@
       h.textContent = T.next24;
       section.appendChild(h);
       const horizon = nowMs() + 24 * 3600e3;
-      const upcoming = blocks(intervals).filter((b) => b.action !== 'self_use' && new Date(intervals[b.from].t).getTime() < horizon).slice(0, 5);
+      const upcoming = blocks(intervals).filter((b) => b.action !== 'self_use' && new Date(intervals[b.from].t).getTime() < horizon).slice(0, 6);
       if (upcoming.length === 0) {
         const empty = document.createElement('div');
         empty.className = 'empty';
@@ -446,7 +453,7 @@
         const end = new Date(new Date(intervals[b.to].t).getTime() + 900e3).toISOString();
         row.innerHTML = '<span class="dot"></span><span class="what"></span><span class="when"></span><span class="target"></span>';
         row.querySelector('.dot').style.background = ACTION_COLOR[b.action];
-        row.querySelector('.what').textContent = b.action === 'charge' ? T.chargeShort : T.holdShort;
+        row.querySelector('.what').textContent = SHORT(T, b.action);
         row.querySelector('.when').textContent = `${fmtTime(intervals[b.from].t)}–${fmtTime(end)}`;
         row.querySelector('.target').textContent = `${Math.round(b.soc)} %`;
         section.appendChild(row);
