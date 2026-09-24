@@ -1715,7 +1715,7 @@
       "getable": true,
       "setable": false,
       "uiComponent": "sensor",
-      "icon": "/assets/icons/price.svg"
+      "icon": "/assets/icons/extra.svg"
     },
     "measure_solis_price": {
       "type": "number",
@@ -1854,8 +1854,8 @@
     "solis_power_source": {
       "type": "enum",
       "title": {
-        "en": "House powered by",
-        "sv": "Huset drivs av"
+        "en": "Power source",
+        "sv": "Elkälla"
       },
       "getable": true,
       "setable": false,

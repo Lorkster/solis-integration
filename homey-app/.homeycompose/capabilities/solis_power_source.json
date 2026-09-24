@@ -1,8 +1,8 @@
 {
   "type": "enum",
   "title": {
-    "en": "House powered by",
-    "sv": "Huset drivs av"
+    "en": "Power source",
+    "sv": "Elkälla"
   },
   "getable": true,
   "setable": false,

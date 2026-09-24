@@ -7,6 +7,7 @@ import { extraPowerCost, houseSupply, type HouseSupply, usesSource } from '../..
 import { LockDetector } from '../../lib/inverter/LockDetector.js';
 import type { InverterTransport, LiveData } from '../../lib/inverter/types.js';
 import type { BatteryAction } from '../../lib/planner/planner.js';
+import { displayAction, planSummary } from '../../lib/planner/summary.js';
 import { ElprisetJustNuProvider, type PriceArea } from '../../lib/prices/PriceProvider.js';
 import { SolisCloudTransport } from '../../lib/solis/SolisCloudTransport.js';
 import { addDays, addMinutes, localDate, localHHMM } from '../../lib/time.js';
@@ -239,7 +240,7 @@ export default class SolisInverterDevice extends Homey.Device {
           t: iv.start.toISOString(),
           price: round(iv.buy, 3),
           // Holds at the reserve keep nothing and are not sent to the inverter; show them as self-use.
-          action: iv.action === 'hold' && iv.socStartPct <= state.reserveSoc + 1.5 ? 'self_use' : iv.action,
+          action: displayAction(iv, state.reserveSoc),
           soc: round(iv.socEndPct, 1),
           loadKw: round(this.loadProfile.predict(iv.start) ?? this.controller.config.avgLoadKw, 2),
           pvKw: round(this.solar?.forecastAt(iv.start) ?? 0, 2),
@@ -559,11 +560,7 @@ export default class SolisInverterDevice extends Homey.Device {
   }
 
   private summarise(state: PlanState): string {
-    const tz = this.homey.clock.getTimezone();
-    const slots = state.schedule.chargeSlots.filter((s) => s.enabled);
-    const suffix = this.controlMode === 'auto' ? '' : ' (monitor)';
-    if (slots.length === 0) return `Self-use, no grid charging planned${suffix}`;
-    const parts = slots.map((s) => `${s.currentA > 0 ? 'Charge' : 'Hold'} ${s.start}–${s.end}`);
-    return `${parts.join(', ')}${suffix} · ${localHHMM(state.generatedAt, tz)}`;
+    const language = this.homey.i18n.getLanguage() === 'sv' ? 'sv' : 'en';
+    return planSummary(state.plan.intervals, new Date(), state.reserveSoc, this.homey.clock.getTimezone(), language);
   }
 }

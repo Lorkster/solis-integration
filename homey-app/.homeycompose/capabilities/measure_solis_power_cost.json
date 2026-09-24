@@ -12,5 +12,5 @@
   "getable": true,
   "setable": false,
   "uiComponent": "sensor",
-  "icon": "/assets/icons/price.svg"
+  "icon": "/assets/icons/extra.svg"
 }

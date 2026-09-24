@@ -82,10 +82,10 @@ chosen as the device's tile indicator, and all numbers and alarms are kept in Ho
 |---|---|---|---|
 | **Battery** | Batteri | % | Battery state of charge. |
 | **Battery power (+ charging, − discharging)** | Batteriets effekt (+ laddar, − laddar ur) | W | Battery power. Positive while charging, negative while discharging. Used by Homey Energy. |
-| **House powered by** | Huset drivs av |  | Which sources supply the house right now: solar, battery and/or grid. A source counts when it delivers at least 100 W and 5 % of the consumption.<br>Values: Solar, Solar + battery, Battery, Grid, Solar + grid, Battery + grid, Solar + battery + grid, Nothing (no load) |
+| **Power source** | Elkälla |  | Which sources power the house right now: solar, battery and/or grid. A source counts when it delivers at least 100 W and 5 % of the consumption.<br>Values: Solar, Solar + battery, Battery, Grid, Solar + grid, Battery + grid, Solar + battery + grid, Nothing (no load) |
 | **Cost of extra power now** | Kostnad för extra el nu | kr/kWh | What one more kWh costs right now: the import price while buying from the grid, the export income you give up while selling solar, otherwise what the battery's energy is worth later (from the plan). The best value to base "run it now?" automations on. |
 | **Control mode** | Styrläge |  | *Monitor only*: the app plans and shows, but never changes the inverter. *Automatic*: the app writes the charging schedule to the inverter.<br>Values: Monitor only, Automatic |
-| **Plan** | Plan |  | The planned charge and save periods for the next 24 hours, and when the plan was made. |
+| **Plan** | Plan |  | What the battery does now and the next planned periods, e.g. "Self-use now · Save 21:45–07:15". |
 | **Electricity price now (buying)** | Elpris just nu (köp) | kr/kWh | What you pay per kWh bought right now, including fees, taxes and VAT. |
 | **Solar production** | Solproduktion | W | Total solar panel production. |
 | **House consumption** | Husets förbrukning | W | Total house consumption. |
