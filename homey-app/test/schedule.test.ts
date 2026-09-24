@@ -15,11 +15,13 @@ function plan(start: string, actions: BatteryAction[]): PlannedInterval[] {
       start: new Date(t0 + i * 900_000),
       end: new Date(t0 + (i + 1) * 900_000),
       buy: 3,
+      sell: 1,
       action,
       socStartPct,
       socEndPct: soc,
       gridKwh: 0,
       batteryKwh: 0,
+      storedEnergyValue: 0,
     };
   });
 }

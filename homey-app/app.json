@@ -36,6 +36,94 @@
   "flow": {
     "triggers": [
       {
+        "id": "power_source_changed",
+        "title": {
+          "en": "What powers the house changed",
+          "sv": "Det som driver huset ändrades"
+        },
+        "tokens": [
+          {
+            "name": "source",
+            "type": "string",
+            "title": {
+              "en": "Powered by",
+              "sv": "Drivs av"
+            },
+            "example": {
+              "en": "Solar + battery",
+              "sv": "Sol + batteri"
+            }
+          },
+          {
+            "name": "solar_share",
+            "type": "number",
+            "title": {
+              "en": "From solar (%)",
+              "sv": "Från sol (%)"
+            },
+            "example": 60
+          },
+          {
+            "name": "battery_share",
+            "type": "number",
+            "title": {
+              "en": "From battery (%)",
+              "sv": "Från batteri (%)"
+            },
+            "example": 40
+          },
+          {
+            "name": "grid_share",
+            "type": "number",
+            "title": {
+              "en": "From grid (%)",
+              "sv": "Från nätet (%)"
+            },
+            "example": 0
+          }
+        ],
+        "hint": {
+          "en": "Fires when the combination of solar, battery and grid that runs the house changes.",
+          "sv": "Körs när kombinationen av sol, batteri och nät som driver huset ändras."
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=solis-inverter"
+          }
+        ]
+      },
+      {
+        "id": "power_cost_changed",
+        "title": {
+          "en": "The cost of extra power changed",
+          "sv": "Kostnaden för extra el ändrades"
+        },
+        "hint": {
+          "en": "Fires when the cost of using one more kWh changes by at least 0.10 kr.",
+          "sv": "Körs när kostnaden för en kWh till ändras med minst 0,10 kr."
+        },
+        "tokens": [
+          {
+            "name": "cost",
+            "type": "number",
+            "title": {
+              "en": "Cost (kr/kWh)",
+              "sv": "Kostnad (kr/kWh)"
+            },
+            "example": 2.72
+          }
+        ],
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=solis-inverter"
+          }
+        ]
+      },
+      {
         "id": "plan_updated",
         "title": {
           "en": "The battery plan was updated",
@@ -61,6 +149,10 @@
             "example": 12.5
           }
         ],
+        "hint": {
+          "en": "Fires every time a new plan is made (about every 30 minutes).",
+          "sv": "Körs varje gång en ny plan görs (ungefär var 30:e minut)."
+        },
         "args": [
           {
             "type": "device",
@@ -87,6 +179,10 @@
             }
           }
         ],
+        "hint": {
+          "en": "Fires when the plan switches between charge, save and self-use. Action is charge, hold or self_use.",
+          "sv": "Körs när planen byter mellan ladda, spara och egenanvändning. Åtgärd är charge, hold eller self_use."
+        },
         "args": [
           {
             "type": "device",
@@ -142,6 +238,10 @@
             "example": "18:00"
           }
         ],
+        "hint": {
+          "en": "Fires once per new warning at the chosen level that covers Homey's location.",
+          "sv": "Körs en gång per ny varning på vald nivå som gäller Homeys plats."
+        },
         "args": [
           {
             "type": "device",
@@ -155,6 +255,10 @@
         "title": {
           "en": "The SMHI warnings for my location ended",
           "sv": "SMHI-varningarna för min plats upphörde"
+        },
+        "hint": {
+          "en": "Fires when no warning at the chosen level covers Homey's location any more.",
+          "sv": "Körs när ingen varning på vald nivå längre gäller Homeys plats."
         },
         "args": [
           {
@@ -188,6 +292,10 @@
           "en": "The battery was released",
           "sv": "Batteriet frigjordes"
         },
+        "hint": {
+          "en": "Fires when the SolisCloud limit is back to normal and the battery works again.",
+          "sv": "Körs när SolisCloud-gränsen är normal igen och batteriet fungerar."
+        },
         "args": [
           {
             "type": "device",
@@ -198,6 +306,119 @@
       }
     ],
     "conditions": [
+      {
+        "id": "house_powered_by",
+        "title": {
+          "en": "The house !{{is|is not}} using power from",
+          "sv": "Huset !{{använder|använder inte}} el från"
+        },
+        "titleFormatted": {
+          "en": "The house !{{is|is not}} using power from [[source]]",
+          "sv": "Huset !{{använder|använder inte}} el från [[source]]"
+        },
+        "hint": {
+          "en": "True when the source delivers at least 100 W and 5 % of the house consumption.",
+          "sv": "Sant när källan levererar minst 100 W och 5 % av husets förbrukning."
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=solis-inverter"
+          },
+          {
+            "type": "dropdown",
+            "name": "source",
+            "values": [
+              {
+                "id": "solar",
+                "title": {
+                  "en": "solar",
+                  "sv": "sol"
+                }
+              },
+              {
+                "id": "battery",
+                "title": {
+                  "en": "battery",
+                  "sv": "batteri"
+                }
+              },
+              {
+                "id": "grid",
+                "title": {
+                  "en": "grid",
+                  "sv": "nät"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "solar_surplus_above",
+        "title": {
+          "en": "Solar surplus !{{is|is not}} above",
+          "sv": "Solöverskottet !{{är|är inte}} över"
+        },
+        "titleFormatted": {
+          "en": "Solar surplus !{{is|is not}} above [[watts]] W",
+          "sv": "Solöverskottet !{{är|är inte}} över [[watts]] W"
+        },
+        "hint": {
+          "en": "Surplus = solar production minus house consumption; it goes into the battery or to the grid.",
+          "sv": "Överskott = solproduktion minus husets förbrukning; det går till batteriet eller nätet."
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=solis-inverter"
+          },
+          {
+            "type": "number",
+            "name": "watts",
+            "min": 0,
+            "max": 30000,
+            "step": 100,
+            "placeholder": {
+              "en": "1500"
+            }
+          }
+        ]
+      },
+      {
+        "id": "power_cost_below",
+        "title": {
+          "en": "Extra power !{{costs|does not cost}} less than",
+          "sv": "Extra el !{{kostar|kostar inte}} mindre än"
+        },
+        "titleFormatted": {
+          "en": "Extra power !{{costs|does not cost}} less than [[price]] kr/kWh now",
+          "sv": "Extra el !{{kostar|kostar inte}} mindre än [[price]] kr/kWh nu"
+        },
+        "hint": {
+          "en": "What one more kWh costs right now: the import price when buying, the lost export income when selling solar, otherwise what the battery's energy is worth later.",
+          "sv": "Vad en kWh till kostar just nu: köppriset vid köp, förlorad försäljning vid solöverskott, annars vad batteriets energi är värd senare."
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=solis-inverter"
+          },
+          {
+            "type": "number",
+            "name": "price",
+            "min": -5,
+            "max": 20,
+            "step": 0.05,
+            "placeholder": {
+              "en": "2.00"
+            }
+          }
+        ]
+      },
       {
         "id": "planned_action_is",
         "title": {
@@ -241,7 +462,11 @@
               }
             ]
           }
-        ]
+        ],
+        "hint": {
+          "en": "What the plan does in the current quarter-hour: charge from the grid, save the charge, or self-use (the battery runs the house).",
+          "sv": "Vad planen gör just denna kvart: ladda från nätet, spara laddningen eller egenanvändning (batteriet driver huset)."
+        }
       },
       {
         "id": "price_among_cheapest",
@@ -269,13 +494,21 @@
               "en": "4"
             }
           }
-        ]
+        ],
+        "hint": {
+          "en": "Compares the current import price with today's quarter-hour prices.",
+          "sv": "Jämför nuvarande köppris med dagens kvartspriser."
+        }
       },
       {
         "id": "weather_warning_active",
         "title": {
           "en": "An SMHI warning !{{is|is not}} active",
           "sv": "En SMHI-varning !{{är|är inte}} aktiv"
+        },
+        "hint": {
+          "en": "True while an SMHI warning at the chosen level covers Homey's location.",
+          "sv": "Sant medan en SMHI-varning på vald nivå gäller Homeys plats."
         },
         "args": [
           {
@@ -323,7 +556,11 @@
               }
             ]
           }
-        ]
+        ],
+        "hint": {
+          "en": "Monitor only never changes the inverter. Automatic writes the plan to the inverter.",
+          "sv": "Endast övervaka ändrar aldrig växelriktaren. Automatisk skriver planen till växelriktaren."
+        }
       },
       {
         "id": "force_charge",
@@ -351,7 +588,11 @@
               "en": "60"
             }
           }
-        ]
+        ],
+        "hint": {
+          "en": "Overrides the plan: charges from the grid for the given time, then the plan takes over again.",
+          "sv": "Går före planen: laddar från nätet under angiven tid, sedan tar planen över igen."
+        }
       },
       {
         "id": "hold_battery",
@@ -379,7 +620,11 @@
               "en": "60"
             }
           }
-        ]
+        ],
+        "hint": {
+          "en": "Overrides the plan: the battery neither charges nor discharges for the given time.",
+          "sv": "Går före planen: batteriet varken laddar eller laddar ur under angiven tid."
+        }
       },
       {
         "id": "prepare_outage",
@@ -407,13 +652,21 @@
               "en": "24"
             }
           }
-        ]
+        ],
+        "hint": {
+          "en": "Raises the reserve to the outage level (setting) for the given time, so the battery is filled.",
+          "sv": "Höjer reserven till avbrottsnivån (inställning) under angiven tid, så att batteriet fylls."
+        }
       },
       {
         "id": "clear_overrides",
         "title": {
           "en": "Cancel manual battery overrides",
           "sv": "Avbryt manuella batteriåtgärder"
+        },
+        "hint": {
+          "en": "Ends manual charge/save overrides and outage preparation, including preparation for the current SMHI warning.",
+          "sv": "Avslutar manuell laddning/sparning och avbrottsförberedelse, även för den aktuella SMHI-varningen."
         },
         "args": [
           {
@@ -428,6 +681,10 @@
         "title": {
           "en": "Update the battery plan now",
           "sv": "Uppdatera batteriplanen nu"
+        },
+        "hint": {
+          "en": "Fetches prices and forecasts and makes a new plan right away (normally every 30 minutes).",
+          "sv": "Hämtar priser och prognoser och gör en ny plan direkt (annars var 30:e minut)."
         },
         "args": [
           {
@@ -467,12 +724,18 @@
       "capabilities": [
         "measure_battery",
         "measure_power",
+        "solis_power_source",
+        "measure_solis_power_cost",
         "solis_control_mode",
         "solis_plan_status",
         "measure_solis_price",
         "measure_solis_pv",
         "measure_solis_load",
         "measure_solis_grid",
+        "measure_solis_surplus",
+        "measure_solis_solar_share",
+        "measure_solis_battery_share",
+        "measure_solis_grid_share",
         "measure_solis_pv_forecast",
         "measure_solis_reserve",
         "measure_solis_backup_hours",
@@ -485,8 +748,8 @@
       "capabilitiesOptions": {
         "measure_power": {
           "title": {
-            "en": "Battery power",
-            "sv": "Batteriets effekt"
+            "en": "Battery power (+ charging, − discharging)",
+            "sv": "Batteriets effekt (+ laddar, − laddar ur)"
           }
         },
         "meter_power.charged": {
@@ -1374,11 +1637,27 @@
       "decimals": 1,
       "insights": true
     },
+    "measure_solis_battery_share": {
+      "type": "number",
+      "title": {
+        "en": "House power from battery",
+        "sv": "Husets el från batteri"
+      },
+      "units": {
+        "en": "%"
+      },
+      "decimals": 0,
+      "insights": true,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/icons/reserve.svg"
+    },
     "measure_solis_grid": {
       "type": "number",
       "title": {
-        "en": "Grid power (+ import)",
-        "sv": "Nätets effekt (+ köp)"
+        "en": "Grid power (+ buying, − selling)",
+        "sv": "Nätets effekt (+ köp, − försäljning)"
       },
       "getable": true,
       "setable": false,
@@ -1390,10 +1669,26 @@
       "decimals": 0,
       "insights": true
     },
+    "measure_solis_grid_share": {
+      "type": "number",
+      "title": {
+        "en": "House power from grid",
+        "sv": "Husets el från nätet"
+      },
+      "units": {
+        "en": "%"
+      },
+      "decimals": 0,
+      "insights": true,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/icons/grid.svg"
+    },
     "measure_solis_load": {
       "type": "number",
       "title": {
-        "en": "House load",
+        "en": "House consumption",
         "sv": "Husets förbrukning"
       },
       "getable": true,
@@ -1406,11 +1701,27 @@
       "decimals": 0,
       "insights": true
     },
+    "measure_solis_power_cost": {
+      "type": "number",
+      "title": {
+        "en": "Cost of extra power now",
+        "sv": "Kostnad för extra el nu"
+      },
+      "units": {
+        "en": "kr/kWh"
+      },
+      "decimals": 2,
+      "insights": true,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/icons/price.svg"
+    },
     "measure_solis_price": {
       "type": "number",
       "title": {
-        "en": "Electricity price now",
-        "sv": "Elpris just nu"
+        "en": "Electricity price now (buying)",
+        "sv": "Elpris just nu (köp)"
       },
       "getable": true,
       "setable": false,
@@ -1425,8 +1736,8 @@
     "measure_solis_pv": {
       "type": "number",
       "title": {
-        "en": "Solar power",
-        "sv": "Solelproduktion"
+        "en": "Solar production",
+        "sv": "Solproduktion"
       },
       "getable": true,
       "setable": false,
@@ -1470,6 +1781,38 @@
       "decimals": 0,
       "insights": true
     },
+    "measure_solis_solar_share": {
+      "type": "number",
+      "title": {
+        "en": "House power from solar",
+        "sv": "Husets el från sol"
+      },
+      "units": {
+        "en": "%"
+      },
+      "decimals": 0,
+      "insights": true,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/icons/pv.svg"
+    },
+    "measure_solis_surplus": {
+      "type": "number",
+      "title": {
+        "en": "Solar surplus",
+        "sv": "Solöverskott"
+      },
+      "units": {
+        "en": "W"
+      },
+      "decimals": 0,
+      "insights": true,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/icons/pv.svg"
+    },
     "solis_control_mode": {
       "type": "enum",
       "title": {
@@ -1507,6 +1850,75 @@
       "setable": false,
       "uiComponent": "sensor",
       "icon": "/assets/icons/plan.svg"
+    },
+    "solis_power_source": {
+      "type": "enum",
+      "title": {
+        "en": "House powered by",
+        "sv": "Huset drivs av"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/icons/load.svg",
+      "values": [
+        {
+          "id": "solar",
+          "title": {
+            "en": "Solar",
+            "sv": "Sol"
+          }
+        },
+        {
+          "id": "solar_battery",
+          "title": {
+            "en": "Solar + battery",
+            "sv": "Sol + batteri"
+          }
+        },
+        {
+          "id": "battery",
+          "title": {
+            "en": "Battery",
+            "sv": "Batteri"
+          }
+        },
+        {
+          "id": "grid",
+          "title": {
+            "en": "Grid",
+            "sv": "Nät"
+          }
+        },
+        {
+          "id": "solar_grid",
+          "title": {
+            "en": "Solar + grid",
+            "sv": "Sol + nät"
+          }
+        },
+        {
+          "id": "battery_grid",
+          "title": {
+            "en": "Battery + grid",
+            "sv": "Batteri + nät"
+          }
+        },
+        {
+          "id": "solar_battery_grid",
+          "title": {
+            "en": "Solar + battery + grid",
+            "sv": "Sol + batteri + nät"
+          }
+        },
+        {
+          "id": "none",
+          "title": {
+            "en": "Nothing (no load)",
+            "sv": "Inget (ingen last)"
+          }
+        }
+      ]
     },
     "solis_warning": {
       "type": "string",

@@ -1,8 +1,8 @@
 {
   "type": "number",
   "title": {
-    "en": "Solar power",
-    "sv": "Solelproduktion"
+    "en": "Solar production",
+    "sv": "Solproduktion"
   },
   "getable": true,
   "setable": false,

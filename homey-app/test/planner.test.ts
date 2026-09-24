@@ -59,6 +59,21 @@ describe('planBattery', () => {
     assert.ok(plan.intervals[4].socEndPct >= 24, `SOC after 1.25 h: ${plan.intervals[4].socEndPct}`);
   });
 
+  it('values stored energy at what it costs to replace', () => {
+    const plan = planBattery({ ...base, socPct: 60, intervals: intervals('2026-09-24T00:00:00+02:00', DAY) });
+    const peak = plan.intervals[32]; // 08:00, 4.3 kr/kWh
+    // Energy used now can be recharged at night/midday prices (about 2.5 / 0.95 + margins).
+    assert.ok(peak.storedEnergyValue > 2.5 && peak.storedEnergyValue < 3.0, `peak value ${peak.storedEnergyValue}`);
+    assert.ok(peak.storedEnergyValue < peak.buy, 'cheaper than buying at the peak');
+  });
+
+  it('values stored energy close to the peak price when it cannot be replaced', () => {
+    // No grid charging possible: a kWh used before the evening peak must be bought at the peak.
+    const plan = planBattery({ ...base, socPct: 50, maxChargeKw: 0.01, intervals: intervals('2026-09-24T12:00:00+02:00', DAY.slice(48)) });
+    const beforePeak = plan.intervals[20]; // 17:00
+    assert.ok(beforePeak.storedEnergyValue > 3.2, `value ${beforePeak.storedEnergyValue}`); // peak price less losses and wear
+  });
+
   it('respects fixed actions', () => {
     const fixed = new Map<number, BatteryAction>([[0, 'hold'], [1, 'hold']]);
     const plan = planBattery({ ...base, socPct: 80, fixedActions: fixed, intervals: intervals('2026-09-24T07:00:00+02:00', DAY.slice(28)) });

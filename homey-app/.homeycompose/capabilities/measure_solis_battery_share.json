@@ -1,0 +1,16 @@
+{
+  "type": "number",
+  "title": {
+    "en": "House power from battery",
+    "sv": "Husets el från batteri"
+  },
+  "units": {
+    "en": "%"
+  },
+  "decimals": 0,
+  "insights": true,
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "icon": "/assets/icons/reserve.svg"
+}

@@ -1,8 +1,8 @@
 {
   "type": "number",
   "title": {
-    "en": "Grid power (+ import)",
-    "sv": "Nätets effekt (+ köp)"
+    "en": "Grid power (+ buying, − selling)",
+    "sv": "Nätets effekt (+ köp, − försäljning)"
   },
   "getable": true,
   "setable": false,

@@ -1,0 +1,69 @@
+{
+  "type": "enum",
+  "title": {
+    "en": "House powered by",
+    "sv": "Huset drivs av"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "icon": "/assets/icons/load.svg",
+  "values": [
+    {
+      "id": "solar",
+      "title": {
+        "en": "Solar",
+        "sv": "Sol"
+      }
+    },
+    {
+      "id": "solar_battery",
+      "title": {
+        "en": "Solar + battery",
+        "sv": "Sol + batteri"
+      }
+    },
+    {
+      "id": "battery",
+      "title": {
+        "en": "Battery",
+        "sv": "Batteri"
+      }
+    },
+    {
+      "id": "grid",
+      "title": {
+        "en": "Grid",
+        "sv": "Nät"
+      }
+    },
+    {
+      "id": "solar_grid",
+      "title": {
+        "en": "Solar + grid",
+        "sv": "Sol + nät"
+      }
+    },
+    {
+      "id": "battery_grid",
+      "title": {
+        "en": "Battery + grid",
+        "sv": "Batteri + nät"
+      }
+    },
+    {
+      "id": "solar_battery_grid",
+      "title": {
+        "en": "Solar + battery + grid",
+        "sv": "Sol + batteri + nät"
+      }
+    },
+    {
+      "id": "none",
+      "title": {
+        "en": "Nothing (no load)",
+        "sv": "Inget (ingen last)"
+      }
+    }
+  ]
+}

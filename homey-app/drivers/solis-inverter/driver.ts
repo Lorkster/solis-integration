@@ -9,6 +9,15 @@ export default class SolisInverterDriver extends Homey.Driver {
   override async onInit(): Promise<void> {
     const flow = this.homey.flow;
 
+    flow.getConditionCard('house_powered_by')
+      .registerRunListener(async ({ device, source }: DeviceArgs<{ source: 'solar' | 'battery' | 'grid' }>) => device.usesSource(source));
+    flow.getConditionCard('solar_surplus_above')
+      .registerRunListener(async ({ device, watts }: DeviceArgs<{ watts: number }>) => device.solarSurplusW() > watts);
+    flow.getConditionCard('power_cost_below')
+      .registerRunListener(async ({ device, price }: DeviceArgs<{ price: number }>) => {
+        const cost = device.extraPowerCost();
+        return cost !== null && cost < price;
+      });
     flow.getConditionCard('planned_action_is')
       .registerRunListener(async ({ device, action }: DeviceArgs<{ action: string }>) => device.currentAction() === action);
     flow.getConditionCard('price_among_cheapest')

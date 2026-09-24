@@ -7,12 +7,18 @@
   "capabilities": [
     "measure_battery",
     "measure_power",
+    "solis_power_source",
+    "measure_solis_power_cost",
     "solis_control_mode",
     "solis_plan_status",
     "measure_solis_price",
     "measure_solis_pv",
     "measure_solis_load",
     "measure_solis_grid",
+    "measure_solis_surplus",
+    "measure_solis_solar_share",
+    "measure_solis_battery_share",
+    "measure_solis_grid_share",
     "measure_solis_pv_forecast",
     "measure_solis_reserve",
     "measure_solis_backup_hours",
@@ -25,8 +31,8 @@
   "capabilitiesOptions": {
     "measure_power": {
       "title": {
-        "en": "Battery power",
-        "sv": "Batteriets effekt"
+        "en": "Battery power (+ charging, − discharging)",
+        "sv": "Batteriets effekt (+ laddar, − laddar ur)"
       }
     },
     "meter_power.charged": {

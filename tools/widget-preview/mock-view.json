@@ -1135,5 +1135,15 @@
     "pvKw": 0
    }
   ]
- }
+ },
+ "supply": {
+  "source": "solar_battery",
+  "title": "Solar + battery",
+  "solarPct": 70,
+  "batteryPct": 26,
+  "gridPct": 4,
+  "surplusW": 0
+ },
+ "extraPowerCost": 2.72,
+ "batteryLocked": false
 }

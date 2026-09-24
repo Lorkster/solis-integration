@@ -1,0 +1,127 @@
+// Regenerates the parts of docs/USER-GUIDE.md that describe the app's device values, settings and
+// flow cards, straight from the app's manifest files, and renders the widget screenshots.
+// Usage: node tools/gen-docs.mjs            (needs Microsoft Edge for the screenshots)
+//        node tools/gen-docs.mjs --no-images
+import { execFileSync } from 'node:child_process';
+import { readFileSync, writeFileSync, readdirSync, mkdirSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const app = join(root, 'homey-app');
+const guidePath = join(root, 'docs', 'USER-GUIDE.md');
+const read = (p) => JSON.parse(readFileSync(join(app, p), 'utf8'));
+
+const driver = read('drivers/solis-inverter/driver.compose.json');
+const flow = read('drivers/solis-inverter/driver.flow.compose.json');
+const customCaps = Object.fromEntries(readdirSync(join(app, '.homeycompose/capabilities'))
+  .map((f) => [f.replace('.json', ''), read(`.homeycompose/capabilities/${f}`)]));
+
+/** What each device value means, written for the user. Keyed by capability id. */
+const MEANING = {
+  measure_battery: 'Battery state of charge.',
+  measure_power: 'Battery power. Positive while charging, negative while discharging. Used by Homey Energy.',
+  solis_power_source: 'Which sources supply the house right now: solar, battery and/or grid. A source counts when it delivers at least 100 W and 5 % of the consumption.',
+  measure_solis_power_cost: 'What one more kWh costs right now: the import price while buying from the grid, the export income you give up while selling solar, otherwise what the battery\'s energy is worth later (from the plan). The best value to base "run it now?" automations on.',
+  solis_control_mode: '*Monitor only*: the app plans and shows, but never changes the inverter. *Automatic*: the app writes the charging schedule to the inverter.',
+  solis_plan_status: 'The planned charge and save periods for the next 24 hours, and when the plan was made.',
+  measure_solis_price: 'What you pay per kWh bought right now, including fees, taxes and VAT.',
+  measure_solis_pv: 'Total solar panel production.',
+  measure_solis_load: 'Total house consumption.',
+  measure_solis_grid: 'Power to or from the grid. Positive while buying, negative while selling.',
+  measure_solis_surplus: 'Solar production beyond the house consumption. It goes into the battery or to the grid.',
+  measure_solis_solar_share: 'Share of the house consumption covered by solar right now.',
+  measure_solis_battery_share: 'Share of the house consumption covered by the battery right now.',
+  measure_solis_grid_share: 'Share of the house consumption bought from the grid right now.',
+  measure_solis_pv_forecast: 'Expected solar production for the whole day, from the forecast calibrated against your panels.',
+  measure_solis_reserve: 'Battery level kept for power outages right now (seasonal, raised during SMHI warnings).',
+  measure_solis_backup_hours: 'How long the battery would last in a power outage at the current consumption, down to the inverter\'s outage limit.',
+  alarm_solis_battery_locked: 'On when a leftover SolisCloud command keeps the battery at 0 A. See the troubleshooting section.',
+  alarm_solis_weather: 'On while an SMHI warning covers Homey\'s location.',
+  solis_warning: 'Text of the active SMHI warning(s).',
+  'meter_power.charged': 'Total energy charged into the battery. Used by Homey Energy.',
+  'meter_power.discharged': 'Total energy discharged from the battery. Used by Homey Energy.',
+};
+
+const SYSTEM_TITLES = {
+  measure_battery: { en: 'Battery', sv: 'Batteri' },
+  'meter_power.charged': driver.capabilitiesOptions['meter_power.charged'].title,
+  'meter_power.discharged': driver.capabilitiesOptions['meter_power.discharged'].title,
+  measure_power: driver.capabilitiesOptions.measure_power.title,
+};
+
+const esc = (s) => String(s ?? '').replace(/\|/g, '\\|');
+const card = (title) => title.en.replace(/!\{\{([^|]*)\|([^}]*)\}\}/g, '$1 / $2').replace(/\[\[(\w+)\]\]/g, '*[$1]*');
+
+function capabilitiesTable() {
+  const rows = driver.capabilities.map((id) => {
+    const c = customCaps[id];
+    const title = SYSTEM_TITLES[id] ?? c?.title ?? { en: id };
+    const unit = c?.units?.en ?? (id === 'measure_battery' ? '%' : id === 'measure_power' ? 'W' : id.startsWith('meter_power') ? 'kWh' : '');
+    const values = c?.type === 'enum' ? `<br>Values: ${c.values.map((v) => v.title.en).join(', ')}` : '';
+    if (!MEANING[id]) throw new Error(`No user description for capability ${id}`);
+    return `| **${esc(title.en)}** | ${esc(title.sv ?? '')} | ${unit} | ${esc(MEANING[id])}${values} |`;
+  });
+  return ['| Value | In Swedish | Unit | What it means |', '|---|---|---|---|', ...rows].join('\n');
+}
+
+function settingsTable() {
+  const out = [];
+  for (const group of driver.settings) {
+    out.push(`**${group.label.en}**`, '', '| Setting | Default | What it does |', '|---|---|---|');
+    for (const s of group.children) {
+      let def = s.value;
+      if (s.type === 'checkbox') def = s.value ? 'on' : 'off';
+      if (s.type === 'dropdown') def = s.values.find((v) => v.id === s.value)?.label.en ?? s.value;
+      if (s.type === 'password' || (s.type === 'text' && !s.value)) def = '(from pairing)';
+      const unit = s.units?.en && typeof s.value === 'number' ? ` ${s.units.en}` : '';
+      out.push(`| ${esc(s.label.en)} | ${esc(`${def}${unit}`)} | ${esc(s.hint?.en ?? '')} |`);
+    }
+    out.push('');
+  }
+  return out.join('\n').trim();
+}
+
+function flowTables() {
+  const section = (name, cards, extra) => [
+    `**${name}**`, '', `| Card | ${extra === 'Tokens' ? 'Notes' : extra} |`, '|---|---|',
+    ...cards.map((c) => `| ${esc(card(c.titleFormatted ?? c.title))} | ${esc(
+      extra === 'Tokens'
+        ? [c.hint?.en, c.tokens?.length ? `Tokens: ${c.tokens.map((t) => t.title.en).join(', ')}` : ''].filter(Boolean).join(' ')
+        : c.hint?.en ?? '',
+    )} |`),
+    '',
+  ].join('\n');
+  return [
+    section('When… (triggers)', flow.triggers, 'Tokens'),
+    section('And… (conditions)', flow.conditions, 'Notes'),
+    section('Then… (actions)', flow.actions, 'Notes'),
+  ].join('\n').trim();
+}
+
+let guide = readFileSync(guidePath, 'utf8');
+for (const [name, content] of [['capabilities', capabilitiesTable()], ['settings', settingsTable()], ['flows', flowTables()]]) {
+  const re = new RegExp(`(<!-- generated:${name} -->)[\\s\\S]*?(<!-- /generated:${name} -->)`);
+  if (!re.test(guide)) throw new Error(`Marker for ${name} missing in USER-GUIDE.md`);
+  guide = guide.replace(re, `$1\n<!-- Generated by tools/gen-docs.mjs from the app manifest. Do not edit by hand. -->\n\n${content}\n\n$2`);
+}
+writeFileSync(guidePath, guide);
+console.log('Updated', guidePath);
+
+if (!process.argv.includes('--no-images')) {
+  const images = join(root, 'docs', 'images');
+  mkdirSync(images, { recursive: true });
+  for (const [widget, height] of [['battery-plan', 780], ['battery-status', 560]]) {
+    for (const theme of ['light', 'dark']) {
+      const out = join(images, `${widget}-${theme}.png`);
+      execFileSync('node', [join(root, 'tools/widget-preview/render.mjs'), widget, theme, '384', String(height), out]);
+      // Trim empty space below the card.
+      execFileSync('python', ['-c', `
+from PIL import Image
+im = Image.open(r"${out}").convert("RGB"); bg = im.getpixel((2, im.height - 2)); b = im.height
+while b > 0 and all(im.getpixel((x, b - 1)) == bg for x in range(0, 768, 16)): b -= 1
+im.crop((0, 0, 768, min(im.height, b + 24))).save(r"${out}", optimize=True)`]);
+      console.log('Rendered', out);
+    }
+  }
+}

@@ -55,11 +55,18 @@ export interface PlannedInterval {
   start: Date;
   end: Date;
   buy: number;
+  sell: number;
   action: BatteryAction;
   socStartPct: number;
   socEndPct: number;
   gridKwh: number; // positive = import
   batteryKwh: number; // stored energy change, positive = charging
+  /**
+   * What one more kWh taken out of the battery at the start of this interval costs later, in SEK
+   * (the slope of the optimal cost-to-go). High before an expensive peak, low when the battery
+   * will be refilled cheaply or by solar anyway.
+   */
+  storedEnergyValue: number;
 }
 
 export interface PlanResult {
@@ -129,6 +136,7 @@ export function planBattery(input: PlanInput): PlanResult {
   const terminal = new Float64Array(states);
   for (let i = 0; i < states; i++) terminal[i] = -terminalValue * Math.max(0, toEnergy(i) - reserveE);
   let next: Float64Array[] = ACTIONS.map(() => terminal);
+  const valueAt: Float64Array[] = new Array(n); // best cost-to-go per energy index at the start of t
   const policy: Uint8Array[][] = new Array(n); // policy[t][prev][i] = action index
 
   const costWithAction = new Float64Array(A);
@@ -161,6 +169,9 @@ export function planBattery(input: PlanInput): PlanResult {
       }
     }
     policy[t] = choice;
+    const best = new Float64Array(states);
+    for (let i = 0; i < states; i++) best[i] = Math.min(...current.map((c) => c[i]));
+    valueAt[t] = best;
     next = current;
   }
 
@@ -176,12 +187,30 @@ export function planBattery(input: PlanInput): PlanResult {
   const baselineCostSek = baseline.cost + endValue(baseline.endE);
 
   return {
-    intervals: optimal.intervals,
+    intervals: optimal.intervals.map((iv, t) => ({
+      ...iv,
+      storedEnergyValue: marginalValue(valueAt[t], iv.socStartPct / 100 * input.capacityKwh, reserveE),
+    })),
     costSek,
     baselineCostSek,
     savingsSek: baselineCostSek - costSek,
     terminalValuePerKwh: terminalValue,
   };
+}
+
+/**
+ * Cost of removing one kWh from the battery: the slope of the cost-to-go around the current energy
+ * level, taken over ±0.5 kWh to smooth the discretisation. Energy at or below the reserve is not
+ * available for normal use, so its value is not meaningful and the slope above it is used.
+ */
+function marginalValue(values: Float64Array, energyKwh: number, reserveKwh: number): number {
+  const span = Math.round(0.5 / ENERGY_STEP_KWH);
+  const last = values.length - 1;
+  const here = Math.min(last, Math.max(0, Math.round(Math.max(energyKwh, reserveKwh) / ENERGY_STEP_KWH)));
+  const lo = Math.max(0, here - span);
+  const hi = Math.min(last, here + span);
+  if (hi === lo) return 0;
+  return Math.max(0, (values[lo] - values[hi]) / ((hi - lo) * ENERGY_STEP_KWH));
 }
 
 function simulate(
@@ -201,11 +230,13 @@ function simulate(
       start: iv.start,
       end: iv.end,
       buy: iv.buy,
+      sell: iv.sell,
       action,
       socStartPct: e / input.capacityKwh * 100,
       socEndPct: endE / input.capacityKwh * 100,
       gridKwh: s.gridKwh,
       batteryKwh: s.delta,
+      storedEnergyValue: 0, // filled in by planBattery
     });
     cost += s.cost;
     e = endE;

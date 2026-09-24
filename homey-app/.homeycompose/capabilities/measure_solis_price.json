@@ -1,8 +1,8 @@
 {
   "type": "number",
   "title": {
-    "en": "Electricity price now",
-    "sv": "Elpris just nu"
+    "en": "Electricity price now (buying)",
+    "sv": "Elpris just nu (köp)"
   },
   "getable": true,
   "setable": false,

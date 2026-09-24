@@ -1,0 +1,16 @@
+{
+  "type": "number",
+  "title": {
+    "en": "House power from grid",
+    "sv": "Husets el från nätet"
+  },
+  "units": {
+    "en": "%"
+  },
+  "decimals": 0,
+  "insights": true,
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "icon": "/assets/icons/grid.svg"
+}

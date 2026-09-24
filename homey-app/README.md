@@ -1,5 +1,8 @@
 # Solis Smart Battery (Homey Pro app)
 
+> **Using the app?** See the [user guide](../docs/USER-GUIDE.md) and [INSTALL.md](../INSTALL.md).
+> This file is for development.
+
 Plans battery charging for a Solis hybrid inverter from Nord Pool prices and writes the plan into the
 inverter's own time-of-use slots, while keeping a backup reserve for power outages.
 
@@ -30,6 +33,13 @@ inverter's own time-of-use slots, while keeping a backup reserve for power outag
 
 The inverter connection is behind `InverterTransport` (`lib/inverter/types.ts`). `SolisCloudTransport`
 is the only implementation today; a local Modbus TCP transport can be added without touching the rest.
+
+## Documentation
+
+`docs/USER-GUIDE.md` is partly generated: the device values, settings and flow cards come from the
+manifest files, and the widget pictures are rendered from the widget code. After changing any of
+those, run `node tools/gen-docs.mjs` (CI fails if the generated parts are out of date).
+User-facing descriptions of device values live in `tools/gen-docs.mjs` (`MEANING`).
 
 ## User interface
 

@@ -41,12 +41,15 @@
       background: color-mix(in srgb, var(--homey-color-warning, #fab219) 22%, transparent); }
     .pill svg { width: 16px; height: 16px; flex: none; }
 
-    .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--homey-su-2, 8px); margin-top: var(--homey-su-3, 12px); }
+    .tiles { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--homey-su-2, 8px); margin-top: var(--homey-su-3, 12px); }
     .tile { padding: 10px; border-radius: 12px; background: var(--c-node); min-width: 0; }
     .tile-label { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--c-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .tile-label svg { width: 13px; height: 13px; flex: none; }
     .tile-value { margin-top: 4px; font-size: 18px; font-weight: 600; line-height: 1.1; }
     .tile-unit { font-size: 12px; font-weight: 400; color: var(--c-muted); }
+    .source { margin-top: var(--homey-su-2, 8px); font-size: 13px; text-align: center; }
+    .source b { font-weight: 600; }
+    .source span { color: var(--c-muted); }
     .footer { margin-top: var(--homey-su-2, 8px); font-size: 11px; color: var(--c-muted); text-align: right; }
     .message { color: var(--c-muted); font-size: 13px; padding: var(--homey-su-4, 16px) 0; text-align: center; }
   </style>
@@ -60,14 +63,16 @@
       en: {
         solar: 'Solar', grid: 'Grid', house: 'House', battery: 'Battery',
         importing: 'import', exporting: 'export', charging: 'charging', discharging: 'discharging', idle: 'idle',
-        backup: 'Backup time', reserve: 'Reserve', price: 'Price now',
+        backup: 'Backup time', reserve: 'Reserve', price: 'Price now', extra: 'Extra power now',
+        poweredBy: 'House powered by', fromSolar: 'solar', fromBattery: 'battery', fromGrid: 'grid',
         locked: 'Battery locked by SolisCloud – release it with Quick Control → Discharge (short duration)',
         updated: (t) => `Data from ${t}`, waiting: 'Waiting for data…', notPaired: 'Add your Solis inverter in Homey to see its status.',
       },
       sv: {
         solar: 'Sol', grid: 'Nät', house: 'Hus', battery: 'Batteri',
         importing: 'köp', exporting: 'sälj', charging: 'laddar', discharging: 'laddar ur', idle: 'vila',
-        backup: 'Reservtid', reserve: 'Reserv', price: 'Pris nu',
+        backup: 'Reservtid', reserve: 'Reserv', price: 'Pris nu', extra: 'Extra el nu',
+        poweredBy: 'Huset drivs av', fromSolar: 'sol', fromBattery: 'batteri', fromGrid: 'nät',
         locked: 'Batteriet låst av SolisCloud – frigör med Snabbkontroll → Urladdning (kort tid)',
         updated: (t) => `Data från ${t}`, waiting: 'Väntar på data…', notPaired: 'Lägg till din Solis-växelriktare i Homey för att se status.',
       },
@@ -81,6 +86,7 @@
       shield: '<path d="M12 21.5s7.5-3.2 7.5-9.5V5.5L12 2.5 4.5 5.5V12c0 6.3 7.5 9.5 7.5 9.5z"/>',
       tag: '<path d="M20.6 12.6l-8 8a1.4 1.4 0 01-2 0L3 13V3h10l7.6 7.6a1.4 1.4 0 010 2z"/><circle cx="7.5" cy="7.5" r="1.3"/>',
       clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+      bolt: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
       warning: '<path d="M10.3 3.7L2.4 17.5A2 2 0 004.1 20.5h15.8a2 2 0 001.7-3L13.7 3.7a2 2 0 00-3.4 0z"/><path d="M12 9v4.5M12 16.8v.1"/>',
     };
     const icon = (name) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${PATHS[name]}</svg>`;
@@ -203,6 +209,18 @@
         root.appendChild(pill);
       }
       renderFlow(root);
+      if (view.supply) {
+        const s = view.supply;
+        const line = document.createElement('div');
+        line.className = 'source';
+        const shares = [[s.solarPct, t.fromSolar], [s.batteryPct, t.fromBattery], [s.gridPct, t.fromGrid]]
+          .filter(([pct]) => pct > 0).map(([pct, name]) => `${pct} % ${name}`).join(' · ');
+        line.innerHTML = '<span></span> <b></b><br><span class="shares"></span>';
+        line.querySelector('span').textContent = t.poweredBy;
+        line.querySelector('b').textContent = s.title;
+        line.querySelector('.shares').textContent = shares;
+        root.appendChild(line);
+      }
 
       const tiles = document.createElement('div');
       tiles.className = 'tiles';
@@ -212,6 +230,8 @@
       const now = nowMs();
       const current = view.plan && view.plan.intervals.find((iv) => new Date(iv.t).getTime() <= now && new Date(iv.t).getTime() + 900e3 > now);
       tile(tiles, 'tag', t.price, current ? current.price.toLocaleString(locale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '–', 'kr/kWh');
+      tile(tiles, 'bolt', t.extra, view.extraPowerCost === null || view.extraPowerCost === undefined
+        ? '–' : view.extraPowerCost.toLocaleString(locale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 }), 'kr/kWh');
       root.appendChild(tiles);
 
       const footer = document.createElement('div');

@@ -1,0 +1,16 @@
+{
+  "type": "number",
+  "title": {
+    "en": "Cost of extra power now",
+    "sv": "Kostnad för extra el nu"
+  },
+  "units": {
+    "en": "kr/kWh"
+  },
+  "decimals": 2,
+  "insights": true,
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "icon": "/assets/icons/price.svg"
+}

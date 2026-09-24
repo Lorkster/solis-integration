@@ -1,0 +1,16 @@
+{
+  "type": "number",
+  "title": {
+    "en": "House power from solar",
+    "sv": "Husets el från sol"
+  },
+  "units": {
+    "en": "%"
+  },
+  "decimals": 0,
+  "insights": true,
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "icon": "/assets/icons/pv.svg"
+}

@@ -3,6 +3,7 @@ import Homey from 'homey';
 import { BatteryController, type ControllerConfig, currentAction, type PlanState } from '../../lib/controller/BatteryController.js';
 import { LoadProfile, type LoadProfileData } from '../../lib/forecast/LoadProfile.js';
 import { type CalibrationData, looksCurtailed, SolarCalibration, SolarForecaster } from '../../lib/forecast/SolarForecast.js';
+import { extraPowerCost, houseSupply, type HouseSupply, usesSource } from '../../lib/energy/EnergyFlow.js';
 import { LockDetector } from '../../lib/inverter/LockDetector.js';
 import type { InverterTransport, LiveData } from '../../lib/inverter/types.js';
 import type { BatteryAction } from '../../lib/planner/planner.js';
@@ -58,6 +59,8 @@ export default class SolisInverterDevice extends Homey.Device {
   /** Battery floor during a power outage, read from the inverter (Solis default 20-30 %). */
   private offGridFloorSoc: number | null = null;
   private readonly lock = new LockDetector();
+  private supply: HouseSupply | null = null;
+  private lastCostReported: number | null = null;
 
   override async onInit(): Promise<void> {
     const tz = this.homey.clock.getTimezone();
@@ -155,6 +158,22 @@ export default class SolisInverterDevice extends Homey.Device {
     await this.replan();
   }
 
+  usesSource(part: 'solar' | 'battery' | 'grid'): boolean {
+    return this.supply ? usesSource(this.supply.source, part) : false;
+  }
+
+  solarSurplusW(): number {
+    return this.supply?.surplusW ?? 0;
+  }
+
+  /** What one more kWh costs right now (SEK/kWh), or null before the first plan. */
+  extraPowerCost(): number | null {
+    const now = new Date();
+    const iv = this.planState?.plan.intervals.find((i) => i.start <= now && i.end > now);
+    if (!iv || !this.live) return null;
+    return extraPowerCost(this.live.gridPowerW, iv.buy, iv.sell, iv.storedEnergyValue);
+  }
+
   currentAction(): BatteryAction | null {
     return currentAction(this.planState, new Date());
   }
@@ -199,6 +218,15 @@ export default class SolisInverterDevice extends Homey.Device {
       outageUntil: this.controller.outage?.until.toISOString() ?? null,
       offGridFloorSoc: this.backupFloor(),
       batteryLocked: this.lock.locked,
+      supply: this.supply && {
+        source: this.supply.source,
+        title: this.sourceTitle(this.supply.source),
+        solarPct: this.supply.solarPct,
+        batteryPct: this.supply.batteryPct,
+        gridPct: this.supply.gridPct,
+        surplusW: Math.round(this.supply.surplusW),
+      },
+      extraPowerCost: round(this.extraPowerCost() ?? NaN, 2),
       plan: state && {
         generatedAt: state.generatedAt.toISOString(),
         reserveSoc: state.reserveSoc,
@@ -299,6 +327,7 @@ export default class SolisInverterDevice extends Homey.Device {
       }
       await this.setAvailable();
       await this.updateLock(live);
+      await this.updateEnergyFlow(live);
       const set = (cap: string, value: number) => (Number.isFinite(value) ? this.setCapabilityValue(cap, value) : undefined);
       await Promise.all([
         set('measure_battery', live.socPct),
@@ -315,6 +344,47 @@ export default class SolisInverterDevice extends Homey.Device {
       this.error('Live data failed:', err);
       if (!this.live) await this.setUnavailable(`SolisCloud: ${(err as Error).message}`);
     }
+  }
+
+  /** Publishes where the house's power comes from and what extra power costs, with flow triggers. */
+  private async updateEnergyFlow(live: LiveData): Promise<void> {
+    const previous = this.supply?.source;
+    this.supply = houseSupply({ pvW: live.pvPowerW, loadW: live.loadPowerW, gridW: live.gridPowerW, batteryW: live.batteryPowerW });
+    const s = this.supply;
+    await Promise.all([
+      this.setCapabilityValue('solis_power_source', s.source),
+      this.setCapabilityValue('measure_solis_solar_share', s.solarPct),
+      this.setCapabilityValue('measure_solis_battery_share', s.batteryPct),
+      this.setCapabilityValue('measure_solis_grid_share', s.gridPct),
+      this.setCapabilityValue('measure_solis_surplus', Math.round(s.surplusW)),
+    ]);
+    if (previous !== undefined && previous !== s.source) {
+      await this.homey.flow.getDeviceTriggerCard('power_source_changed').trigger(this, {
+        source: this.sourceTitle(s.source), solar_share: s.solarPct, battery_share: s.batteryPct, grid_share: s.gridPct,
+      }).catch(this.error);
+    }
+    await this.updatePowerCost();
+  }
+
+  private async updatePowerCost(): Promise<void> {
+    const cost = this.extraPowerCost();
+    if (cost === null) return;
+    const rounded = Math.round(cost * 100) / 100;
+    await this.setCapabilityValue('measure_solis_power_cost', rounded);
+    if (this.lastCostReported !== null && Math.abs(rounded - this.lastCostReported) >= 0.1) {
+      await this.homey.flow.getDeviceTriggerCard('power_cost_changed').trigger(this, { cost: rounded }).catch(this.error);
+    }
+    if (this.lastCostReported === null || Math.abs(rounded - this.lastCostReported) >= 0.1) this.lastCostReported = rounded;
+  }
+
+  private sourceTitle(source: string): string {
+    const sv = this.homey.i18n.getLanguage() === 'sv';
+    const names: Record<string, [string, string]> = {
+      solar: ['Solar', 'Sol'], solar_battery: ['Solar + battery', 'Sol + batteri'], battery: ['Battery', 'Batteri'],
+      grid: ['Grid', 'Nät'], solar_grid: ['Solar + grid', 'Sol + nät'], battery_grid: ['Battery + grid', 'Batteri + nät'],
+      solar_battery_grid: ['Solar + battery + grid', 'Sol + batteri + nät'], none: ['Nothing', 'Inget'],
+    };
+    return (names[source] ?? [source, source])[sv ? 1 : 0];
   }
 
   /** Warns when a leftover SolisCloud remote command keeps the battery frozen at 0 A. */
@@ -432,6 +502,7 @@ export default class SolisInverterDevice extends Homey.Device {
       const state = await this.controller.buildPlan(this.live, now);
       this.planState = state;
       await this.updatePlanCapabilities(state, now);
+      await this.updatePowerCost();
 
       if (this.controlMode === 'auto') {
         const changes = await this.controller.apply(state);

@@ -2,9 +2,9 @@ name: Homey app
 
 on:
   push:
-    paths: ['homey-app/**', '.github/workflows/homey-app.yml']
+    paths: ['homey-app/**', 'docs/**', 'tools/**', '.github/workflows/homey-app.yml']
   pull_request:
-    paths: ['homey-app/**', '.github/workflows/homey-app.yml']
+    paths: ['homey-app/**', 'docs/**', 'tools/**', '.github/workflows/homey-app.yml']
 
 jobs:
   check:
@@ -23,3 +23,8 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npx homey app validate --level publish
+      - name: Generated documentation is up to date
+        working-directory: .
+        run: |
+          node tools/gen-docs.mjs --no-images
+          git diff --exit-code docs/USER-GUIDE.md
