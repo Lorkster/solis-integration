@@ -2,51 +2,68 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import type { BatteryAction, PlannedInterval } from '../lib/planner/planner.js';
-import { planSummary } from '../lib/planner/summary.js';
+import { planPeriods, planSummary } from '../lib/planner/summary.js';
 import { TZ } from './helpers.js';
 
-function plan(start: string, spec: Array<[BatteryAction, number, number]>): PlannedInterval[] {
-  // spec: [action, quarters, SOC at start]
+/** spec: [action, quarters, SOC at start, battery kWh per quarter (+ charging)] */
+function plan(start: string, spec: Array<[BatteryAction, number, number, number?]>): PlannedInterval[] {
   const out: PlannedInterval[] = [];
   let t = new Date(start).getTime();
-  for (const [action, quarters, soc] of spec) {
+  for (const [action, quarters, soc, kwh = 0] of spec) {
     for (let i = 0; i < quarters; i++, t += 900_000) {
-      out.push({ start: new Date(t), end: new Date(t + 900_000), buy: 3, sell: 1, action, socStartPct: soc, socEndPct: soc, gridKwh: 0, batteryKwh: 0, storedEnergyValue: 0 });
+      out.push({
+        start: new Date(t), end: new Date(t + 900_000), buy: 3, sell: 1, action,
+        socStartPct: soc, socEndPct: soc, gridKwh: 0, batteryKwh: kwh, storedEnergyValue: 0,
+      });
     }
   }
   return out;
 }
 
-function withBattery(intervals: PlannedInterval[], kwhPerQuarter: number, from: number, to: number): PlannedInterval[] {
-  return intervals.map((iv, i) => (i >= from && i < to ? { ...iv, batteryKwh: kwhPerQuarter } : iv));
-}
+const RESERVE = 25;
+const MAX = 100;
+
+describe('planPeriods', () => {
+  it('names every period by what powers what (24–25 Sep plan)', () => {
+    const day = plan('2026-09-24T18:45:00+02:00', [
+      ['self_use', 9, 61, -0.6], // battery powers the house until 21:00
+      ['self_use', 48, 26, 0], // at reserve overnight
+      ['self_use', 12, 26, 0.3], // solar charging 09:00–12:00
+      ['charge', 7, 34, 1.5], // grid charging 12:00–13:45
+      ['hold', 8, 84, 0], // saving 13:45–15:45
+    ]);
+    const periods = planPeriods(day, RESERVE, MAX).map((p) => p.state);
+    assert.deepEqual(periods, ['battery', 'at_reserve', 'solar_charge', 'grid_charge', 'save']);
+  });
+
+  it('merges short dips into the surrounding period but keeps planned charging', () => {
+    const day = plan('2026-09-25T09:00:00+02:00', [
+      ['self_use', 8, 30, 0.3], // solar charging
+      ['self_use', 1, 32, -0.1], // 15 min dip
+      ['self_use', 8, 32, 0.3], // solar charging
+      ['charge', 1, 40, 1.5], // 15 min planned charge: kept
+    ]);
+    assert.deepEqual(planPeriods(day, RESERVE, MAX).map((p) => p.state), ['solar_charge', 'grid_charge']);
+  });
+
+  it('recognises a full battery with solar covering the house', () => {
+    const day = plan('2026-07-01T11:00:00+02:00', [['self_use', 8, 100, 0]]);
+    assert.equal(planPeriods(day, RESERVE, MAX)[0].state, 'full');
+  });
+});
 
 describe('planSummary', () => {
-  // 24 Sep 18:15: self-use until 21:45, then save overnight until 07:15 (crosses midnight).
-  const evening = plan('2026-09-24T18:15:00+02:00', [['self_use', 14, 67], ['hold', 38, 40], ['self_use', 8, 40]]);
+  const evening = plan('2026-09-24T18:15:00+02:00', [['self_use', 11, 61, -0.6], ['self_use', 60, 26, 0], ['charge', 7, 30, 1.5]]);
 
-  it('merges periods across midnight and starts with what happens now', () => {
-    assert.equal(planSummary(evening, new Date('2026-09-24T18:16:00+02:00'), 25, TZ), 'Self-use now · Save 21:45–07:15');
-    assert.equal(planSummary(evening, new Date('2026-09-24T18:16:00+02:00'), 25, TZ, 'sv'), 'Egenanvändning nu · Spara 21:45–07:15');
+  it('says what happens now and the next battery periods', () => {
+    assert.equal(planSummary(evening, new Date('2026-09-24T18:16:00+02:00'), RESERVE, MAX, TZ),
+      'Battery powers house until 21:00 · Grid charging 12:00–13:45');
+    assert.equal(planSummary(evening, new Date('2026-09-24T18:16:00+02:00'), RESERVE, MAX, TZ, 'sv'),
+      'Batteriet driver huset till 21:00 · Nätladdning 12:00–13:45');
   });
 
-  it('names periods where the battery covers the house', () => {
-    const evening2 = withBattery(evening, -0.6, 0, 14); // 2.4 kW out of the battery until 21:45
-    assert.equal(planSummary(evening2, new Date('2026-09-24T18:16:00+02:00'), 25, TZ), 'Use battery until 21:45 · Save 21:45–07:15');
-  });
-
-  it('leaves out brief dips where the battery helps a little', () => {
-    const morning = withBattery(plan('2026-09-25T09:00:00+02:00', [['self_use', 16, 26]]), -0.1, 0, 2); // 0.2 kWh in 30 min
-    assert.equal(planSummary(morning, new Date('2026-09-25T09:00:00+02:00'), 25, TZ), 'Self-use now · no charging or saving needed');
-  });
-
-  it('says until when the current action lasts', () => {
-    const night = plan('2026-09-25T02:00:00+02:00', [['charge', 13, 30], ['hold', 7, 80], ['self_use', 4, 80]]);
-    assert.equal(planSummary(night, new Date('2026-09-25T02:05:00+02:00'), 25, TZ), 'Charge until 05:15 · Save 05:15–07:00');
-  });
-
-  it('hides saves at the reserve level and says when nothing is planned', () => {
-    const idle = plan('2026-09-24T22:00:00+02:00', [['self_use', 4, 29], ['hold', 8, 27]]); // 2 points above the reserve
-    assert.equal(planSummary(idle, new Date('2026-09-24T22:00:00+02:00'), 25, TZ), 'Self-use now · no charging or saving needed');
+  it('hides saves too close to the reserve', () => {
+    const idle = plan('2026-09-24T22:00:00+02:00', [['self_use', 4, 29, -0.3], ['hold', 8, 27]]);
+    assert.equal(planSummary(idle, new Date('2026-09-24T22:00:00+02:00'), RESERVE, MAX, TZ), 'Battery powers house until 23:00');
   });
 });

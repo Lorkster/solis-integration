@@ -180,8 +180,8 @@
           }
         ],
         "hint": {
-          "en": "Fires when the plan switches between charge, save and self-use. Action is charge, hold or self_use.",
-          "sv": "Körs när planen byter mellan ladda, spara och egenanvändning. Åtgärd är charge, hold eller self_use."
+          "en": "Fires when the plan switches between grid charging, saving for later and self-use. Action is charge, hold or self_use.",
+          "sv": "Körs när planen byter mellan nätladdning, sparande och egenanvändning. Åtgärd är charge, hold eller self_use."
         },
         "args": [
           {
@@ -442,30 +442,30 @@
               {
                 "id": "charge",
                 "title": {
-                  "en": "charging from grid",
-                  "sv": "laddning från nätet"
+                  "en": "grid charging",
+                  "sv": "nätladdning"
                 }
               },
               {
                 "id": "hold",
                 "title": {
-                  "en": "holding charge",
-                  "sv": "spara laddningen"
+                  "en": "saving for later",
+                  "sv": "sparar till senare"
                 }
               },
               {
                 "id": "self_use",
                 "title": {
-                  "en": "self-use",
-                  "sv": "egenanvändning"
+                  "en": "self-use (battery powers the house when needed)",
+                  "sv": "egenanvändning (batteriet driver huset vid behov)"
                 }
               }
             ]
           }
         ],
         "hint": {
-          "en": "What the plan does in the current quarter-hour: charge from the grid, save the charge, or self-use (the battery runs the house).",
-          "sv": "Vad planen gör just denna kvart: ladda från nätet, spara laddningen eller egenanvändning (batteriet driver huset)."
+          "en": "What the plan does in the current quarter-hour. In self-use the battery powers the house when needed, stores solar surplus, and stops at the reserve.",
+          "sv": "Vad planen gör just denna kvart. Vid egenanvändning driver batteriet huset vid behov, lagrar solöverskott och stannar vid reserven."
         }
       },
       {

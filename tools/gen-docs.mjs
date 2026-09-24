@@ -24,7 +24,7 @@ const MEANING = {
   solis_power_source: 'Which sources power the house right now: solar, battery and/or grid. A source counts when it delivers at least 100 W and 5 % of the consumption.',
   measure_solis_power_cost: 'What one more kWh costs right now: the import price while buying from the grid, the export income you give up while selling solar, otherwise what the battery\'s energy is worth later (from the plan). The best value to base "run it now?" automations on.',
   solis_control_mode: '*Monitor only*: the app plans and shows, but never changes the inverter. *Automatic*: the app writes the charging schedule to the inverter.',
-  solis_plan_status: 'What the battery does now and the next planned periods, e.g. "Self-use now · Save 21:45–07:15".',
+  solis_plan_status: 'What happens now and the next battery periods, e.g. "Battery powers house until 21:00 · Grid charging 13:45–15:30".',
   measure_solis_price: 'What you pay per kWh bought right now, including fees, taxes and VAT.',
   measure_solis_pv: 'Total solar panel production.',
   measure_solis_load: 'Total house consumption.',

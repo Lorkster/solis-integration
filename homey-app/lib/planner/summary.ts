@@ -3,97 +3,141 @@ import type { BatteryAction, PlannedInterval } from './planner.js';
 
 export type Language = 'en' | 'sv';
 
-export type DisplayState = BatteryAction | 'use';
+/**
+ * What the battery and house are doing in a period, named by what powers what. Every quarter-hour
+ * gets exactly one state, so nothing in the plan is left unexplained.
+ */
+export type PeriodState = 'grid_charge' | 'save' | 'battery' | 'solar_charge' | 'at_reserve' | 'full';
 
-const WORDS: Record<Language, Record<DisplayState | 'now' | 'until' | 'none', string>> = {
-  en: { charge: 'Charge', hold: 'Save', use: 'Use battery', self_use: 'Self-use', now: 'now', until: 'until', none: 'no charging or saving needed' },
-  sv: { charge: 'Ladda', hold: 'Spara', use: 'Använd batteri', self_use: 'Egenanvändning', now: 'nu', until: 'till', none: 'ingen laddning eller sparning behövs' },
+export const PERIOD_STATES: readonly PeriodState[] = ['grid_charge', 'save', 'battery', 'solar_charge', 'at_reserve', 'full'];
+
+/** Names used in lists, legends and on the device tile. */
+export const PERIOD_NAMES: Record<Language, Record<PeriodState, string>> = {
+  en: {
+    grid_charge: 'Grid charging',
+    save: 'Saving for later',
+    battery: 'Battery powers house',
+    solar_charge: 'Solar charging',
+    at_reserve: 'At reserve · grid powers house',
+    full: 'Full · solar powers house',
+  },
+  sv: {
+    grid_charge: 'Nätladdning',
+    save: 'Sparar till senare',
+    battery: 'Batteriet driver huset',
+    solar_charge: 'Solladdning',
+    at_reserve: 'Vid reserv · nätet driver huset',
+    full: 'Fullt · solen driver huset',
+  },
 };
 
-/** A quarter-hour counts as "use" when the battery is planned to deliver at least this (kWh). */
-const MIN_USE_KWH_PER_QUARTER = 0.05;
-/** A "use" period is only worth showing when it lasts and delivers this much. */
-export const MIN_USE_MINUTES = 30;
-export const MIN_USE_KWH = 0.5;
+const UNTIL: Record<Language, string> = { en: 'until', sv: 'till' };
 
 /**
  * A "save" only makes sense with a meaningful amount of energy above the reserve (5 percentage
- * points, about 1 kWh on a 21.7 kWh battery). Smaller saves are not sent to the inverter and are
- * shown as self-use.
+ * points, about 1 kWh on a 21.7 kWh battery). Smaller saves are not sent to the inverter.
  */
 export const MIN_SAVE_ABOVE_RESERVE_PCT = 5;
+/** Periods shorter than this (other than planned charging and saving) merge into their neighbour. */
+export const MIN_PERIOD_MINUTES = 30;
+/** Battery flow per quarter-hour (kWh) below which the battery counts as not moving. */
+const MOVING_KWH_PER_QUARTER = 0.05;
 
 export function isPointlessSave(action: BatteryAction, socStartPct: number, reserveSoc: number): boolean {
   return action === 'hold' && socStartPct < reserveSoc + MIN_SAVE_ABOVE_RESERVE_PCT;
 }
 
-/** Display action of an interval, with pointless saves shown as self-use. */
+/** Plan action with pointless saves treated as self-use (they are not sent to the inverter). */
 export function displayAction(iv: PlannedInterval, reserveSoc: number): BatteryAction {
   return isPointlessSave(iv.action, iv.socStartPct, reserveSoc) ? 'self_use' : iv.action;
 }
 
-/** Like displayAction, but self-use where the battery covers the house is "use". */
-export function displayState(iv: PlannedInterval, reserveSoc: number): DisplayState {
+/** State of a single quarter-hour. */
+export function intervalState(iv: PlannedInterval, reserveSoc: number, maxSoc: number): PeriodState {
   const action = displayAction(iv, reserveSoc);
-  return action === 'self_use' && iv.batteryKwh <= -MIN_USE_KWH_PER_QUARTER ? 'use' : action;
+  if (action === 'charge') return 'grid_charge';
+  if (action === 'hold') return 'save';
+  if (iv.batteryKwh <= -MOVING_KWH_PER_QUARTER) return 'battery';
+  if (iv.batteryKwh >= MOVING_KWH_PER_QUARTER) return 'solar_charge';
+  return iv.socStartPct >= maxSoc - 2 ? 'full' : 'at_reserve';
 }
 
-interface Block {
-  action: DisplayState;
+export interface Period {
+  state: PeriodState;
   start: Date;
   end: Date;
-  kwh: number; // energy delivered by the battery (use blocks)
+  socStartPct: number;
+  socEndPct: number;
 }
 
-function blocks(intervals: PlannedInterval[], reserveSoc: number): Block[] {
-  const out: Block[] = [];
+const PLANNED: ReadonlySet<PeriodState> = new Set(['grid_charge', 'save']);
+
+/**
+ * Groups the plan into named periods. Short periods that are just the battery following the house
+ * (a brief dip or a moment of solar surplus) merge into the period before them, so the list shows
+ * what matters. Planned charging and saving are never merged away: they are what the inverter does.
+ */
+export function planPeriods(intervals: PlannedInterval[], reserveSoc: number, maxSoc: number): Period[] {
+  const raw: Period[] = [];
   for (const iv of intervals) {
-    const action = displayState(iv, reserveSoc);
-    const kwh = Math.max(0, -iv.batteryKwh);
-    const last = out[out.length - 1];
-    if (last && last.action === action && last.end.getTime() === iv.start.getTime()) {
+    const state = intervalState(iv, reserveSoc, maxSoc);
+    const last = raw[raw.length - 1];
+    if (last && last.state === state && last.end.getTime() === iv.start.getTime()) {
       last.end = iv.end;
-      last.kwh += kwh;
+      last.socEndPct = iv.socEndPct;
     } else {
-      out.push({ action, start: iv.start, end: iv.end, kwh });
+      raw.push({ state, start: iv.start, end: iv.end, socStartPct: iv.socStartPct, socEndPct: iv.socEndPct });
     }
   }
-  // Brief dips where the house slightly exceeds solar are noise: show them as self-use.
-  const merged: Block[] = [];
-  for (const b of out) {
-    const minutes = (b.end.getTime() - b.start.getTime()) / 60_000;
-    const action = b.action === 'use' && (minutes < MIN_USE_MINUTES || b.kwh < MIN_USE_KWH) ? 'self_use' : b.action;
-    const last = merged[merged.length - 1];
-    if (last && last.action === action) {
-      last.end = b.end;
-      last.kwh += b.kwh;
+
+  const minutes = (p: Period) => (p.end.getTime() - p.start.getTime()) / 60_000;
+  const out: Period[] = [];
+  for (let i = 0; i < raw.length; i++) {
+    const p = raw[i];
+    const last = out[out.length - 1];
+    if (!PLANNED.has(p.state) && minutes(p) < MIN_PERIOD_MINUTES) {
+      if (last && !PLANNED.has(last.state)) {
+        last.end = p.end;
+        last.socEndPct = p.socEndPct;
+        continue;
+      }
+      const next = raw[i + 1];
+      if (next && !PLANNED.has(next.state)) {
+        next.start = p.start;
+        next.socStartPct = p.socStartPct;
+        continue;
+      }
+    }
+    if (last && last.state === p.state) {
+      last.end = p.end;
+      last.socEndPct = p.socEndPct;
     } else {
-      merged.push({ ...b, action });
+      out.push({ ...p });
     }
   }
-  return merged;
+  return out;
 }
 
 /**
- * One short line for the device tile: what the battery does now and the next planned periods,
- * e.g. "Self-use now · Save 21:45–07:15" or "Charge until 05:15 · Save 05:15–07:00".
+ * One short line for the device tile: what happens now and the next periods that involve the
+ * battery, e.g. "Battery powers house until 21:00 · Grid charging 13:45–15:30".
  */
 export function planSummary(
   intervals: PlannedInterval[],
   now: Date,
   reserveSoc: number,
+  maxSoc: number,
   timeZone: string,
   language: Language = 'en',
 ): string {
-  const w = WORDS[language];
+  const names = PERIOD_NAMES[language];
   const upcoming = intervals.filter((iv) => iv.end > now && iv.start < new Date(now.getTime() + 86_400_000));
   if (upcoming.length === 0) return '';
-  const [current, ...rest] = blocks(upcoming, reserveSoc);
-  const head = current.action === 'self_use'
-    ? `${w.self_use} ${w.now}`
-    : `${w[current.action]} ${w.until} ${localHHMM(current.end, timeZone)}`;
-  const next = rest.filter((b) => b.action !== 'self_use').slice(0, 2)
-    .map((b) => `${w[b.action]} ${localHHMM(b.start, timeZone)}–${localHHMM(b.end, timeZone)}`);
-  if (next.length === 0 && current.action === 'self_use') return `${head} · ${w.none}`;
+  const [current, ...rest] = planPeriods(upcoming, reserveSoc, maxSoc);
+  const head = `${names[current.state]} ${UNTIL[language]} ${localHHMM(current.end, timeZone)}`;
+  const next = rest
+    .filter((p) => p.state === 'grid_charge' || p.state === 'save' || p.state === 'battery')
+    .slice(0, 2)
+    .map((p) => `${names[p.state]} ${localHHMM(p.start, timeZone)}–${localHHMM(p.end, timeZone)}`);
   return [head, ...next].join(' · ');
 }

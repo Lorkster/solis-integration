@@ -7,7 +7,7 @@ import { extraPowerCost, houseSupply, type HouseSupply, usesSource } from '../..
 import { LockDetector } from '../../lib/inverter/LockDetector.js';
 import type { InverterTransport, LiveData } from '../../lib/inverter/types.js';
 import type { BatteryAction } from '../../lib/planner/planner.js';
-import { displayState, planSummary } from '../../lib/planner/summary.js';
+import { intervalState, planPeriods, planSummary } from '../../lib/planner/summary.js';
 import { ElprisetJustNuProvider, type PriceArea } from '../../lib/prices/PriceProvider.js';
 import { SolisCloudTransport } from '../../lib/solis/SolisCloudTransport.js';
 import { addDays, addMinutes, localDate, localHHMM } from '../../lib/time.js';
@@ -239,12 +239,17 @@ export default class SolisInverterDevice extends Homey.Device {
         slots: state.schedule.chargeSlots.filter((s) => s.enabled),
         learnedLoad: this.loadProfile.observations >= 96 * 3,
         solarForecast: Boolean(this.solar),
+        periods: planPeriods(state.plan.intervals, state.reserveSoc, this.controller.config.maxSocPct).map((p) => ({
+          state: p.state,
+          start: p.start.toISOString(),
+          end: p.end.toISOString(),
+          socEnd: round(p.socEndPct),
+        })),
         intervals: state.plan.intervals.map((iv) => ({
           t: iv.start.toISOString(),
           price: round(iv.buy, 3),
           // Holds at the reserve keep nothing and are not sent to the inverter; show them as self-use.
-          action: displayState(iv, state.reserveSoc),
-          batteryKw: round(iv.batteryKwh * 4, 2),
+          state: intervalState(iv, state.reserveSoc, this.controller.config.maxSocPct),
           soc: round(iv.socEndPct, 1),
           loadKw: round(this.loadProfile.predict(iv.start) ?? this.controller.config.avgLoadKw, 2),
           pvKw: round(this.solar?.forecastAt(iv.start) ?? 0, 2),
@@ -590,6 +595,7 @@ export default class SolisInverterDevice extends Homey.Device {
 
   private summarise(state: PlanState): string {
     const language = this.homey.i18n.getLanguage() === 'sv' ? 'sv' : 'en';
-    return planSummary(state.plan.intervals, new Date(), state.reserveSoc, this.homey.clock.getTimezone(), language);
+    return planSummary(state.plan.intervals, new Date(), state.reserveSoc, this.controller.config.maxSocPct,
+      this.homey.clock.getTimezone(), language);
   }
 }

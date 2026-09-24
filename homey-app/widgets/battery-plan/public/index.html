@@ -9,6 +9,7 @@
       --c-hold: #e87ba4;
       --c-solar: #eda100;
       --c-use: #008300;
+      --c-quiet: var(--homey-text-color-light, #8a8a8e);
       --c-ink: var(--homey-text-color, #1a1a1a);
       --c-muted: var(--homey-text-color-light, #8a8a8e);
       --c-grid: rgba(0, 0, 0, 0.08);
@@ -48,6 +49,7 @@
     .axis-text { font-size: 10px; fill: var(--c-muted); font-variant-numeric: tabular-nums; }
     .panel-title { font-size: 10px; fill: var(--c-muted); font-weight: 600; letter-spacing: 0.02em; }
     .band-label { font-size: 10px; fill: var(--c-ink); font-weight: 600; }
+    .band-label.quiet { fill: var(--c-muted); font-weight: 400; }
 
     .tooltip { position: absolute; top: 0; pointer-events: none; min-width: 132px; padding: 8px 10px; border-radius: 8px;
       background: var(--c-surface); box-shadow: 0 2px 12px rgba(0, 0, 0, 0.18); font-size: 12px; line-height: 1.45; display: none; z-index: 2; }
@@ -71,8 +73,6 @@
     .row .what { flex: 1; }
     .row .when { font-variant-numeric: tabular-nums; }
     .row .target { color: var(--c-muted); font-variant-numeric: tabular-nums; min-width: 44px; text-align: right; }
-    .empty { color: var(--c-muted); font-size: 13px; padding: 6px 0; }
-    .note { color: var(--c-muted); font-size: 11px; line-height: 1.4; padding-top: 6px; border-top: 1px solid var(--c-grid); }
 
     .footer { display: flex; justify-content: space-between; gap: 8px; margin-top: var(--homey-su-2, 8px); font-size: 11px; color: var(--c-muted); }
     .footer b { color: var(--c-ink); font-weight: 600; }
@@ -87,40 +87,54 @@
 
     const TEXT = {
       en: {
-        charge: 'Charging from the grid', hold: 'Saving the battery', use: 'Battery covers the house', self_use: 'Self-use',
-        chargeSub: (until, soc) => `until ${until} · to ${soc} %`,
-        holdSub: (until) => `until ${until}, for higher prices`,
-        useSub: (until, soc) => `until ${until} · down to ${soc} %`,
-        selfSubNext: (what, at) => `next: ${what} at ${at}`,
-        selfSubNone: 'no grid charging needed',
-        chargeShort: 'Charge', holdShort: 'Save', useShort: 'Use', selfShort: 'Self-use',
+        names: {
+          grid_charge: 'Grid charging', save: 'Saving for later', battery: 'Battery powers house',
+          solar_charge: 'Solar charging', at_reserve: 'At reserve · grid powers house', full: 'Full · solar powers house',
+        },
+        bands: { grid_charge: 'Grid', save: 'Save', battery: 'Battery', solar_charge: 'Solar', at_reserve: 'Reserve', full: 'Full' },
+        titles: {
+          grid_charge: 'Charging from the grid', save: 'Saving the battery for later', battery: 'Battery powers the house',
+          solar_charge: 'Solar charges the battery', at_reserve: 'Battery at reserve', full: 'Battery full',
+        },
+        subs: {
+          grid_charge: (u, soc) => `until ${u} · to ${soc} %`, save: (u) => `until ${u} · grid powers the house`,
+          battery: (u, soc) => `until ${u} · down to ${soc} %`, solar_charge: (u, soc) => `until ${u} · up to ${soc} %`,
+          at_reserve: (u) => `until ${u} · grid powers the house`, full: (u) => `until ${u} · solar powers the house`,
+        },
+        quiet: 'At reserve / full',
         monitor: 'Monitor only – the app is not controlling the inverter',
         locked: 'Battery locked by SolisCloud – release it with Quick Control → Discharge (short duration)',
         outage: (until) => `Preparing for a power outage until ${until}`,
         price: 'Price kr/kWh', energy: 'Solar & load kW', battery: 'Battery %',
         solar: 'Solar', load: 'Load', reserve: 'Reserve', now: 'Now',
-        next24: 'Next 24 hours', noSlots: 'Nothing planned – the battery runs on self-use.',
-        between: 'Between these periods the battery runs self-use: it stores surplus solar and covers the house down to the reserve.',
+        next24: 'Next 24 hours',
         saves: (kr) => `≈ <b>${kr} kr</b> cheaper than plain self-use`,
         updated: (t) => `Updated ${t}`,
         waiting: 'Waiting for the first plan…', notPaired: 'Add your Solis inverter in Homey to see the plan.',
         today: 'Today', tomorrow: 'Tomorrow', soc: 'charged',
       },
       sv: {
-        charge: 'Laddar från nätet', hold: 'Sparar batteriet', use: 'Batteriet försörjer huset', self_use: 'Egenanvändning',
-        chargeSub: (until, soc) => `till ${until} · upp till ${soc} %`,
-        holdSub: (until) => `till ${until}, inför dyrare priser`,
-        useSub: (until, soc) => `till ${until} · ner till ${soc} %`,
-        selfSubNext: (what, at) => `nästa: ${what} kl. ${at}`,
-        selfSubNone: 'ingen nätladdning behövs',
-        chargeShort: 'Ladda', holdShort: 'Spara', useShort: 'Använd', selfShort: 'Egenanvändning',
+        names: {
+          grid_charge: 'Nätladdning', save: 'Sparar till senare', battery: 'Batteriet driver huset',
+          solar_charge: 'Solladdning', at_reserve: 'Vid reserv · nätet driver huset', full: 'Fullt · solen driver huset',
+        },
+        bands: { grid_charge: 'Nät', save: 'Spara', battery: 'Batteri', solar_charge: 'Sol', at_reserve: 'Reserv', full: 'Fullt' },
+        titles: {
+          grid_charge: 'Laddar från nätet', save: 'Sparar batteriet till senare', battery: 'Batteriet driver huset',
+          solar_charge: 'Solen laddar batteriet', at_reserve: 'Batteriet vid reserv', full: 'Batteriet fullt',
+        },
+        subs: {
+          grid_charge: (u, soc) => `till ${u} · upp till ${soc} %`, save: (u) => `till ${u} · nätet driver huset`,
+          battery: (u, soc) => `till ${u} · ner till ${soc} %`, solar_charge: (u, soc) => `till ${u} · upp till ${soc} %`,
+          at_reserve: (u) => `till ${u} · nätet driver huset`, full: (u) => `till ${u} · solen driver huset`,
+        },
+        quiet: 'Vid reserv / fullt',
         monitor: 'Endast övervakning – appen styr inte växelriktaren',
         locked: 'Batteriet låst av SolisCloud – frigör med Snabbkontroll → Urladdning (kort tid)',
         outage: (until) => `Förbereder för strömavbrott till ${until}`,
         price: 'Pris kr/kWh', energy: 'Sol & förbrukning kW', battery: 'Batteri %',
         solar: 'Sol', load: 'Förbrukning', reserve: 'Reserv', now: 'Nu',
-        next24: 'Kommande 24 timmar', noSlots: 'Inget planerat – batteriet går på egenanvändning.',
-        between: 'Mellan perioderna går batteriet på egenanvändning: det lagrar solöverskott och försörjer huset ner till reserven.',
+        next24: 'Kommande 24 timmar',
         saves: (kr) => `≈ <b>${kr} kr</b> billigare än vanlig egenanvändning`,
         updated: (t) => `Uppdaterad ${t}`,
         waiting: 'Väntar på den första planen…', notPaired: 'Lägg till din Solis-växelriktare i Homey för att se planen.',
@@ -129,10 +143,12 @@
     };
 
     const ICON = {
-      charge: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
-      hold: '<rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>',
-      self_use: '<path d="M3 11l9-7.5 9 7.5"/><path d="M5.5 9.5V20h13V9.5"/>',
-      use: '<rect x="6" y="4" width="12" height="17" rx="2"/><path d="M10 2h4M12 16V9M9 12l3-3 3 3"/>',
+      grid_charge: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
+      save: '<rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>',
+      battery: '<rect x="6" y="4" width="12" height="17" rx="2"/><path d="M10 2h4M12 16V9M9 12l3-3 3 3"/>',
+      solar_charge: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+      at_reserve: '<path d="M12 21.5s7.5-3.2 7.5-9.5V5.5L12 2.5 4.5 5.5V12c0 6.3 7.5 9.5 7.5 9.5z"/>',
+      full: '<rect x="6" y="4" width="12" height="17" rx="2"/><path d="M10 2h4M9 8h6M9 12h6M9 16h6"/>',
       warning: '<path d="M10.3 3.7L2.4 17.5A2 2 0 004.1 20.5h15.8a2 2 0 001.7-3L13.7 3.7a2 2 0 00-3.4 0z"/><path d="M12 9v4.5M12 16.8v.1"/>',
       shield: '<path d="M12 21.5s7.5-3.2 7.5-9.5V5.5L12 2.5 4.5 5.5V12c0 6.3 7.5 9.5 7.5 9.5z"/>',
       eye: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
@@ -140,8 +156,11 @@
     const icon = (name, color) =>
       `<svg viewBox="0 0 24 24" fill="none" stroke="${color || 'currentColor'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[name]}</svg>`;
 
-    const ACTION_COLOR = { charge: 'var(--c-charge)', hold: 'var(--c-hold)', use: 'var(--c-use)', self_use: 'transparent' };
-    const SHORT = (T, action) => ({ charge: T.chargeShort, hold: T.holdShort, use: T.useShort, self_use: T.selfShort })[action];
+    const STATE_COLOR = {
+      grid_charge: 'var(--c-charge)', save: 'var(--c-hold)', battery: 'var(--c-use)',
+      solar_charge: 'var(--c-solar)', at_reserve: 'var(--c-quiet)', full: 'var(--c-quiet)',
+    };
+    const QUIET = new Set(['at_reserve', 'full']);
 
     let view = null;
     let hoursShown = 36;
@@ -173,51 +192,30 @@
       return view.plan.intervals.filter((iv) => new Date(iv.t).getTime() < end);
     }
 
-    /**
-     * Groups consecutive intervals with the same action into blocks. Brief "use" dips (under
-     * 30 minutes or 0.5 kWh) are shown as self-use, like on the device tile.
-     */
-    function blocks(intervals) {
-      const out = [];
-      intervals.forEach((iv, i) => {
-        const kwh = Math.max(0, -(iv.batteryKw || 0) / 4);
-        const last = out[out.length - 1];
-        if (last && last.action === iv.action) { last.to = i; last.soc = iv.soc; last.kwh += kwh; }
-        else out.push({ action: iv.action, from: i, to: i, soc: iv.soc, kwh });
-      });
-      const merged = [];
-      for (const b of out) {
-        const minutes = (b.to - b.from + 1) * 15;
-        const action = b.action === 'use' && (minutes < 30 || b.kwh < 0.5) ? 'self_use' : b.action;
-        const last = merged[merged.length - 1];
-        if (last && last.action === action) { last.to = b.to; last.soc = b.soc; last.kwh += b.kwh; }
-        else merged.push({ ...b, action });
-      }
-      return merged;
+    /** The app's periods within the visible intervals, with interval indexes for drawing. */
+    function periods(intervals) {
+      const t0 = new Date(intervals[0].t).getTime();
+      const n = intervals.length;
+      return (view.plan.periods || [])
+        .map((p) => ({ ...p, from: Math.round((new Date(p.start).getTime() - t0) / 900e3), to: Math.round((new Date(p.end).getTime() - t0) / 900e3) - 1 }))
+        .filter((p) => p.to >= 0 && p.from < n)
+        .map((p) => ({ ...p, from: Math.max(0, p.from), to: Math.min(n - 1, p.to) }));
     }
 
     function renderHeader(root, intervals) {
       const T = t();
       const current = intervals[0];
-      const bl = blocks(intervals);
-      const first = bl[0];
-      const endIso = (b) => { const iv = intervals[b.to]; return new Date(new Date(iv.t).getTime() + 900e3).toISOString(); };
-      let sub;
-      if (first.action === 'charge') sub = T.chargeSub(fmtTime(endIso(first)), Math.round(first.soc));
-      else if (first.action === 'hold') sub = T.holdSub(fmtTime(endIso(first)));
-      else if (first.action === 'use') sub = T.useSub(fmtTime(endIso(first)), Math.round(first.soc));
-      else {
-        const next = bl.find((b) => b.action !== 'self_use');
-        sub = next ? T.selfSubNext(SHORT(T, next.action).toLowerCase(), fmtTime(intervals[next.from].t)) : T.selfSubNone;
-      }
+      const first = periods(intervals)[0];
+      const state = first ? first.state : current.state;
+      const sub = first ? T.subs[state](fmtTime(first.end), Math.round(first.socEnd)) : '';
       const soc = view.live ? view.live.socPct : Math.round(current.soc);
       const header = document.createElement('div');
       header.className = 'status';
       header.innerHTML = `
-        <div class="status-icon">${icon(current.action, current.action === 'self_use' ? 'var(--c-ink)' : ACTION_COLOR[current.action])}</div>
+        <div class="status-icon">${icon(state, QUIET.has(state) ? 'var(--c-ink)' : STATE_COLOR[state])}</div>
         <div class="status-text"><div class="status-title"></div><div class="status-sub"></div></div>
         <div class="soc"><div class="soc-value">${soc} %</div><div class="soc-label">${T.soc}</div></div>`;
-      header.querySelector('.status-title').textContent = T[current.action];
+      header.querySelector('.status-title').textContent = T.titles[state];
       header.querySelector('.status-sub').textContent = sub;
       root.appendChild(header);
 
@@ -286,13 +284,18 @@
 
       // Action washes across all panels, a solid strip on top of the price panel, and direct labels.
       const top = panels[0].top, bottom = panels[panels.length - 1].bottom;
-      for (const b of blocks(intervals)) {
-        if (b.action === 'self_use') continue;
+      for (const b of periods(intervals)) {
         const x0 = x(b.from), x1 = x(b.to + 1);
-        svg.appendChild(el('rect', { x: x0, y: top, width: Math.max(x1 - x0, 1), height: bottom - top, fill: ACTION_COLOR[b.action], opacity: b.action === 'use' ? 0.07 : 0.1 }));
-        svg.appendChild(el('rect', { x: x0, y: top, width: Math.max(x1 - x0 - 2, 1), height: 3, rx: 1.5, fill: ACTION_COLOR[b.action] }));
-        const label = SHORT(T, b.action);
-        if (x1 - x0 > label.length * 6 + 8) svg.appendChild(el('text', { x: x0 + 4, y: top + 14, class: 'band-label' }, label));
+        const quiet = QUIET.has(b.state);
+        if (!quiet) {
+          const wash = b.state === 'battery' || b.state === 'solar_charge' ? 0.07 : 0.1;
+          svg.appendChild(el('rect', { x: x0, y: top, width: Math.max(x1 - x0, 1), height: bottom - top, fill: STATE_COLOR[b.state], opacity: wash }));
+        }
+        svg.appendChild(el('rect', { x: x0, y: top, width: Math.max(x1 - x0 - 2, 1), height: 3, rx: 1.5, fill: STATE_COLOR[b.state], opacity: quiet ? 0.6 : 1 }));
+        const label = T.bands[b.state];
+        if (x1 - x0 > label.length * 6 + 8) {
+          svg.appendChild(el('text', { x: x0 + 4, y: top + 14, class: quiet ? 'band-label quiet' : 'band-label' }, label));
+        }
       }
 
       for (const p of panels) {
@@ -404,7 +407,7 @@
           tip.appendChild(r);
         };
         row('var(--c-ink)', `${fmtNum(iv.price, 2)} kr`, '/kWh');
-        row(iv.action === 'self_use' ? 'var(--c-muted)' : ACTION_COLOR[iv.action], SHORT(T, iv.action), '');
+        row(STATE_COLOR[iv.state], T.names[iv.state], '');
         if (showEnergy) {
           row('var(--c-solar)', `${fmtNum(iv.pvKw, 1)} kW`, T.solar);
           row('var(--c-muted)', `${fmtNum(iv.loadKw, 1)} kW`, T.load);
@@ -438,9 +441,10 @@
       const legend = document.createElement('div');
       legend.className = 'legend';
       const item = (html) => { const s = document.createElement('span'); s.innerHTML = html; legend.appendChild(s); };
-      item(`<i class="swatch" style="background:var(--c-charge)"></i>${T.chargeShort}`);
-      item(`<i class="swatch" style="background:var(--c-hold)"></i>${T.holdShort}`);
-      item(`<i class="swatch" style="background:var(--c-use)"></i>${T.useShort}`);
+      for (const state of ['grid_charge', 'save', 'battery', 'solar_charge']) {
+        item(`<i class="swatch" style="background:${STATE_COLOR[state]}"></i>${T.names[state]}`);
+      }
+      item(`<i class="swatch" style="background:var(--c-quiet);opacity:.6"></i>${T.quiet}`);
       if (showEnergy) {
         item(`<i class="key" style="background:var(--c-solar)"></i>${T.solar}`);
         item(`<i class="key" style="background:var(--c-muted)"></i>${T.load}`);
@@ -456,29 +460,16 @@
       h.textContent = T.next24;
       section.appendChild(h);
       const horizon = nowMs() + 24 * 3600e3;
-      const upcoming = blocks(intervals).filter((b) => b.action !== 'self_use' && new Date(intervals[b.from].t).getTime() < horizon).slice(0, 6);
-      if (upcoming.length === 0) {
-        const empty = document.createElement('div');
-        empty.className = 'empty';
-        empty.textContent = T.noSlots;
-        section.appendChild(empty);
-      }
-      for (const b of upcoming) {
+      const upcoming = periods(intervals).filter((p) => new Date(p.start).getTime() < horizon).slice(0, 8);
+      for (const p of upcoming) {
         const row = document.createElement('div');
         row.className = 'row';
-        const end = new Date(new Date(intervals[b.to].t).getTime() + 900e3).toISOString();
         row.innerHTML = '<span class="dot"></span><span class="what"></span><span class="when"></span><span class="target"></span>';
-        row.querySelector('.dot').style.background = ACTION_COLOR[b.action];
-        row.querySelector('.what').textContent = SHORT(T, b.action);
-        row.querySelector('.when').textContent = `${fmtTime(intervals[b.from].t)}–${fmtTime(end)}`;
-        row.querySelector('.target').textContent = `${Math.round(b.soc)} %`;
+        row.querySelector('.dot').style.background = STATE_COLOR[p.state];
+        row.querySelector('.what').textContent = T.names[p.state];
+        row.querySelector('.when').textContent = `${fmtTime(new Date(Math.max(new Date(p.start).getTime(), nowMs())).toISOString())}–${fmtTime(p.end)}`;
+        row.querySelector('.target').textContent = `${p.socEnd} %`;
         section.appendChild(row);
-      }
-      if (upcoming.length) {
-        const note = document.createElement('div');
-        note.className = 'note';
-        note.textContent = T.between;
-        section.appendChild(note);
       }
       root.appendChild(section);
     }

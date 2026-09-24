@@ -40,22 +40,29 @@ Dark mode: [battery plan](images/battery-plan-dark.png), [battery status](images
 
 ### Battery plan
 
-- **Top line**: what the battery does right now, in words (*Charging from the grid*, *Saving the
-  battery*, *Battery covers the house*, *Self-use*), until when, and the battery level.
+Every part of the plan is named by what powers what. The same names are used in the chart, the
+list and on the device tile:
+
+| Name | What happens |
+|---|---|
+| **Grid charging** (blue) | The battery charges from the grid, because power is cheap now. |
+| **Saving for later** (pink) | The battery keeps its charge for more expensive hours; the grid powers the house. |
+| **Battery powers house** (green) | The battery covers the house instead of the grid. |
+| **Solar charging** (yellow) | Solar surplus charges the battery. |
+| **At reserve · grid powers house** (grey) | The battery is down to the reserve, kept for power outages; the grid powers the house. |
+| **Full · solar powers house** (grey) | The battery is full; solar powers the house and the rest is sold. |
+
+- **Top line**: what is happening now, until when, and to which battery level.
 - **Notices** (when relevant): SMHI warning, preparing for an outage, battery locked by SolisCloud,
   or *Monitor only – the app is not controlling the inverter*.
-- **Three charts on one time axis**:
-  - **Price kr/kWh** – what you pay per kWh, with the plan marked on top: blue is *Charge* (from the
-    grid), pink is *Save* (the battery keeps its charge for more expensive hours), green is *Use* (the
-    battery runs the house). Unmarked time is plain self-use where the battery is idle, for example
-    because solar covers the house or the battery is at its reserve.
-  - **Solar & load kW** – expected solar production (yellow) and house consumption (grey).
+- **Three charts on one time axis**, with the periods marked on top:
+  - **Price kr/kWh** – what you pay per kWh.
+  - **Solar & load kW** – expected solar production (yellow line) and house consumption (grey line).
   - **Battery %** – the expected battery level, the dot is the level now, the dashed line the reserve.
-- **Touch and drag** across the charts (or use the arrow keys) to see price, action, solar, load and
+- **Touch and drag** across the charts (or use the arrow keys) to see price, period, solar, load and
   battery level for any quarter-hour.
-- **Next 24 hours** lists the charge, save and use periods with the battery level they end at.
-  Brief dips (under 30 minutes or 0.5 kWh) are left out. Between the periods the battery runs
-  self-use: it stores surplus solar and covers the house down to the reserve.
+- **Next 24 hours** lists the periods with the battery level each one ends at. Periods shorter than
+  30 minutes where the battery just follows the house are merged into their neighbours.
 - **Bottom line**: how much the plan saves compared with plain self-use, and when it was updated.
 
 Widget settings: *Time shown* (24, 36 or 48 hours) and *Show solar and load forecast*.
@@ -90,7 +97,7 @@ chosen as the device's tile indicator, and all numbers and alarms are kept in Ho
 | **Power source** | Elkälla |  | Which sources power the house right now: solar, battery and/or grid. A source counts when it delivers at least 100 W and 5 % of the consumption.<br>Values: Solar, Solar + battery, Battery, Grid, Solar + grid, Battery + grid, Solar + battery + grid, Nothing (no load) |
 | **Cost of extra power now** | Kostnad för extra el nu | kr/kWh | What one more kWh costs right now: the import price while buying from the grid, the export income you give up while selling solar, otherwise what the battery's energy is worth later (from the plan). The best value to base "run it now?" automations on. |
 | **Control mode** | Styrläge |  | *Monitor only*: the app plans and shows, but never changes the inverter. *Automatic*: the app writes the charging schedule to the inverter.<br>Values: Monitor only, Automatic |
-| **Plan** | Plan |  | What the battery does now and the next planned periods, e.g. "Self-use now · Save 21:45–07:15". |
+| **Plan** | Plan |  | What happens now and the next battery periods, e.g. "Battery powers house until 21:00 · Grid charging 13:45–15:30". |
 | **Electricity price now (buying)** | Elpris just nu (köp) | kr/kWh | What you pay per kWh bought right now, including fees, taxes and VAT. |
 | **Solar production** | Solproduktion | W | Total solar panel production. |
 | **House consumption** | Husets förbrukning | W | Total house consumption. |
@@ -231,7 +238,7 @@ So the rule becomes one condition: **Extra power costs less than 2.00 kr/kWh now
 | What powers the house changed | Fires when the combination of solar, battery and grid that runs the house changes. Tokens: Powered by, From solar (%), From battery (%), From grid (%) |
 | The cost of extra power changed | Fires when the cost of using one more kWh changes by at least 0.10 kr. Tokens: Cost (kr/kWh) |
 | The battery plan was updated | Fires every time a new plan is made (about every 30 minutes). Tokens: Summary, Expected savings (SEK) |
-| The planned battery action changed | Fires when the plan switches between charge, save and self-use. Action is charge, hold or self_use. Tokens: Action |
+| The planned battery action changed | Fires when the plan switches between grid charging, saving for later and self-use. Action is charge, hold or self_use. Tokens: Action |
 | An SMHI warning was issued for my location | Fires once per new warning at the chosen level that covers Homey's location. Tokens: Level, Warning, Area, Until |
 | The SMHI warnings for my location ended | Fires when no warning at the chosen level covers Homey's location any more. |
 | The battery was locked by SolisCloud | A leftover SolisCloud remote command holds the battery at 0 A. Release it with Quick Control → Discharge with a duration in SolisCloud. |
@@ -244,7 +251,7 @@ So the rule becomes one condition: **Extra power costs less than 2.00 kr/kWh now
 | The house is / is not using power from *[source]* | True when the source delivers at least 100 W and 5 % of the house consumption. |
 | Solar surplus is / is not above *[watts]* W | Surplus = solar production minus house consumption; it goes into the battery or to the grid. |
 | Extra power costs / does not cost less than *[price]* kr/kWh now | What one more kWh costs right now: the import price when buying, the lost export income when selling solar, otherwise what the battery's energy is worth later. |
-| Planned action is / is not *[action]* | What the plan does in the current quarter-hour: charge from the grid, save the charge, or self-use (the battery runs the house). |
+| Planned action is / is not *[action]* | What the plan does in the current quarter-hour. In self-use the battery powers the house when needed, stores solar surplus, and stops at the reserve. |
 | Price is / is not among the *[hours]* cheapest hours today | Compares the current import price with today's quarter-hour prices. |
 | An SMHI warning is / is not active | True while an SMHI warning at the chosen level covers Homey's location. |
 
