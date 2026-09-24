@@ -23,10 +23,21 @@ that with the Wi-Fi logger that is already fitted, instead of the Waveshare RS48
 - Reported problems: occasional logger resets, and the logger needs to reach its cloud server to
   stay connected.
 
+## Status on this installation (24 Sep 2026)
+
+The logger was found by its `D_<serial>` name and **already answered on port 502** – Modbus TCP was
+on without any change. A read-only read of the key registers took under a second and matched
+SolisCloud (SOC, battery, solar, house, grid, grid voltage). The meter power register (33263) is
+negative while importing, like SolisCloud's `psum`. SolisCloud kept receiving its 5-minute
+uploads afterwards, so the logger serves both at once. The logger's address is now reserved in the
+router. Next: a longer read-only run (`--watch 30`) during a day, then the local transport.
+
 ## Steps
 
-1. **Find the logger's address** in the router's list of connected devices. It usually shows up as
-   an unnamed device or with a name starting with the logger's serial number.
+1. **Find the logger's address** in the router's list of connected devices. The S2-WL-ST names
+   itself **`D_` followed by its serial number** (the logger serial in SolisCloud), and its web page
+   is not always on port 80, so it is easy to miss. `python tools/modbus_probe.py --find` lists the
+   addresses that answer on port 502.
 2. **Give it a fixed address** in the router (DHCP reservation), so the app can find it.
 3. **Switch Modbus TCP on.** Open `http://<logger address>` in a browser (user `admin`; you choose the
    password at the first login), then **Advanced → LAN settings / Modbus TCP**: enable it on port 502.
