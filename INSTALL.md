@@ -93,7 +93,8 @@ SMHI warnings.
 ### 7. Add the dashboard widgets
 
 In the Homey app, open a dashboard (or create one), tap the **pencil** to edit it, then
-**+ Add Widget → Apps → Solis Smart Battery** and choose:
+**+ Add Widget → Apps → Solis Smart Battery** and choose (step-by-step instructions with pictures:
+[user guide](docs/USER-GUIDE.md#adding-the-widgets-to-a-dashboard)):
 
 - **Battery plan**: prices, planned charging and saving, solar and load forecast, battery level.
   Touch and drag across the chart to see the details for any quarter-hour.

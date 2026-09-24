@@ -26,11 +26,35 @@ Installing, updating and removing the app is described in [INSTALL.md](../INSTAL
 
 ## Dashboard widgets
 
-Add them in the Homey app: open a dashboard (or create one), tap the **pencil** to edit it, then
-**+ Add Widget → Apps → Solis Smart Battery** and pick *Battery plan* or *Battery status*.
-Widgets size themselves to their content.
-Both follow Homey's light and dark mode. The pictures below are rendered from the widget code with
-real prices and consumption from 23–24 September 2026.
+The app has two widgets for Homey dashboards: **Battery plan** and **Battery status**. Both follow
+Homey's light and dark mode and size themselves to their content. The pictures below are rendered
+from the widget code with real prices and consumption from 23–24 September 2026.
+
+### Adding the widgets to a dashboard
+
+1. **Open a dashboard** in the Homey app (phone or [my.homey.app](https://my.homey.app)).
+   The dashboard's name is shown at the top; tap the name (▾) to switch dashboards or create a new
+   one, for example *Energy*.
+2. **Tap the pencil** (top right) to edit the dashboard.
+3. **Tap + Add Widget**, choose the **Apps** tab and then **Solis Smart Battery**.
+4. **Pick a widget**: *Battery plan* or *Battery status*. Repeat for the other one.
+5. For **Battery plan**, choose the widget settings:
+   - *Time shown*: 24, 36 or 48 hours (default 36).
+   - *Show solar and load forecast*: on or off (default on).
+6. **Drag the widgets** into the order you want and **tap ✕** (top right) to stop editing.
+
+To change a widget's settings later, edit the dashboard again and tap the widget. To remove it,
+edit the dashboard and delete the widget; the app and its device are not affected.
+
+**Tips**
+
+- The two widgets work well together: *Battery status* for what happens right now, *Battery plan*
+  for the coming day and a half.
+- On the phone, touch and drag across the *Battery plan* charts to see the details of any
+  quarter-hour.
+- If a widget shows *Waiting for the first plan…*, the app has just started; the plan appears within
+  a minute. *Add your Solis inverter* means the device has not been added yet (see
+  [INSTALL.md](../INSTALL.md#5-add-the-inverter-in-homey)).
 
 | Battery plan | Battery status |
 |---|---|
