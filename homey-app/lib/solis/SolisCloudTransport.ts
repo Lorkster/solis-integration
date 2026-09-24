@@ -85,6 +85,23 @@ export class SolisCloudTransport implements InverterTransport {
     return this.writeSlot(DISCHARGE_SLOT_CIDS[index], slot, previous);
   }
 
+  /**
+   * The 12 slot switches are bits of one inverter register (charge slots 1-6 = bits 0-5, discharge
+   * slots 1-6 = bits 6-11). SolisCloud flips the bit of the CID that is written and computes the
+   * new register value from the "old value" sent along, so that must be the whole bit field as it is
+   * now - sending just the slot's own old value clears every other slot.
+   */
+  private async switchBitField(): Promise<string> {
+    const cids = [...CHARGE_SLOT_CIDS, ...DISCHARGE_SLOT_CIDS].map((s) => s.switch);
+    const values = await this.client.readBatch(this.serialNumber, cids);
+    const mask = cids.reduce((m, cid, bit) => (values.get(cid) === '1' ? m | (1 << bit) : m), 0);
+    return String(mask);
+  }
+
+  private async writeSwitch(cids: SlotCids, on: boolean): Promise<void> {
+    await this.client.control(this.serialNumber, cids.switch, on ? '1' : '0', await this.switchBitField());
+  }
+
   /** Writes only the fields that differ. Parameters are written before the enable switch. */
   private async writeSlot(cids: SlotCids, slot: TouSlot, previous?: TouSlot): Promise<void> {
     const sn = this.serialNumber;
@@ -93,7 +110,7 @@ export class SolisCloudTransport implements InverterTransport {
     if (slot.enabled && previous?.enabled) {
       // Avoid running a half-updated slot: switch it off while changing it.
       if (time !== previousTime || slot.currentA !== previous.currentA || slot.soc !== previous.soc) {
-        await this.client.control(sn, cids.switch, '0', '1');
+        await this.writeSwitch(cids, false);
         previous = { ...previous, enabled: false };
       }
     }
@@ -102,9 +119,7 @@ export class SolisCloudTransport implements InverterTransport {
       await this.client.control(sn, cids.current, String(slot.currentA), previous?.currentA.toString());
     }
     if (slot.soc !== previous?.soc) await this.client.control(sn, cids.soc, String(slot.soc), previous?.soc.toString());
-    if (slot.enabled !== previous?.enabled) {
-      await this.client.control(sn, cids.switch, slot.enabled ? '1' : '0', previous ? (previous.enabled ? '1' : '0') : undefined);
-    }
+    if (slot.enabled !== previous?.enabled) await this.writeSwitch(cids, slot.enabled);
   }
 }
 
