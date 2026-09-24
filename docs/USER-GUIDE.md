@@ -26,7 +26,9 @@ Installing, updating and removing the app is described in [INSTALL.md](../INSTAL
 
 ## Dashboard widgets
 
-Add them in the Homey app: **Dashboards → edit (pencil) → add widget → Solis Smart Battery**.
+Add them in the Homey app: open a dashboard (or create one), tap the **pencil** to edit it, then
+**+ Add Widget → Apps → Solis Smart Battery** and pick *Battery plan* or *Battery status*.
+Widgets size themselves to their content.
 Both follow Homey's light and dark mode. The pictures below are rendered from the widget code with
 real prices and consumption from 23–24 September 2026.
 
