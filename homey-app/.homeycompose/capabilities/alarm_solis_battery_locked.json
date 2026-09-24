@@ -1,0 +1,20 @@
+{
+  "type": "boolean",
+  "title": {
+    "en": "Battery locked by SolisCloud",
+    "sv": "Batteriet låst av SolisCloud"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "icon": "/assets/icons/warning.svg",
+  "insights": true,
+  "insightsTitleTrue": {
+    "en": "Battery locked by a SolisCloud remote command",
+    "sv": "Batteriet låst av ett fjärrkommando från SolisCloud"
+  },
+  "insightsTitleFalse": {
+    "en": "Battery released",
+    "sv": "Batteriet frigjort"
+  }
+}

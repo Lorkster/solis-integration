@@ -40,6 +40,9 @@ export interface LiveData {
   batteryDischargedTotalKwh: number;
   /** Best-effort indication that the house is fed from the inverter's backup output. */
   onBackup: boolean | null;
+  /** SolisCloud remote-control current limit (EMS / Quick Control), null if not reported. */
+  remoteControlEnabled: boolean | null;
+  remoteCurrentLimitA: number | null;
 }
 
 export interface InverterSummary {

@@ -80,5 +80,6 @@ npx homey app install    # install permanently
 - [x] Learned load profile from observed consumption
 - [x] Solar forecast with learned calibration
 - [x] SMHI weather warnings → automatic outage preparation
+- [x] Warn when a leftover SolisCloud remote command locks the battery at 0 A (`lib/inverter/LockDetector.ts`)
 - [ ] Enter the real panel orientation (the calibration suggests east-facing or afternoon shade)
 - [ ] Local Modbus TCP transport

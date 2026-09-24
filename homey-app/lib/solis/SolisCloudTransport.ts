@@ -151,7 +151,7 @@ export function parseLiveData(detail: Record<string, unknown>): LiveData {
   const energyKwh = (key: string) => scaled(detail, key, ENERGY_UNITS, 'kWh');
 
   // batteryPowerZheng / batteryPowerFu are the charge / discharge components in W.
-  // batteryDirection: 1 = charging, 3 = idle (2 = discharging, not yet observed).
+  // batteryDirection: 1 = charging, 2 = discharging, 3 = idle.
   const charging = Number(detail.batteryPowerZheng ?? 0);
   const discharging = Number(detail.batteryPowerFu ?? 0);
   let batteryPowerW: number;
@@ -173,5 +173,7 @@ export function parseLiveData(detail: Record<string, unknown>): LiveData {
     batteryDischargedTotalKwh: energyKwh('batteryTotalDischargeEnergy'),
     // TODO: identify the field that shows the backup output feeding the house (outage test).
     onBackup: null,
+    remoteControlEnabled: detail.batteryCDEnableSet === undefined ? null : Number(detail.batteryCDEnableSet) === 1,
+    remoteCurrentLimitA: detail.batteryCDISet === undefined ? null : Number(detail.batteryCDISet),
   };
 }

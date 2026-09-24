@@ -61,12 +61,14 @@
         solar: 'Solar', grid: 'Grid', house: 'House', battery: 'Battery',
         importing: 'import', exporting: 'export', charging: 'charging', discharging: 'discharging', idle: 'idle',
         backup: 'Backup time', reserve: 'Reserve', price: 'Price now',
+        locked: 'Battery locked by SolisCloud – release it with Quick Control → Discharge (short duration)',
         updated: (t) => `Data from ${t}`, waiting: 'Waiting for data…', notPaired: 'Add your Solis inverter in Homey to see its status.',
       },
       sv: {
         solar: 'Sol', grid: 'Nät', house: 'Hus', battery: 'Batteri',
         importing: 'köp', exporting: 'sälj', charging: 'laddar', discharging: 'laddar ur', idle: 'vila',
         backup: 'Reservtid', reserve: 'Reserv', price: 'Pris nu',
+        locked: 'Batteriet låst av SolisCloud – frigör med Snabbkontroll → Urladdning (kort tid)',
         updated: (t) => `Data från ${t}`, waiting: 'Väntar på data…', notPaired: 'Lägg till din Solis-växelriktare i Homey för att se status.',
       },
     };
@@ -191,11 +193,13 @@
         root.appendChild(msg);
         return;
       }
-      for (const w of view.warnings || []) {
+      const notices = (view.warnings || []).map((w) => `${w.title} · ${w.area}`);
+      if (view.batteryLocked) notices.unshift(t.locked);
+      for (const text of notices) {
         const pill = document.createElement('div');
         pill.className = 'pill';
         pill.innerHTML = icon('warning');
-        pill.appendChild(document.createTextNode(`${w.title} · ${w.area}`));
+        pill.appendChild(document.createTextNode(text));
         root.appendChild(pill);
       }
       renderFlow(root);

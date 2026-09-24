@@ -164,4 +164,5 @@ Nothing needs to be removed from the computer, but you can delete the `solis-int
 | Pairing says the key is invalid | Check the Key ID and Key Secret in SolisCloud API Management; copy them again without spaces. |
 | The device shows **"Planning failed: … Access denied"** | The API key can read but not control the inverter. Ask Solis support to enable control access for the API. |
 | Warnings like **"datalogger offline"** | The WiFi logger lost its connection briefly. The app retries by itself; the inverter keeps running its schedule meanwhile. |
+| **"Battery locked by SolisCloud"** | A SolisCloud EMS strategy or Quick Control command has left the battery at 0 A, so it neither charges nor discharges and no inverter setting overrides it. Make sure no EMS strategy is selected, then in SolisCloud run **Quick Control → Discharge** with about 2 kW, target SOC above your reserve and a duration of 1 hour. When it ends, the limit returns to normal. |
 | The plan looks wrong | Check the settings (battery capacity, price fees, solar panels). The plan improves as the app learns during the first days. |

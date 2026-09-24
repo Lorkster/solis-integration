@@ -163,6 +163,38 @@
             "filter": "driver_id=solis-inverter"
           }
         ]
+      },
+      {
+        "id": "battery_locked",
+        "title": {
+          "en": "The battery was locked by SolisCloud",
+          "sv": "Batteriet låstes av SolisCloud"
+        },
+        "hint": {
+          "en": "A leftover SolisCloud remote command holds the battery at 0 A. Release it with Quick Control → Discharge with a duration in SolisCloud.",
+          "sv": "Ett kvarglömt fjärrkommando från SolisCloud håller batteriet på 0 A. Frigör det med Snabbkontroll → Urladdning med en varaktighet i SolisCloud."
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=solis-inverter"
+          }
+        ]
+      },
+      {
+        "id": "battery_unlocked",
+        "title": {
+          "en": "The battery was released",
+          "sv": "Batteriet frigjordes"
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=solis-inverter"
+          }
+        ]
       }
     ],
     "conditions": [
@@ -444,6 +476,7 @@
         "measure_solis_pv_forecast",
         "measure_solis_reserve",
         "measure_solis_backup_hours",
+        "alarm_solis_battery_locked",
         "alarm_solis_weather",
         "solis_warning",
         "meter_power.charged",
@@ -1285,6 +1318,26 @@
     }
   },
   "capabilities": {
+    "alarm_solis_battery_locked": {
+      "type": "boolean",
+      "title": {
+        "en": "Battery locked by SolisCloud",
+        "sv": "Batteriet låst av SolisCloud"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/icons/warning.svg",
+      "insights": true,
+      "insightsTitleTrue": {
+        "en": "Battery locked by a SolisCloud remote command",
+        "sv": "Batteriet låst av ett fjärrkommando från SolisCloud"
+      },
+      "insightsTitleFalse": {
+        "en": "Battery released",
+        "sv": "Batteriet frigjort"
+      }
+    },
     "alarm_solis_weather": {
       "type": "boolean",
       "title": {

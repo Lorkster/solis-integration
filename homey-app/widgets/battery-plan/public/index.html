@@ -92,6 +92,7 @@
         selfSubNone: 'no grid charging needed',
         chargeShort: 'Charge', holdShort: 'Save', selfShort: 'Self-use',
         monitor: 'Monitor only – the app is not controlling the inverter',
+        locked: 'Battery locked by SolisCloud – release it with Quick Control → Discharge (short duration)',
         outage: (until) => `Preparing for a power outage until ${until}`,
         price: 'Price kr/kWh', energy: 'Solar & load kW', battery: 'Battery %',
         solar: 'Solar', load: 'Load', reserve: 'Reserve', now: 'Now',
@@ -109,6 +110,7 @@
         selfSubNone: 'ingen nätladdning behövs',
         chargeShort: 'Ladda', holdShort: 'Spara', selfShort: 'Egenanvändning',
         monitor: 'Endast övervakning – appen styr inte växelriktaren',
+        locked: 'Batteriet låst av SolisCloud – frigör med Snabbkontroll → Urladdning (kort tid)',
         outage: (until) => `Förbereder för strömavbrott till ${until}`,
         price: 'Pris kr/kWh', energy: 'Sol & förbrukning kW', battery: 'Batteri %',
         solar: 'Sol', load: 'Förbrukning', reserve: 'Reserv', now: 'Nu',
@@ -197,6 +199,13 @@
       header.querySelector('.status-sub').textContent = sub;
       root.appendChild(header);
 
+      if (view.batteryLocked) {
+        const pill = document.createElement('div');
+        pill.className = 'pill warning';
+        pill.innerHTML = icon('warning');
+        pill.appendChild(document.createTextNode(T.locked));
+        root.appendChild(pill);
+      }
       for (const w of view.warnings || []) {
         const pill = document.createElement('div');
         pill.className = 'pill warning';

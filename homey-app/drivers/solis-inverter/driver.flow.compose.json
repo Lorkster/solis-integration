@@ -100,6 +100,24 @@
         "en": "The SMHI warnings for my location ended",
         "sv": "SMHI-varningarna för min plats upphörde"
       }
+    },
+    {
+      "id": "battery_locked",
+      "title": {
+        "en": "The battery was locked by SolisCloud",
+        "sv": "Batteriet låstes av SolisCloud"
+      },
+      "hint": {
+        "en": "A leftover SolisCloud remote command holds the battery at 0 A. Release it with Quick Control → Discharge with a duration in SolisCloud.",
+        "sv": "Ett kvarglömt fjärrkommando från SolisCloud håller batteriet på 0 A. Frigör det med Snabbkontroll → Urladdning med en varaktighet i SolisCloud."
+      }
+    },
+    {
+      "id": "battery_unlocked",
+      "title": {
+        "en": "The battery was released",
+        "sv": "Batteriet frigjordes"
+      }
     }
   ],
   "conditions": [

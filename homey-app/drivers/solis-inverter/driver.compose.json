@@ -16,6 +16,7 @@
     "measure_solis_pv_forecast",
     "measure_solis_reserve",
     "measure_solis_backup_hours",
+    "alarm_solis_battery_locked",
     "alarm_solis_weather",
     "solis_warning",
     "meter_power.charged",

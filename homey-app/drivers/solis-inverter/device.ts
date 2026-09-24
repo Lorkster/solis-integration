@@ -3,6 +3,7 @@ import Homey from 'homey';
 import { BatteryController, type ControllerConfig, currentAction, type PlanState } from '../../lib/controller/BatteryController.js';
 import { LoadProfile, type LoadProfileData } from '../../lib/forecast/LoadProfile.js';
 import { type CalibrationData, looksCurtailed, SolarCalibration, SolarForecaster } from '../../lib/forecast/SolarForecast.js';
+import { LockDetector } from '../../lib/inverter/LockDetector.js';
 import type { InverterTransport, LiveData } from '../../lib/inverter/types.js';
 import type { BatteryAction } from '../../lib/planner/planner.js';
 import { ElprisetJustNuProvider, type PriceArea } from '../../lib/prices/PriceProvider.js';
@@ -56,6 +57,7 @@ export default class SolisInverterDevice extends Homey.Device {
   private planning = false;
   /** Battery floor during a power outage, read from the inverter (Solis default 20-30 %). */
   private offGridFloorSoc: number | null = null;
+  private readonly lock = new LockDetector();
 
   override async onInit(): Promise<void> {
     const tz = this.homey.clock.getTimezone();
@@ -196,6 +198,7 @@ export default class SolisInverterDevice extends Homey.Device {
       })),
       outageUntil: this.controller.outage?.until.toISOString() ?? null,
       offGridFloorSoc: this.backupFloor(),
+      batteryLocked: this.lock.locked,
       plan: state && {
         generatedAt: state.generatedAt.toISOString(),
         reserveSoc: state.reserveSoc,
@@ -295,6 +298,7 @@ export default class SolisInverterDevice extends Homey.Device {
         await this.setStoreValue('loadProfile', this.loadProfile.toJSON());
       }
       await this.setAvailable();
+      await this.updateLock(live);
       const set = (cap: string, value: number) => (Number.isFinite(value) ? this.setCapabilityValue(cap, value) : undefined);
       await Promise.all([
         set('measure_battery', live.socPct),
@@ -311,6 +315,24 @@ export default class SolisInverterDevice extends Homey.Device {
       this.error('Live data failed:', err);
       if (!this.live) await this.setUnavailable(`SolisCloud: ${(err as Error).message}`);
     }
+  }
+
+  /** Warns when a leftover SolisCloud remote command keeps the battery frozen at 0 A. */
+  private async updateLock(live: LiveData): Promise<void> {
+    const reserve = this.planState?.reserveSoc ?? this.controller.reserveSocAt(new Date());
+    const changed = this.lock.update({
+      time: live.timestamp,
+      remoteEnabled: live.remoteControlEnabled,
+      remoteCurrentA: live.remoteCurrentLimitA,
+      socPct: live.socPct,
+      gridW: live.gridPowerW,
+      batteryW: live.batteryPowerW,
+    }, reserve);
+    await this.setCapabilityValue('alarm_solis_battery_locked', this.lock.locked);
+    if (!changed) return;
+    this.log(this.lock.locked ? 'Battery locked by a SolisCloud remote command' : 'Battery released');
+    await this.homey.flow.getDeviceTriggerCard(this.lock.locked ? 'battery_locked' : 'battery_unlocked')
+      .trigger(this, {}).catch(this.error);
   }
 
   /**
@@ -416,7 +438,10 @@ export default class SolisInverterDevice extends Homey.Device {
         if (changes.length > 0) this.log('Inverter updated:', changes.join('; '));
       }
       const floor = this.backupFloor();
-      if (state.reserveSoc <= floor + 2) {
+      if (this.lock.locked) {
+        await this.setWarning('Battery locked by a SolisCloud remote command (0 A). Release it in SolisCloud: '
+          + 'Quick Control → Discharge with a short duration. The limit returns to normal when it ends.');
+      } else if (state.reserveSoc <= floor + 2) {
         await this.setWarning(`Reserve ${state.reserveSoc} % is not above the inverter's power-outage limit of ${floor} %: `
           + 'there is no backup energy. Raise the reserve in the settings.');
       } else {
