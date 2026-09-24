@@ -92,6 +92,8 @@
     const icon = (name) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${PATHS[name]}</svg>`;
 
     let view = null;
+    /** Short currency sign for the price area's currency (kr for SEK, NOK, DKK). */
+    const cur = () => ({ SEK: 'kr', NOK: 'kr', DKK: 'kr', EUR: '€', PLN: 'zł' })[view && view.currency] || (view && view.currency) || 'kr';
     const T = () => TEXT[view && view.language === 'sv' ? 'sv' : 'en'];
 
     function el(name, attrs, text) {
@@ -230,9 +232,9 @@
       tile(tiles, 'shield', t.reserve, view.plan ? String(view.plan.reserveSoc) : '–', '%');
       const now = nowMs();
       const current = view.plan && view.plan.intervals.find((iv) => new Date(iv.t).getTime() <= now && new Date(iv.t).getTime() + 900e3 > now);
-      tile(tiles, 'tag', t.price, current ? current.price.toLocaleString(locale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '–', 'kr/kWh');
+      tile(tiles, 'tag', t.price, current ? current.price.toLocaleString(locale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '–', `${cur()}/kWh`);
       tile(tiles, 'bolt', t.extra, view.extraPowerCost === null || view.extraPowerCost === undefined
-        ? '–' : view.extraPowerCost.toLocaleString(locale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 }), 'kr/kWh');
+        ? '–' : view.extraPowerCost.toLocaleString(locale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 }), `${cur()}/kWh`);
       root.appendChild(tiles);
 
       const footer = document.createElement('div');

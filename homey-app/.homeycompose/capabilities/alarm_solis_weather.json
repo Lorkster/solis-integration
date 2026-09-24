@@ -10,11 +10,11 @@
   "icon": "/assets/icons/warning.svg",
   "insights": true,
   "insightsTitleTrue": {
-    "en": "SMHI warning issued",
-    "sv": "SMHI-varning utfärdad"
+    "en": "Weather warning issued",
+    "sv": "Vädervarning utfärdad"
   },
   "insightsTitleFalse": {
-    "en": "SMHI warning ended",
-    "sv": "SMHI-varning upphörd"
+    "en": "Weather warning ended",
+    "sv": "Vädervarning upphörd"
   }
 }

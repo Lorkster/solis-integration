@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { type Irradiance, type IrradianceProvider, looksCurtailed, modelPvKw, type SolarArray, SolarCalibration, SolarForecaster } from '../lib/forecast/SolarForecast.js';
+import { type Irradiance, IrradiancePowerProvider, type IrradianceProvider, looksCurtailed, modelPvKw, type SolarArray, SolarCalibration, SolarForecaster } from '../lib/forecast/SolarForecast.js';
 import { containsPoint, parseWarnings } from '../lib/warnings/SmhiWarnings.js';
 import { TZ } from './helpers.js';
 
@@ -43,7 +43,7 @@ describe('solar model', () => {
     const forecaster = new SolarForecaster({
       latitude: 59.8, longitude: 17, performanceRatio: 0.85, maxAcKw: 20,
       arrays: [{ kwp: 6, tilt: 35, azimuth: 0 }, { kwp: 5, tilt: 35, azimuth: -90 }],
-    }, new SolarCalibration(TZ), provider);
+    }, new SolarCalibration(TZ), new IrradiancePowerProvider(provider));
     await forecaster.refresh();
     const expected = modelPvKw({ start, gti: 800, tempC: 15 }, { kwp: 6, tilt: 35, azimuth: 0 }, 0.85)
       + modelPvKw({ start, gti: 400, tempC: 15 }, { kwp: 5, tilt: 35, azimuth: -90 }, 0.85);

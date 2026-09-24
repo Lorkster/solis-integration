@@ -79,8 +79,8 @@ export class BatteryController {
     const intervals: PlanInterval[] = upcoming.map((p) => ({
       start: p.start,
       end: p.end,
-      buy: buyPrice(p.sekPerKwh, p.start, this.config.timeZone, this.config.tariff),
-      sell: sellPrice(p.sekPerKwh, this.config.tariff),
+      buy: buyPrice(p.perKwh, p.start, this.config.timeZone, this.config.tariff),
+      sell: sellPrice(p.perKwh, this.config.tariff),
       loadKw: this.loadForecast(p.start) ?? this.config.avgLoadKw,
       pvKw: (this.pvForecast(p.start) ?? 0) * this.config.pvTrust,
     }));
@@ -186,18 +186,22 @@ export class BatteryController {
     };
   }
 
+  /**
+   * Yesterday, today and tomorrow (when published). Price days follow the market's time zone (CET),
+   * so outside CET the first local hour can belong to the previous delivery day.
+   */
   private async loadPrices(now: Date): Promise<SpotPrice[]> {
-    const today = localDate(now, this.config.timeZone);
-    const tomorrow = localDate(addDays(now, 1), this.config.timeZone);
-    const [a, b] = await Promise.all([
-      this.prices.getDay(today, this.config.priceArea),
-      this.prices.getDay(tomorrow, this.config.priceArea).catch((err) => {
-        this.log('Tomorrow prices unavailable:', err);
-        return null;
-      }),
-    ]);
-    if (!a) throw new Error(`No prices for ${today}`);
-    return [...a, ...(b ?? [])];
+    const tz = this.config.timeZone;
+    const [yesterday, today, tomorrow] = [-1, 0, 1].map((d) => localDate(addDays(now, d), tz));
+    const optional = (date: string) => this.prices.getDay(date, this.config.priceArea).catch((err) => {
+      this.log(`Prices for ${date} unavailable:`, err);
+      return null;
+    });
+    const [a, b, c] = await Promise.all([optional(yesterday), this.prices.getDay(today, this.config.priceArea), optional(tomorrow)]);
+    if (!b) throw new Error(`No prices for ${today}`);
+    const byStart = new Map<number, SpotPrice>();
+    for (const p of [...(a ?? []), ...b, ...(c ?? [])]) byStart.set(p.start.getTime(), p);
+    return [...byStart.values()].sort((x, y) => x.start.getTime() - y.start.getTime());
   }
 }
 

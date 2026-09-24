@@ -1,8 +1,8 @@
 {
   "type": "string",
   "title": {
-    "en": "SMHI warning",
-    "sv": "SMHI-varning"
+    "en": "Weather warning",
+    "sv": "Vädervarning"
   },
   "getable": true,
   "setable": false,

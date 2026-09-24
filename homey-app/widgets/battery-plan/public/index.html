@@ -105,10 +105,10 @@
         monitor: 'Monitor only – the app is not controlling the inverter',
         locked: 'Battery locked by SolisCloud – release it with Quick Control → Discharge (short duration)',
         outage: (until) => `Preparing for a power outage until ${until}`,
-        price: 'Price kr/kWh', energy: 'Solar & load kW', battery: 'Battery %',
+        price: () => `Price ${cur()}/kWh`, energy: 'Solar & load kW', battery: 'Battery %',
         solar: 'Solar', load: 'Load', reserve: 'Reserve', now: 'Now',
         next24: 'Next 24 hours',
-        saves: (kr) => `≈ <b>${kr} kr</b> cheaper than plain self-use`,
+        saves: (amount) => `≈ <b>${amount} ${cur()}</b> cheaper than plain self-use`,
         updated: (t) => `Updated ${t}`,
         waiting: 'Waiting for the first plan…', notPaired: 'Add your Solis inverter in Homey to see the plan.',
         today: 'Today', tomorrow: 'Tomorrow', soc: 'charged',
@@ -132,10 +132,10 @@
         monitor: 'Endast övervakning – appen styr inte växelriktaren',
         locked: 'Batteriet låst av SolisCloud – frigör med Snabbkontroll → Urladdning (kort tid)',
         outage: (until) => `Förbereder för strömavbrott till ${until}`,
-        price: 'Pris kr/kWh', energy: 'Sol & förbrukning kW', battery: 'Batteri %',
+        price: () => `Pris ${cur()}/kWh`, energy: 'Sol & förbrukning kW', battery: 'Batteri %',
         solar: 'Sol', load: 'Förbrukning', reserve: 'Reserv', now: 'Nu',
         next24: 'Kommande 24 timmar',
-        saves: (kr) => `≈ <b>${kr} kr</b> billigare än vanlig egenanvändning`,
+        saves: (amount) => `≈ <b>${amount} ${cur()}</b> billigare än vanlig egenanvändning`,
         updated: (t) => `Uppdaterad ${t}`,
         waiting: 'Väntar på den första planen…', notPaired: 'Lägg till din Solis-växelriktare i Homey för att se planen.',
         today: 'Idag', tomorrow: 'Imorgon', soc: 'laddat',
@@ -163,6 +163,8 @@
     const QUIET = new Set(['at_reserve', 'full']);
 
     let view = null;
+    /** Short currency sign for the price area's currency (kr for SEK, NOK, DKK). */
+    const cur = () => ({ SEK: 'kr', NOK: 'kr', DKK: 'kr', EUR: '€', PLN: 'zł' })[view && view.currency] || (view && view.currency) || 'kr';
     let hoursShown = 36;
     let showEnergy = true;
     let cursor = null; // index of interval under the crosshair
@@ -303,7 +305,7 @@
         if (p.key === 'price') {
           values = intervals.map((iv) => iv.price);
           p.dom = niceDomain(Math.min(...values), Math.max(...values), 2);
-          p.title = T.price;
+          p.title = T.price();
         } else if (p.key === 'energy') {
           const maxKw = Math.max(1, ...intervals.map((iv) => Math.max(iv.pvKw, iv.loadKw)));
           p.dom = niceDomain(0, maxKw, 3);
@@ -406,7 +408,7 @@
           const l = document.createElement('span'); l.className = 'l'; l.textContent = label; r.appendChild(l);
           tip.appendChild(r);
         };
-        row('var(--c-ink)', `${fmtNum(iv.price, 2)} kr`, '/kWh');
+        row('var(--c-ink)', `${fmtNum(iv.price, 2)} ${cur()}`, '/kWh');
         row(STATE_COLOR[iv.state], T.names[iv.state], '');
         if (showEnergy) {
           row('var(--c-solar)', `${fmtNum(iv.pvKw, 1)} kW`, T.solar);
@@ -436,7 +438,7 @@
         else return;
         e.preventDefault();
       });
-      wrap.setAttribute('aria-label', `${T.price}, ${T.energy}, ${T.battery}`);
+      wrap.setAttribute('aria-label', `${T.price()}, ${T.energy}, ${T.battery}`);
 
       const legend = document.createElement('div');
       legend.className = 'legend';

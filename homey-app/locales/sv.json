@@ -9,5 +9,15 @@
       "safe": "Appen startar i läget <b>Endast övervaka</b>: den visar priser och planer men ändrar ingenting i växelriktaren förrän du byter till <b>Automatisk</b>.",
       "next": "Jag har min API-nyckel"
     }
+  },
+  "device": {
+    "name": "Hembatteri",
+    "noHybrid": "Ingen Solis hybridväxelriktare hittades på SolisCloud-kontot. Appen behöver en växelriktare med batteri; strängväxelriktare utan batteri stöds inte.",
+    "support": {
+      "full": "Stöds: planerar och styr batteriet (6 tidsluckor)",
+      "monitor": "Endast övervakning: den här firmwaren använder det äldre schemat med 3 luckor, som appen inte kan skriva ännu",
+      "unsupported": "Stöds inte: växelriktaren saknar batteristyrning"
+    },
+    "monitorOnly": "Växelriktarens firmware använder det äldre schemat med 3 luckor. Appen kan visa planen men inte styra batteriet ännu."
   }
 }

@@ -59,16 +59,16 @@
         "sv": "Kostnaden för extra el ändrades"
       },
       "hint": {
-        "en": "Fires when the cost of using one more kWh changes by at least 0.10 kr.",
-        "sv": "Körs när kostnaden för en kWh till ändras med minst 0,10 kr."
+        "en": "Fires when the cost of using one more kWh changes by at least 0.10 (in your currency).",
+        "sv": "Körs när kostnaden för en kWh till ändras med minst 0,10 (i din valuta)."
       },
       "tokens": [
         {
           "name": "cost",
           "type": "number",
           "title": {
-            "en": "Cost (kr/kWh)",
-            "sv": "Kostnad (kr/kWh)"
+            "en": "Cost per kWh",
+            "sv": "Kostnad per kWh"
           },
           "example": 2.72
         }
@@ -95,7 +95,7 @@
           "name": "savings",
           "type": "number",
           "title": {
-            "en": "Expected savings (SEK)"
+            "en": "Expected savings"
           },
           "example": 12.5
         }
@@ -131,8 +131,8 @@
     {
       "id": "weather_warning_started",
       "title": {
-        "en": "An SMHI warning was issued for my location",
-        "sv": "En SMHI-varning utfärdades för min plats"
+        "en": "A weather warning was issued for my location",
+        "sv": "En vädervarning utfärdades för min plats"
       },
       "tokens": [
         {
@@ -183,8 +183,8 @@
     {
       "id": "weather_warning_ended",
       "title": {
-        "en": "The SMHI warnings for my location ended",
-        "sv": "SMHI-varningarna för min plats upphörde"
+        "en": "The weather warnings for my location ended",
+        "sv": "Vädervarningarna för min plats upphörde"
       },
       "hint": {
         "en": "Fires when no warning at the chosen level covers Homey's location any more.",
@@ -293,8 +293,8 @@
         "sv": "Extra el !{{kostar|kostar inte}} mindre än"
       },
       "titleFormatted": {
-        "en": "Extra power !{{costs|does not cost}} less than [[price]] kr/kWh now",
-        "sv": "Extra el !{{kostar|kostar inte}} mindre än [[price]] kr/kWh nu"
+        "en": "Extra power !{{costs|does not cost}} less than [[price]] per kWh now",
+        "sv": "Extra el !{{kostar|kostar inte}} mindre än [[price]] per kWh nu"
       },
       "hint": {
         "en": "What one more kWh costs right now: the import price when buying, the lost export income when selling solar, otherwise what the battery's energy is worth later.",
@@ -387,12 +387,12 @@
     {
       "id": "weather_warning_active",
       "title": {
-        "en": "An SMHI warning !{{is|is not}} active",
-        "sv": "En SMHI-varning !{{är|är inte}} aktiv"
+        "en": "A weather warning !{{is|is not}} active",
+        "sv": "En vädervarning !{{är|är inte}} aktiv"
       },
       "hint": {
-        "en": "True while an SMHI warning at the chosen level covers Homey's location.",
-        "sv": "Sant medan en SMHI-varning på vald nivå gäller Homeys plats."
+        "en": "True while a weather warning at the chosen level covers Homey's location.",
+        "sv": "Sant medan en vädervarning på vald nivå gäller Homeys plats."
       }
     }
   ],
@@ -522,8 +522,8 @@
         "sv": "Avbryt manuella batteriåtgärder"
       },
       "hint": {
-        "en": "Ends manual charge/save overrides and outage preparation, including preparation for the current SMHI warning.",
-        "sv": "Avslutar manuell laddning/sparning och avbrottsförberedelse, även för den aktuella SMHI-varningen."
+        "en": "Ends manual charge/save overrides and outage preparation, including preparation for the current weather warning.",
+        "sv": "Avslutar manuell laddning/sparning och avbrottsförberedelse, även för den aktuella vädervarningen."
       }
     },
     {
@@ -535,6 +535,30 @@
       "hint": {
         "en": "Fetches prices and forecasts and makes a new plan right away (normally every 30 minutes).",
         "sv": "Hämtar priser och prognoser och gör en ny plan direkt (annars var 30:e minut)."
+      }
+    },
+    {
+      "id": "set_prices",
+      "title": {
+        "en": "Set electricity prices",
+        "sv": "Ange elpriser"
+      },
+      "titleFormatted": {
+        "en": "Set electricity prices to [[prices]]",
+        "sv": "Ange elpriser till [[prices]]"
+      },
+      "args": [
+        {
+          "type": "text",
+          "name": "prices",
+          "placeholder": {
+            "en": "[{\"start\":\"2026-09-25T00:00:00+02:00\",\"price\":0.52}, …]"
+          }
+        }
+      ],
+      "hint": {
+        "en": "Only used when the price source is 'From a flow'. A JSON list of spot prices per kWh before fees, one entry per hour or quarter: start time and price. Also accepts 'startsAt', 'time_start' and 'total', 'value' or 'SEK_per_kWh'. Send today's and tomorrow's prices; later entries replace earlier ones.",
+        "sv": "Används bara när priskällan är 'Från ett flöde'. En JSON-lista med spotpriser per kWh före avgifter, en post per timme eller kvart: starttid och pris. Accepterar även 'startsAt', 'time_start' och 'total', 'value' eller 'SEK_per_kWh'. Skicka dagens och morgondagens priser; senare poster ersätter tidigare."
       }
     },
     {

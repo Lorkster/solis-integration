@@ -40,7 +40,7 @@ class FakePrices implements PriceProvider {
       1.0, 0.9, 0.9, 0.9, 1.1, 1.5, 2.0, 2.2, 2.1, 1.5, 1.0, 0.8,
     ]);
     const t0 = new Date('2026-09-24T00:00:00+02:00').getTime();
-    return spot.map((sekPerKwh, i) => ({ start: new Date(t0 + i * 900_000), end: new Date(t0 + (i + 1) * 900_000), sekPerKwh }));
+    return spot.map((perKwh, i) => ({ start: new Date(t0 + i * 900_000), end: new Date(t0 + (i + 1) * 900_000), perKwh }));
   }
 }
 

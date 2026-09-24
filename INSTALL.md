@@ -70,7 +70,9 @@ close the terminal. The app now appears in the Homey app under **More → Apps �
 1. In the Homey app, go to **Devices → + (add) → Solis Smart Battery → Solis hybrid inverter**.
 2. The first screen explains where to find the API key:
    **soliscloud.com → Account → Basic Settings → API Management**. Copy the **Key ID** and **Key Secret**.
-3. Enter them, pick your inverter from the list and finish.
+3. Enter them, pick your inverter from the list and finish. It is added as **Home battery**;
+   rename it as you like. If the list is empty, the account has no Solis hybrid inverter the app can
+   use (see [Supported inverters](docs/USER-GUIDE.md#supported-inverters)).
 
 The first minute after adding it, the app reads 14 days of history from SolisCloud to learn your
 consumption pattern and how your solar panels actually perform.
@@ -82,13 +84,14 @@ Open the device and tap the gear icon (settings). The most important groups:
 | Group | What to check |
 |---|---|
 | **Backup reserve** | How much the battery always keeps for power outages (25 % April–October, 30 % November–March by default). During an outage the battery can be used from whatever level it has down to the inverter's power-outage limit (Off-Grid Overdischarge SOC in SolisCloud; Solis ships 30 %, 15 % is a good choice for LFP batteries). The device warns if the reserve is not above that limit. |
-| **Solar forecast** | Size (kWp), tilt and direction of your panels. With two directions (e.g. east and west roofs), fill in both arrays. |
-| **SMHI weather warnings** | On by default: the battery is charged to the outage level when a warning covers your location. |
+| **Solar forecast** | Size (kWp), tilt and direction of your panels. With two directions (e.g. east and west roofs), fill in both arrays. The forecast comes from Open-Meteo by default; Forecast.Solar and Solcast can be chosen instead. |
+| **Weather warnings** | On by default: the battery is charged to the outage level when a warning covers your location. Choose SMHI (Sweden) or MET Norway (Norway). |
 | **Battery** | Capacity and charge power. The defaults match a 21.68 kWh Qapasity Arctic. |
-| **Electricity price** | Price area and fees from your electricity and grid invoices. |
+| **Electricity price** | Price source, price area and the fees from your electricity and grid invoices. elprisetjustnu.se covers Sweden; Nord Pool covers the Nordics, the Baltics and much of Western Europe. |
+| **Inverter** | Read only: model, rated power, firmware and whether the app can control this inverter. |
 
 The app uses the location set in Homey (**More → Settings → Location**) for the solar forecast and
-SMHI warnings.
+weather warnings.
 
 ### 7. Add the dashboard widgets
 

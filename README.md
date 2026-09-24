@@ -1,6 +1,6 @@
 # solis-integration
 
-Price-driven battery control for a Solis hybrid inverter (S6-EH3P, TOU v2 firmware) via the SolisCloud API.
+Price-driven battery control for Solis hybrid inverters with 6-slot time-of-use firmware (e.g. S6-EH3P, S6-EH1P) via the SolisCloud API.
 
 Background: the SolisCloud "Self-use" EMS strategy only plans from the moment it is saved until midnight
 the same day and never generates plans for the following days. This project replaces it with a scheduler
@@ -14,7 +14,8 @@ battery reserve for power outages.
 - [x] `solis_diag.py` – read-only diagnostic: firmware, live values, storage mode bits, all TOU slots,
       snapshots with change detection (`--watch`)
 - [x] Homey Pro 2023 app in [`homey-app/`](homey-app/): price planner, learned load profile, solar
-      forecast, SMHI warnings, TOU slot writing, backup reserve, flows, two dashboard widgets
+      forecast (Open-Meteo, Forecast.Solar, Solcast), weather warnings (SMHI, MET Norway),
+      prices (elprisetjustnu.se, Nord Pool, flow), TOU slot writing, backup reserve, flows, two dashboard widgets
       (see its README for open items)
 - [ ] Verify inverter behaviour with TOU enabled (discharges to house outside charge slots? 0 A slot = hold?)
 

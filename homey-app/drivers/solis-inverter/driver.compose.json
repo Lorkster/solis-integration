@@ -207,8 +207,66 @@
           },
           "value": true,
           "hint": {
-            "en": "Irradiance from Open-Meteo for Homey's location, calibrated against your measured production.",
-            "sv": "Solinstrålning från Open-Meteo för Homeys plats, kalibrerad mot din uppmätta produktion."
+            "en": "Calibrated against your measured production, so errors in size or orientation shrink over time.",
+            "sv": "Kalibreras mot din uppmätta produktion, så fel i storlek eller riktning minskar med tiden."
+          }
+        },
+        {
+          "id": "pv_source",
+          "type": "dropdown",
+          "label": {
+            "en": "Forecast source",
+            "sv": "Prognoskälla"
+          },
+          "value": "open_meteo",
+          "values": [
+            {
+              "id": "open_meteo",
+              "label": {
+                "en": "Open-Meteo (free, no account)",
+                "sv": "Open-Meteo (gratis, inget konto)"
+              }
+            },
+            {
+              "id": "forecast_solar",
+              "label": {
+                "en": "Forecast.Solar (free, no account)",
+                "sv": "Forecast.Solar (gratis, inget konto)"
+              }
+            },
+            {
+              "id": "solcast",
+              "label": {
+                "en": "Solcast (free hobbyist account)",
+                "sv": "Solcast (gratis hobbykonto)"
+              }
+            }
+          ],
+          "hint": {
+            "en": "Open-Meteo: 15-minute irradiance and 14 days of history for a quick calibration. Forecast.Solar: hourly production estimate. Solcast: forecast for the rooftop sites set up in your Solcast account; uses the API key and site IDs below.",
+            "sv": "Open-Meteo: solinstrålning per kvart och 14 dagars historik för snabb kalibrering. Forecast.Solar: produktionsprognos per timme. Solcast: prognos för takytorna i ditt Solcast-konto; använder API-nyckeln och yt-id:na nedan."
+          }
+        },
+        {
+          "id": "pv_api_key",
+          "type": "password",
+          "label": {
+            "en": "API key (Solcast, or Forecast.Solar paid plan)",
+            "sv": "API-nyckel (Solcast, eller Forecast.Solar betalplan)"
+          },
+          "value": ""
+        },
+        {
+          "id": "solcast_sites",
+          "type": "text",
+          "label": {
+            "en": "Solcast site IDs",
+            "sv": "Solcast yt-id"
+          },
+          "value": "",
+          "hint": {
+            "en": "Resource IDs of your rooftop sites, separated by commas. Solcast allows 10 requests a day, so the app fetches at most every 2.5 hours per site.",
+            "sv": "Resurs-id för dina takytor, separerade med komma. Solcast tillåter 10 anrop per dag, så appen hämtar som oftast var 2,5:e timme per yta."
           }
         },
         {
@@ -224,6 +282,10 @@
           "step": 0.1,
           "units": {
             "en": "kWp"
+          },
+          "hint": {
+            "en": "Also used with Solcast, to judge when production is high enough to learn from.",
+            "sv": "Används även med Solcast, för att avgöra när produktionen är hög nog att lära av."
           }
         },
         {
@@ -433,21 +495,50 @@
     {
       "type": "group",
       "label": {
-        "en": "SMHI weather warnings",
-        "sv": "SMHI-vädervarningar"
+        "en": "Weather warnings",
+        "sv": "Vädervarningar"
       },
       "children": [
         {
           "id": "warnings_enabled",
           "type": "checkbox",
           "label": {
-            "en": "Prepare for outages on SMHI warnings",
-            "sv": "Förbered för strömavbrott vid SMHI-varningar"
+            "en": "Prepare for outages on weather warnings",
+            "sv": "Förbered för strömavbrott vid vädervarningar"
           },
           "value": true,
           "hint": {
             "en": "Charges to the outage level while a warning covers Homey's location.",
             "sv": "Laddar till avbrottsnivån medan en varning gäller Homeys plats."
+          }
+        },
+        {
+          "id": "warnings_source",
+          "type": "dropdown",
+          "label": {
+            "en": "Warning service",
+            "sv": "Varningstjänst"
+          },
+          "value": "smhi",
+          "values": [
+            {
+              "id": "smhi",
+              "label": {
+                "en": "SMHI (Sweden)",
+                "sv": "SMHI (Sverige)"
+              }
+            },
+            {
+              "id": "metno",
+              "label": {
+                "en": "MET Norway (Norway)",
+                "sv": "MET Norge (Norge)"
+              }
+            }
+          ],
+          "hint": {
+            "en": "The national weather service for Homey's location.",
+            "sv": "Den nationella vädertjänsten för Homeys plats."
           }
         },
         {
@@ -629,10 +720,47 @@
       },
       "children": [
         {
+          "id": "price_source",
+          "type": "dropdown",
+          "label": {
+            "en": "Price source",
+            "sv": "Priskälla"
+          },
+          "value": "elprisetjustnu",
+          "values": [
+            {
+              "id": "elprisetjustnu",
+              "label": {
+                "en": "elprisetjustnu.se (Sweden)",
+                "sv": "elprisetjustnu.se (Sverige)"
+              }
+            },
+            {
+              "id": "nordpool",
+              "label": {
+                "en": "Nord Pool (Nordics, Baltics, Western Europe)",
+                "sv": "Nord Pool (Norden, Baltikum, Västeuropa)"
+              }
+            },
+            {
+              "id": "flow",
+              "label": {
+                "en": "From a flow (any price service)",
+                "sv": "Från ett flöde (valfri pristjänst)"
+              }
+            }
+          ],
+          "hint": {
+            "en": "Day-ahead spot prices; tomorrow's arrive around 13:00 CET. 'From a flow' uses prices sent with the 'Set electricity prices' action card, e.g. from another price app.",
+            "sv": "Spotpriser för dagen efter; morgondagens kommer runt 13:00. 'Från ett flöde' använder priser som skickas med åtgärdskortet 'Ange elpriser', t.ex. från en annan prisapp."
+          }
+        },
+        {
           "id": "price_area",
           "type": "dropdown",
           "label": {
-            "en": "Price area"
+            "en": "Price area",
+            "sv": "Elområde"
           },
           "value": "SE3",
           "values": [
@@ -659,8 +787,114 @@
               "label": {
                 "en": "SE4 Malmö"
               }
+            },
+            {
+              "id": "NO1",
+              "label": {
+                "en": "NO1 Oslo"
+              }
+            },
+            {
+              "id": "NO2",
+              "label": {
+                "en": "NO2 Kristiansand"
+              }
+            },
+            {
+              "id": "NO3",
+              "label": {
+                "en": "NO3 Trondheim"
+              }
+            },
+            {
+              "id": "NO4",
+              "label": {
+                "en": "NO4 Tromsø"
+              }
+            },
+            {
+              "id": "NO5",
+              "label": {
+                "en": "NO5 Bergen"
+              }
+            },
+            {
+              "id": "DK1",
+              "label": {
+                "en": "DK1 Denmark West"
+              }
+            },
+            {
+              "id": "DK2",
+              "label": {
+                "en": "DK2 Denmark East"
+              }
+            },
+            {
+              "id": "FI",
+              "label": {
+                "en": "FI Finland"
+              }
+            },
+            {
+              "id": "EE",
+              "label": {
+                "en": "EE Estonia"
+              }
+            },
+            {
+              "id": "LV",
+              "label": {
+                "en": "LV Latvia"
+              }
+            },
+            {
+              "id": "LT",
+              "label": {
+                "en": "LT Lithuania"
+              }
+            },
+            {
+              "id": "GER",
+              "label": {
+                "en": "DE Germany"
+              }
+            },
+            {
+              "id": "NL",
+              "label": {
+                "en": "NL Netherlands"
+              }
+            },
+            {
+              "id": "BE",
+              "label": {
+                "en": "BE Belgium"
+              }
+            },
+            {
+              "id": "FR",
+              "label": {
+                "en": "FR France"
+              }
+            },
+            {
+              "id": "AT",
+              "label": {
+                "en": "AT Austria"
+              }
+            },
+            {
+              "id": "PL",
+              "label": {
+                "en": "PL Poland"
+              }
             }
-          ]
+          ],
+          "hint": {
+            "en": "elprisetjustnu.se covers SE1–SE4 only. The currency follows the area (SEK, NOK, DKK, PLN or EUR).",
+            "sv": "elprisetjustnu.se täcker bara SE1–SE4. Valutan följer området (SEK, NOK, DKK, PLN eller EUR)."
+          }
         },
         {
           "id": "vat_pct",
@@ -690,7 +924,8 @@
           "max": 5,
           "step": 0.0001,
           "units": {
-            "en": "SEK/kWh"
+            "en": "per kWh",
+            "sv": "per kWh"
           }
         },
         {
@@ -704,7 +939,8 @@
           "max": 5,
           "step": 0.0001,
           "units": {
-            "en": "SEK/kWh"
+            "en": "per kWh",
+            "sv": "per kWh"
           }
         },
         {
@@ -718,7 +954,8 @@
           "max": 5,
           "step": 0.0001,
           "units": {
-            "en": "SEK/kWh"
+            "en": "per kWh",
+            "sv": "per kWh"
           }
         },
         {
@@ -740,7 +977,8 @@
           "max": 5,
           "step": 0.0001,
           "units": {
-            "en": "SEK/kWh"
+            "en": "per kWh",
+            "sv": "per kWh"
           }
         },
         {
@@ -754,7 +992,8 @@
           "max": 5,
           "step": 0.0001,
           "units": {
-            "en": "SEK/kWh"
+            "en": "per kWh",
+            "sv": "per kWh"
           }
         }
       ]
@@ -782,6 +1021,51 @@
           "units": {
             "en": "kW"
           }
+        }
+      ]
+    },
+    {
+      "type": "group",
+      "label": {
+        "en": "Inverter",
+        "sv": "Växelriktare"
+      },
+      "children": [
+        {
+          "id": "inverter_model",
+          "type": "label",
+          "label": {
+            "en": "Model",
+            "sv": "Modell"
+          },
+          "value": "–"
+        },
+        {
+          "id": "inverter_power",
+          "type": "label",
+          "label": {
+            "en": "Rated power",
+            "sv": "Märkeffekt"
+          },
+          "value": "–"
+        },
+        {
+          "id": "inverter_firmware",
+          "type": "label",
+          "label": {
+            "en": "Firmware",
+            "sv": "Firmware"
+          },
+          "value": "–"
+        },
+        {
+          "id": "inverter_support",
+          "type": "label",
+          "label": {
+            "en": "App support",
+            "sv": "Stöd i appen"
+          },
+          "value": "–"
         }
       ]
     }

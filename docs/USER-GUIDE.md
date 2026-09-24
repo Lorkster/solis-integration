@@ -5,13 +5,15 @@ Solis Smart Battery is a Homey Pro app for a Solis hybrid inverter with a batter
 - **plans the battery around electricity prices**: charges when power is cheap, saves the charge for
   expensive hours and lets the battery run the house when that pays off;
 - **learns your house**: your real consumption pattern and how your solar panels actually perform;
-- **keeps a reserve for power outages**, and fills the battery before SMHI weather warnings;
+- **keeps a reserve for power outages**, and fills the battery before weather warnings;
 - **tells your flows what is going on**: what powers the house right now, whether there is solar to
   spare, and what one more kWh would cost.
 
 Installing, updating and removing the app is described in [INSTALL.md](../INSTALL.md).
+Which inverters it works with: [Supported inverters](#supported-inverters).
 
 **Contents:**
+[Supported inverters](#supported-inverters) ·
 [Dashboard widgets](#dashboard-widgets) ·
 [The device](#the-device) ·
 [Control modes](#control-modes) ·
@@ -21,6 +23,27 @@ Installing, updating and removing the app is described in [INSTALL.md](../INSTAL
 [Settings](#settings) ·
 [Troubleshooting](#troubleshooting) ·
 [Where the data comes from](#where-the-data-comes-from)
+
+---
+
+## Supported inverters
+
+The app talks to the inverter through SolisCloud and needs a Solis **hybrid** inverter (one with a
+battery) whose firmware uses the **6-slot time-of-use schedule**. The app checks this when you add
+the inverter and shows the result under the device's settings → **Inverter → App support**:
+
+| App support | Meaning |
+|---|---|
+| **Supported** | The app plans and controls the battery. |
+| **Monitor only** | A hybrid inverter whose firmware uses the older 3-slot schedule. The app shows prices, plans and live values, but cannot control the battery yet. Ask Solis support whether a firmware update is available. |
+| **Not supported** | A string inverter without a battery. It is not offered when adding a device. |
+
+Current S6 hybrids (S6-EH3P, S6-EH1P) have the 6-slot schedule. Whether older hybrids (RHI-5G,
+S5-EH1P) have it depends on their firmware, which the check above shows. The app has been tested on
+an **S6-EH3P20K-H**; other models use the same SolisCloud commands but are untested.
+
+The data logger must allow control through SolisCloud: the **S2-WL-ST** (Wi-Fi stick) and
+S3/S5-WiFi-ST work; DLS-W and DLS-L loggers do not.
 
 ---
 
@@ -77,10 +100,10 @@ list and on the device tile:
 | **Full · solar powers house** (grey) | The battery is full; solar powers the house and the rest is sold. |
 
 - **Top line**: what is happening now, until when, and to which battery level.
-- **Notices** (when relevant): SMHI warning, preparing for an outage, battery locked by SolisCloud,
+- **Notices** (when relevant): weather warning, preparing for an outage, battery locked by SolisCloud,
   or *Monitor only – the app is not controlling the inverter*.
 - **Three charts on one time axis**, with the periods marked on top:
-  - **Price kr/kWh** – what you pay per kWh.
+  - **Price per kWh** – what you pay per kWh, in the price area's currency (kr, €, zł).
   - **Solar & load kW** – expected solar production (yellow line) and house consumption (grey line).
   - **Battery %** – the expected battery level, the dot is the level now, the dashed line the reserve.
 - **Touch and drag** across the charts (or use the arrow keys) to see price, period, solar, load and
@@ -107,7 +130,11 @@ Widget settings: *Time shown* (24, 36 or 48 hours) and *Show solar and load fore
 
 ## The device
 
-The inverter appears as one device in Homey with these values. The names are exactly as the app
+The inverter appears as one device in Homey, called **Home battery** (*Hembatteri* in Swedish);
+rename it as you like. The inverter's model, rated power, firmware and what the app supports are in
+the device's settings under **Inverter**.
+
+The device has these values. The names are exactly as the app
 shows them (English, or Swedish when Homey is set to Swedish). Numeric values and alarms can be
 chosen as the device's tile indicator, and all numbers and alarms are kept in Homey Insights.
 
@@ -131,11 +158,11 @@ chosen as the device's tile indicator, and all numbers and alarms are kept in Ho
 | **House power from battery** | Husets el från batteri | % | Share of the house consumption covered by the battery right now. |
 | **House power from grid** | Husets el från nätet | % | Share of the house consumption bought from the grid right now. |
 | **Solar forecast today** | Solprognos idag | kWh | Expected solar production for the whole day, from the forecast calibrated against your panels. |
-| **Backup reserve** | Reservnivå | % | Battery level kept for power outages right now (seasonal, raised during SMHI warnings). |
+| **Backup reserve** | Reservnivå | % | Battery level kept for power outages right now (seasonal, raised during weather warnings). |
 | **Backup time at current load** | Reservtid vid nuvarande förbrukning | h | How long the battery would last in a power outage at the current consumption, down to the inverter's outage limit. |
 | **Battery locked by SolisCloud** | Batteriet låst av SolisCloud |  | On when a leftover SolisCloud command keeps the battery at 0 A. See the troubleshooting section. |
-| **Weather warning** | Vädervarning |  | On while an SMHI warning covers Homey's location. |
-| **SMHI warning** | SMHI-varning |  | Text of the active SMHI warning(s). |
+| **Weather warning** | Vädervarning |  | On while a weather warning covers Homey's location. |
+| **Weather warning** | Vädervarning |  | Text of the active weather warning(s). |
 | **Energy charged** | Laddad energi | kWh | Total energy charged into the battery. Used by Homey Energy. |
 | **Energy discharged** | Urladdad energi | kWh | Total energy discharged from the battery. Used by Homey Energy. |
 
@@ -201,8 +228,8 @@ The reserve only guarantees the minimum:
 | 60 % (afternoon) | about 10 kWh |
 | 25 % (worst case, reserve reached) | about 2 kWh |
 
-**SMHI warnings**: when a warning at the chosen level covers Homey's location (or starts within the
-chosen number of hours), the app raises the reserve to the outage level (100 % by default) until the
+**Weather warnings** (SMHI in Sweden, MET Norway in Norway): when a warning at the chosen level
+covers Homey's location (or starts within the chosen number of hours), the app raises the reserve to the outage level (100 % by default) until the
 warning ends. The flow action **Prepare for a power outage** does the same for a number of hours.
 **Cancel manual battery overrides** stops it early.
 
@@ -243,12 +270,26 @@ So the rule becomes one condition: **Extra power costs less than 2.00 kr/kWh now
 > **Then** send a notification: *House powered by [Powered by] – [From grid (%)] % from the grid*
 
 **Weather warning**
-> **When** An SMHI warning was issued for my location
+> **When** A weather warning was issued for my location
 > **Then** send a notification: *[Warning] in [Area] until [Until] – the battery is being filled*
 
 **Locked battery**
 > **When** The battery was locked by SolisCloud
 > **Then** send a notification (see [Troubleshooting](#troubleshooting))
+
+### Prices from another service
+
+If your prices come from elsewhere (for example your electricity company's Homey app), set
+**Price source** to *From a flow* and send the prices with the action **Set electricity prices**:
+
+> **When** a new price list is available (from your price app)
+> **Then** Set electricity prices to *[the price list as JSON]*
+
+The list holds one entry per hour or quarter-hour with a start time and the spot price per kWh
+before fees, for example `[{"start":"2026-09-25T00:00:00+02:00","price":0.52}, …]`. The field names
+used by common price services (`startsAt`, `total`, `time_start`, `SEK_per_kWh`) also work. The fees
+in the *Electricity price* settings are added on top, so set them to 0 if the prices already include
+everything. Send today's and tomorrow's prices; the plan updates right away.
 
 ### All flow cards
 
@@ -260,11 +301,11 @@ So the rule becomes one condition: **Extra power costs less than 2.00 kr/kWh now
 | Card | Notes |
 |---|---|
 | What powers the house changed | Fires when the combination of solar, battery and grid that runs the house changes. Tokens: Powered by, From solar (%), From battery (%), From grid (%) |
-| The cost of extra power changed | Fires when the cost of using one more kWh changes by at least 0.10 kr. Tokens: Cost (kr/kWh) |
-| The battery plan was updated | Fires every time a new plan is made (about every 30 minutes). Tokens: Summary, Expected savings (SEK) |
+| The cost of extra power changed | Fires when the cost of using one more kWh changes by at least 0.10 (in your currency). Tokens: Cost per kWh |
+| The battery plan was updated | Fires every time a new plan is made (about every 30 minutes). Tokens: Summary, Expected savings |
 | The planned battery action changed | Fires when the plan switches between grid charging, saving for later and self-use. Action is charge, hold or self_use. Tokens: Action |
-| An SMHI warning was issued for my location | Fires once per new warning at the chosen level that covers Homey's location. Tokens: Level, Warning, Area, Until |
-| The SMHI warnings for my location ended | Fires when no warning at the chosen level covers Homey's location any more. |
+| A weather warning was issued for my location | Fires once per new warning at the chosen level that covers Homey's location. Tokens: Level, Warning, Area, Until |
+| The weather warnings for my location ended | Fires when no warning at the chosen level covers Homey's location any more. |
 | The battery was locked by SolisCloud | A leftover SolisCloud remote command holds the battery at 0 A. Release it with Quick Control → Discharge with a duration in SolisCloud. |
 | The battery was released | Fires when the SolisCloud limit is back to normal and the battery works again. |
 
@@ -274,10 +315,10 @@ So the rule becomes one condition: **Extra power costs less than 2.00 kr/kWh now
 |---|---|
 | The house is / is not using power from *[source]* | True when the source delivers at least 100 W and 5 % of the house consumption. |
 | Solar surplus is / is not above *[watts]* W | Surplus = solar production minus house consumption; it goes into the battery or to the grid. |
-| Extra power costs / does not cost less than *[price]* kr/kWh now | What one more kWh costs right now: the import price when buying, the lost export income when selling solar, otherwise what the battery's energy is worth later. |
+| Extra power costs / does not cost less than *[price]* per kWh now | What one more kWh costs right now: the import price when buying, the lost export income when selling solar, otherwise what the battery's energy is worth later. |
 | Planned action is / is not *[action]* | What the plan does in the current quarter-hour. In self-use the battery powers the house when needed, stores solar surplus, and stops at the reserve. |
 | Price is / is not among the *[hours]* cheapest hours today | Compares the current import price with today's quarter-hour prices. |
-| An SMHI warning is / is not active | True while an SMHI warning at the chosen level covers Homey's location. |
+| A weather warning is / is not active | True while a weather warning at the chosen level covers Homey's location. |
 
 **Then… (actions)**
 
@@ -287,8 +328,9 @@ So the rule becomes one condition: **Extra power costs less than 2.00 kr/kWh now
 | Charge from grid for *[minutes]* minutes | Overrides the plan: charges from the grid for the given time, then the plan takes over again. |
 | Save the battery charge for *[minutes]* minutes | Overrides the plan: the battery neither charges nor discharges for the given time. |
 | Prepare for a power outage during *[hours]* hours | Raises the reserve to the outage level (setting) for the given time, so the battery is filled. |
-| Cancel manual battery overrides | Ends manual charge/save overrides and outage preparation, including preparation for the current SMHI warning. |
+| Cancel manual battery overrides | Ends manual charge/save overrides and outage preparation, including preparation for the current weather warning. |
 | Update the battery plan now | Fetches prices and forecasts and makes a new plan right away (normally every 30 minutes). |
+| Set electricity prices to *[prices]* | Only used when the price source is 'From a flow'. A JSON list of spot prices per kWh before fees, one entry per hour or quarter: start time and price. Also accepts 'startsAt', 'time_start' and 'total', 'value' or 'SEK_per_kWh'. Send today's and tomorrow's prices; later entries replace earlier ones. |
 | Hand control back to the inverter | Removes the app's schedule from the inverter and switches to Monitor only. |
 
 <!-- /generated:flows -->
@@ -321,8 +363,11 @@ Open the device and tap the gear icon.
 
 | Setting | Default | What it does |
 |---|---|---|
-| Use solar forecast in the plan | on | Irradiance from Open-Meteo for Homey's location, calibrated against your measured production. |
-| Array 1 size | 11 kWp |  |
+| Use solar forecast in the plan | on | Calibrated against your measured production, so errors in size or orientation shrink over time. |
+| Forecast source | Open-Meteo (free, no account) | Open-Meteo: 15-minute irradiance and 14 days of history for a quick calibration. Forecast.Solar: hourly production estimate. Solcast: forecast for the rooftop sites set up in your Solcast account; uses the API key and site IDs below. |
+| API key (Solcast, or Forecast.Solar paid plan) | (from pairing) |  |
+| Solcast site IDs | (from pairing) | Resource IDs of your rooftop sites, separated by commas. Solcast allows 10 requests a day, so the app fetches at most every 2.5 hours per site. |
+| Array 1 size | 11 kWp | Also used with Solcast, to judge when production is high enough to learn from. |
 | Array 1 tilt | 35 ° | 0° = flat, 90° = vertical |
 | Array 1 facing | South |  |
 | Array 2 size (0 = none) | 0 kWp |  |
@@ -330,11 +375,12 @@ Open the device and tap the gear icon.
 | Array 2 facing | East |  |
 | Forecast trust | 80 % | Share of the forecast the plan counts on. Lower = more grid charging before uncertain days. |
 
-**SMHI weather warnings**
+**Weather warnings**
 
 | Setting | Default | What it does |
 |---|---|---|
-| Prepare for outages on SMHI warnings | on | Charges to the outage level while a warning covers Homey's location. |
+| Prepare for outages on weather warnings | on | Charges to the outage level while a warning covers Homey's location. |
+| Warning service | SMHI (Sweden) | The national weather service for Homey's location. |
 | Lowest warning level | Yellow |  |
 | Weather warnings only (not water levels, fire risk) | on |  |
 | Start preparing ahead of a warning | 12 h |  |
@@ -355,20 +401,30 @@ Open the device and tap the gear icon.
 
 | Setting | Default | What it does |
 |---|---|---|
-| Price area | SE3 Stockholm |  |
+| Price source | elprisetjustnu.se (Sweden) | Day-ahead spot prices; tomorrow's arrive around 13:00 CET. 'From a flow' uses prices sent with the 'Set electricity prices' action card, e.g. from another price app. |
+| Price area | SE3 Stockholm | elprisetjustnu.se covers SE1–SE4 only. The currency follows the area (SEK, NOK, DKK, PLN or EUR). |
 | VAT | 25 % |  |
-| Supplier fees (ex VAT) | 0.1223 SEK/kWh | Variable costs and markups on top of spot. |
-| Energy tax (ex VAT) | 0.36 SEK/kWh |  |
-| Grid transfer fee (ex VAT) | 0.244 SEK/kWh |  |
+| Supplier fees (ex VAT) | 0.1223 per kWh | Variable costs and markups on top of spot. |
+| Energy tax (ex VAT) | 0.36 per kWh |  |
+| Grid transfer fee (ex VAT) | 0.244 per kWh |  |
 | Time tariff with high-load time (Nov–Mar weekdays 06–22) | on |  |
-| Grid transfer fee high-load time (ex VAT) | 0.244 SEK/kWh |  |
-| Export compensation on top of spot | 0.104 SEK/kWh |  |
+| Grid transfer fee high-load time (ex VAT) | 0.244 per kWh |  |
+| Export compensation on top of spot | 0.104 per kWh |  |
 
 **Planning**
 
 | Setting | Default | What it does |
 |---|---|---|
 | Average house load | 2 kW | Used until a load profile is learned from history. |
+
+**Inverter**
+
+| Setting | Default | What it does |
+|---|---|---|
+| Model | – |  |
+| Rated power | – |  |
+| Firmware | – |  |
+| App support | – |  |
 
 <!-- /generated:settings -->
 
@@ -394,8 +450,8 @@ More problems and solutions (installation, API key, datalogger): see [INSTALL.md
 | Data | Source |
 |---|---|
 | Inverter values and settings | SolisCloud API with your own API key |
-| Electricity prices | Nord Pool day-ahead prices via elprisetjustnu.se |
-| Solar forecast | Open-Meteo, for Homey's location |
-| Weather warnings | SMHI open data |
+| Electricity prices | Your choice: Nord Pool day-ahead prices via elprisetjustnu.se (Sweden) or Nord Pool's data portal (Nordics, Baltics, Germany, the Netherlands, Belgium, France, Austria, Poland), or prices sent from a flow |
+| Solar forecast | Your choice: Open-Meteo, Forecast.Solar or Solcast, for Homey's location |
+| Weather warnings | Your choice: SMHI (Sweden) or MET Norway (Norway) |
 
 The app sends nothing else anywhere. Your API key is stored in the device settings on your Homey.

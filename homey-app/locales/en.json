@@ -9,5 +9,15 @@
       "safe": "The app starts in <b>Monitor only</b>: it shows prices and plans but does not change anything on the inverter until you switch to <b>Automatic</b>.",
       "next": "I have my API key"
     }
+  },
+  "device": {
+    "name": "Home battery",
+    "noHybrid": "No Solis hybrid inverter found on this SolisCloud account. The app needs an inverter with a battery; string inverters without a battery are not supported.",
+    "support": {
+      "full": "Supported: plans and controls the battery (6 time slots)",
+      "monitor": "Monitor only: this firmware uses the older 3-slot schedule, which the app cannot write yet",
+      "unsupported": "Not supported: no battery control on this inverter"
+    },
+    "monitorOnly": "This inverter's firmware uses the older 3-slot schedule. The app can show the plan but not control the battery yet."
   }
 }

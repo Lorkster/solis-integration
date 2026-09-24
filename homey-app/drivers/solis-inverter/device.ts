@@ -2,15 +2,20 @@ import Homey from 'homey';
 
 import { BatteryController, type ControllerConfig, currentAction, type PlanState } from '../../lib/controller/BatteryController.js';
 import { LoadProfile, type LoadProfileData } from '../../lib/forecast/LoadProfile.js';
-import { type CalibrationData, looksCurtailed, SolarCalibration, SolarForecaster } from '../../lib/forecast/SolarForecast.js';
+import {
+  type CalibrationData, createPvPowerProvider, looksCurtailed, SolarCalibration, SolarForecaster, type SolarSource,
+} from '../../lib/forecast/SolarForecast.js';
 import { extraPowerCost, houseSupply, type HouseSupply, usesSource } from '../../lib/energy/EnergyFlow.js';
 import { LockDetector } from '../../lib/inverter/LockDetector.js';
-import type { InverterTransport, LiveData } from '../../lib/inverter/types.js';
+import { type InverterInfo, type InverterTransport, type LiveData, supportLevel } from '../../lib/inverter/types.js';
 import type { BatteryAction } from '../../lib/planner/planner.js';
 import { intervalState, planPeriods, planSummary } from '../../lib/planner/summary.js';
-import { ElprisetJustNuProvider, type PriceArea } from '../../lib/prices/PriceProvider.js';
+import {
+  createPriceProvider, currencyForArea, FlowPriceProvider, parseFlowPrices, type PriceArea, type PriceSource,
+} from '../../lib/prices/PriceProvider.js';
 import { SolisCloudTransport } from '../../lib/solis/SolisCloudTransport.js';
 import { addDays, addMinutes, localDate, localHHMM } from '../../lib/time.js';
+import { fetchMetNoWarnings } from '../../lib/warnings/MetNoWarnings.js';
 import { fetchWarnings, type WarningLevel, type WeatherWarning } from '../../lib/warnings/SmhiWarnings.js';
 
 type ControlMode = 'monitor' | 'auto';
@@ -20,8 +25,6 @@ const LIVE_INTERVAL_MS = 5 * 60_000;
 const PLAN_INTERVAL_MS = 30 * 60_000;
 const HISTORY_DAYS = 14;
 const OUTAGE_HOURS_WITHOUT_END = 24;
-
-const prices = new ElprisetJustNuProvider();
 
 /** Averages samples per quarter hour and reports each completed quarter. */
 class QuarterAverager {
@@ -62,9 +65,13 @@ export default class SolisInverterDevice extends Homey.Device {
   private readonly lock = new LockDetector();
   private supply: HouseSupply | null = null;
   private lastCostReported: number | null = null;
+  private flowPrices!: FlowPriceProvider;
+  private info: InverterInfo | null = null;
 
   override async onInit(): Promise<void> {
     const tz = this.homey.clock.getTimezone();
+    this.flowPrices = new FlowPriceProvider(tz, this.getStoreValue('flowPrices') ?? []);
+    this.info = (this.getStoreValue('inverterInfo') as InverterInfo | undefined) ?? null;
     this.loadProfile = new LoadProfile(tz, this.getStoreValue('loadProfile') as LoadProfileData | undefined);
     this.pvQuarters = new QuarterAverager((start, kw) => {
       if (!this.solar) return;
@@ -79,16 +86,50 @@ export default class SolisInverterDevice extends Homey.Device {
       await this.setCapabilityValue('solis_control_mode', 'monitor');
     }
     this.registerCapabilityListener('solis_control_mode', async (mode: ControlMode) => {
+      if (mode === 'auto' && !this.canControl()) throw new Error(this.homey.__('device.monitorOnly'));
       this.log('Control mode →', mode);
       this.homey.setTimeout(() => this.replan().catch(this.error), 1_000);
     });
 
     this.homey.setInterval(() => this.refreshLive().catch(this.error), LIVE_INTERVAL_MS);
     this.homey.setInterval(() => this.replan().catch(this.error), PLAN_INTERVAL_MS);
+    await this.refreshInfo().catch(this.error);
     await this.refreshLive().catch(this.error);
     await this.readInverterLimits().catch(this.error);
     await this.replan().catch(this.error);
     this.learnFromHistory().catch(this.error);
+  }
+
+  /** Model, firmware and what the app can do with this inverter; shown in the device settings. */
+  private async refreshInfo(): Promise<void> {
+    const info = await this.transport.getInfo();
+    this.info = info;
+    await this.setStoreValue('inverterInfo', info);
+    await this.setSettings({
+      inverter_model: info.modelCode ? `${info.model} (${info.modelCode})` : info.model,
+      inverter_power: info.ratedPowerKw ? `${info.ratedPowerKw} kW` : '–',
+      inverter_firmware: info.firmware || '–',
+      inverter_support: this.homey.__(`device.support.${supportLevel(info)}`),
+    });
+    if (!this.canControl() && this.controlMode === 'auto') await this.setCapabilityValue('solis_control_mode', 'monitor');
+    this.createController();
+  }
+
+  /** False when the inverter's schedule format is not supported (plans are shown, nothing is written). */
+  private canControl(): boolean {
+    return !this.info || supportLevel(this.info) === 'full';
+  }
+
+  get currency(): string {
+    return currencyForArea(String(this.getSetting('price_area')));
+  }
+
+  /** Prices from the "Set electricity prices" flow card. */
+  async setFlowPrices(text: string): Promise<void> {
+    const added = this.flowPrices.merge(parseFlowPrices(text));
+    await this.setStoreValue('flowPrices', this.flowPrices.toJSON());
+    this.log(`Received ${added} quarter-hours of prices from a flow`);
+    if (this.getSetting('price_source') === 'flow') await this.replan();
   }
 
   private async readInverterLimits(): Promise<void> {
@@ -99,7 +140,7 @@ export default class SolisInverterDevice extends Homey.Device {
 
   override async onSettings({ changedKeys }: { changedKeys: string[] }): Promise<void> {
     this.log('Settings changed:', changedKeys);
-    const solarChanged = changedKeys.some((k) => k.startsWith('pv_array'));
+    const solarChanged = changedKeys.some((k) => k.startsWith('pv_array') || k === 'pv_source' || k === 'solcast_sites');
     this.homey.setTimeout(async () => {
       if (solarChanged) {
         // New orientation: the previous calibration no longer applies.
@@ -170,7 +211,7 @@ export default class SolisInverterDevice extends Homey.Device {
     return this.supply?.surplusW ?? 0;
   }
 
-  /** What one more kWh costs right now (SEK/kWh), or null before the first plan. */
+  /** What one more kWh costs right now (per kWh, in the price area's currency), or null before the first plan. */
   extraPowerCost(): number | null {
     const now = new Date();
     const iv = this.planState?.plan.intervals.find((i) => i.start <= now && i.end > now);
@@ -206,6 +247,7 @@ export default class SolisInverterDevice extends Homey.Device {
       ready: Boolean(state),
       timeZone: this.homey.clock.getTimezone(),
       language: this.homey.i18n.getLanguage(),
+      currency: this.currency,
       controlMode: this.controlMode,
       live: live && {
         at: live.timestamp.toISOString(),
@@ -276,6 +318,7 @@ export default class SolisInverterDevice extends Homey.Device {
     const { id } = this.getData() as { id: string };
     const tz = this.homey.clock.getTimezone();
     this.transport = new SolisCloudTransport({ keyId: String(s.key_id), keySecret: String(s.key_secret) }, id);
+    this.applyCurrencyUnits().catch(this.error);
     const config: ControllerConfig = {
       timeZone: tz,
       priceArea: s.price_area as PriceArea,
@@ -310,11 +353,18 @@ export default class SolisInverterDevice extends Homey.Device {
       const longitude = this.homey.geolocation.getLongitude();
       if (arrays.length > 0 && Number.isFinite(latitude) && Number.isFinite(longitude)) {
         const calibration = new SolarCalibration(tz, this.getStoreValue('solarCalibration') as CalibrationData | undefined);
-        this.solar = new SolarForecaster({ latitude, longitude, arrays, performanceRatio: 0.85, maxAcKw: 20 }, calibration);
+        const maxAcKw = this.info?.ratedPowerKw ?? 20;
+        try {
+          const provider = createPvPowerProvider(s.pv_source as SolarSource, String(s.pv_api_key ?? ''), String(s.solcast_sites ?? ''));
+          this.solar = new SolarForecaster({ latitude, longitude, arrays, performanceRatio: 0.85, maxAcKw }, calibration, provider);
+        } catch (err) {
+          this.error('Solar forecast disabled:', err);
+        }
       }
     }
 
     const previous = this.controller;
+    const prices = createPriceProvider(s.price_source as PriceSource, this.flowPrices);
     this.controller = new BatteryController(this.transport, prices, config, (...args) => this.log(...args));
     this.controller.loadForecast = (time) => this.loadProfile.predict(time);
     this.controller.pvForecast = (time) => this.solar?.forecastAt(time) ?? null;
@@ -323,6 +373,15 @@ export default class SolisInverterDevice extends Homey.Device {
       this.controller.outage = previous.outage;
     } else {
       this.restoreOverrides();
+    }
+  }
+
+  /** Price capabilities show the price area's currency. */
+  private async applyCurrencyUnits(): Promise<void> {
+    const units = `${this.currency}/kWh`;
+    for (const cap of ['measure_solis_price', 'measure_solis_power_cost']) {
+      const current = (this.getCapabilityOptions(cap) as { units?: unknown }).units;
+      if (current !== units) await this.setCapabilityOptions(cap, { units });
     }
   }
 
@@ -448,8 +507,9 @@ export default class SolisInverterDevice extends Homey.Device {
     if (!this.transport.getHistory || this.getStoreValue('historyLearned')) return;
     const tz = this.homey.clock.getTimezone();
     const load = new LoadProfile(tz);
-    await this.solar?.refresh(HISTORY_DAYS).catch(this.error);
-    const pv = new QuarterAverager((start, kw) => this.solar?.learn(start, kw));
+    const solar = this.solar?.provider.hasHistory ? this.solar : null;
+    await solar?.refresh(HISTORY_DAYS).catch(this.error);
+    const pv = new QuarterAverager((start, kw) => solar?.learn(start, kw));
     for (let d = HISTORY_DAYS; d >= 1; d--) {
       const date = localDate(addDays(new Date(), -d), tz);
       try {
@@ -489,7 +549,8 @@ export default class SolisInverterDevice extends Homey.Device {
     const previousIds = new Set(this.warnings.map((w) => w.id));
     if (s.warnings_enabled) {
       const language = this.homey.i18n.getLanguage() === 'sv' ? 'sv' : 'en';
-      this.warnings = await fetchWarnings(this.homey.geolocation.getLatitude(), this.homey.geolocation.getLongitude(), now, {
+      const fetcher = s.warnings_source === 'metno' ? fetchMetNoWarnings : fetchWarnings;
+      this.warnings = await fetcher(this.homey.geolocation.getLatitude(), this.homey.geolocation.getLongitude(), now, {
         minLevel: s.warnings_min_level as WarningLevel,
         weatherOnly: Boolean(s.warnings_weather_only),
         leadHours: Number(s.warnings_lead_hours),
@@ -530,7 +591,7 @@ export default class SolisInverterDevice extends Homey.Device {
     this.planning = true;
     try {
       const now = new Date();
-      await this.updateWarnings(now).catch((err) => this.error('SMHI warnings failed:', err));
+      await this.updateWarnings(now).catch((err) => this.error('Weather warnings failed:', err));
       await this.solar?.refresh().catch((err) => this.error('Solar forecast failed:', err));
       await this.updateSolarCapability(now);
 
@@ -539,7 +600,7 @@ export default class SolisInverterDevice extends Homey.Device {
       await this.updatePlanCapabilities(state, now);
       await this.updatePowerCost();
 
-      if (this.controlMode === 'auto') {
+      if (this.controlMode === 'auto' && this.canControl()) {
         const changes = await this.controller.apply(state);
         if (changes.length > 0) this.log('Inverter updated:', changes.join('; '));
       }
@@ -547,6 +608,8 @@ export default class SolisInverterDevice extends Homey.Device {
       if (this.lock.locked) {
         await this.setWarning('Battery locked by a SolisCloud remote command (0 A). Release it in SolisCloud: '
           + 'Quick Control → Discharge with a short duration. The limit returns to normal when it ends.');
+      } else if (!this.canControl()) {
+        await this.setWarning(this.homey.__('device.monitorOnly'));
       } else if (state.reserveSoc <= floor + 2) {
         await this.setWarning(`Reserve ${state.reserveSoc} % is not above the inverter's power-outage limit of ${floor} %: `
           + 'there is no backup energy. Raise the reserve in the settings.');

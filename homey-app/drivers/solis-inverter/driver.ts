@@ -1,6 +1,7 @@
 import Homey from 'homey';
 
-import { listInverters } from '../../lib/solis/SolisCloudTransport.js';
+import { supportLevel } from '../../lib/inverter/types.js';
+import { discoverInverters, listInverters } from '../../lib/solis/SolisCloudTransport.js';
 import type SolisInverterDevice from './device.js';
 
 type DeviceArgs<T = object> = T & { device: SolisInverterDevice };
@@ -37,6 +38,8 @@ export default class SolisInverterDriver extends Homey.Driver {
       .registerRunListener(async ({ device }: DeviceArgs) => device.hasWeatherWarning());
     flow.getActionCard('restore_inverter')
       .registerRunListener(async ({ device }: DeviceArgs) => device.restoreInverter());
+    flow.getActionCard('set_prices')
+      .registerRunListener(async ({ device, prices }: DeviceArgs<{ prices: string }>) => device.setFlowPrices(prices));
     flow.getActionCard('replan_now')
       .registerRunListener(async ({ device }: DeviceArgs) => device.setControlMode(device.controlMode));
   }
@@ -53,9 +56,12 @@ export default class SolisInverterDriver extends Homey.Driver {
     });
 
     session.setHandler('list_devices', async () => {
-      const inverters = await listInverters({ keyId, keySecret });
+      const inverters = (await discoverInverters({ keyId, keySecret })).filter((inv) => supportLevel(inv.info) !== 'unsupported');
+      if (inverters.length === 0) throw new Error(this.homey.__('device.noHybrid'));
+      // A plain name for everyday use; the model and firmware are in the device settings.
+      const name = this.homey.__('device.name');
       return inverters.map((inv) => ({
-        name: `${inv.model} (${inv.name})`,
+        name: inverters.length > 1 ? `${name} (${inv.name})` : name,
         data: { id: inv.serialNumber },
         settings: { key_id: keyId, key_secret: keySecret },
       }));

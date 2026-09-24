@@ -1,17 +1,53 @@
-import type { HistorySample, InverterSettings, InverterSummary, InverterTransport, LiveData, TouSlot } from '../inverter/types.js';
+import type {
+  HistorySample, InverterInfo, InverterSettings, InverterSummary, InverterTransport, LiveData, TouSlot,
+} from '../inverter/types.js';
 import { utcOffsetHours } from '../time.js';
 import { CHARGE_SLOT_CIDS, Cid, DISCHARGE_SLOT_CIDS, SETTINGS_CIDS, type SlotCids, TOU_V2_MARKER } from './cids.js';
 import { SolisApiError, SolisCloudClient, type SolisCredentials } from './SolisCloudClient.js';
 
 const BATCH_SIZE = 20;
 
-export async function listInverters(credentials: SolisCredentials): Promise<InverterSummary[]> {
-  const records = await new SolisCloudClient(credentials).inverterList();
+export async function listInverters(credentials: SolisCredentials, client = new SolisCloudClient(credentials)): Promise<InverterSummary[]> {
+  const records = await client.inverterList();
   return records.map((r) => ({
     serialNumber: String(r.sn),
     name: String(r.stationName ?? r.sn),
     model: String(r.machine ?? r.model ?? 'Solis'),
   }));
+}
+
+/** All inverters on the account with what the app can do with each. */
+export async function discoverInverters(credentials: SolisCredentials): Promise<Array<InverterSummary & { info: InverterInfo }>> {
+  const client = new SolisCloudClient(credentials);
+  const result = [];
+  for (const inverter of await listInverters(credentials, client)) {
+    result.push({ ...inverter, info: await inspectInverter(client, inverter.serialNumber) });
+  }
+  return result;
+}
+
+/** Energy storage control code SolisCloud reports for string inverters (no battery). */
+const NO_STORAGE_CONTROL = '0';
+
+/** Model, firmware and schedule format, from the inverter detail and the TOU v2 marker CID. */
+export async function inspectInverter(client: SolisCloudClient, serialNumber: string): Promise<InverterInfo> {
+  const detail = await client.inverterDetail(serialNumber);
+  const text = (key: string) => (detail[key] === undefined || detail[key] === null ? '' : String(detail[key]));
+  const hybrid = text('energyStorageControl') !== NO_STORAGE_CONTROL;
+  const marker = hybrid ? await client.read(serialNumber, Cid.touV2Marker).catch(() => '') : '';
+  const power = scaled(detail, 'power', POWER_UNITS, 'kW');
+  return {
+    model: text('machine') || text('productModel') || 'Solis',
+    modelCode: text('productModel') || text('model'),
+    ratedPowerKw: Number.isFinite(power) && power > 0 ? power / 1000 : null,
+    firmware: [['HMI', text('hmiVersionAll')], ['DSP', text('dspmVersionAll')]]
+      .filter(([, v]) => v)
+      .map(([k, v]) => `${k} ${v}`)
+      .join(' · ') || text('version'),
+    dataLogger: text('collectorModel'),
+    hybrid,
+    touV2: marker === TOU_V2_MARKER,
+  };
 }
 
 export class SolisCloudTransport implements InverterTransport {
@@ -20,6 +56,10 @@ export class SolisCloudTransport implements InverterTransport {
 
   constructor(credentials: SolisCredentials, private readonly serialNumber: string, client?: SolisCloudClient) {
     this.client = client ?? new SolisCloudClient(credentials);
+  }
+
+  getInfo(): Promise<InverterInfo> {
+    return inspectInverter(this.client, this.serialNumber);
   }
 
   async getLiveData(): Promise<LiveData> {
