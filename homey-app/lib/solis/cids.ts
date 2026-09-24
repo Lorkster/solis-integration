@@ -1,11 +1,13 @@
 /**
  * SolisCloud control IDs (CIDs) for hybrid inverters.
- * Source: https://github.com/mkuthan/solis-cloud-control, verified against an S6-EH3P20K-H.
+ * Sources: https://github.com/mkuthan/solis-cloud-control and Solis' official command list
+ * (https://oss.soliscloud.com/doc/SolisCloud_control_api_command_list.xlsx), verified against an S6-EH3P20K-H.
  */
 export const Cid = {
   storageMode: 636,
   reserveSoc: 157,
   overDischargeSoc: 158,
+  offGridOverDischargeSoc: 469,
   forceChargeSoc: 160,
   maxChargeSoc: 7963,
   maxChargeCurrent: 7224,
@@ -46,6 +48,7 @@ export const SETTINGS_CIDS: number[] = [
   Cid.storageMode,
   Cid.reserveSoc,
   Cid.overDischargeSoc,
+  Cid.offGridOverDischargeSoc,
   Cid.forceChargeSoc,
   Cid.maxChargeSoc,
   Cid.maxChargeCurrent,

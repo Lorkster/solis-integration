@@ -80,7 +80,7 @@ Open the device and tap the gear icon (settings). The most important groups:
 
 | Group | What to check |
 |---|---|
-| **Backup reserve** | How much the battery always keeps for power outages (25 % summer, 30 % winter by default). |
+| **Backup reserve** | How much the battery always keeps for power outages (40 % April–October, 45 % November–March by default). Only the part above the inverter's power-outage limit (often 30 %) can be used during an outage; the device shows a warning if the reserve is not above it. |
 | **Solar forecast** | Size (kWp), tilt and direction of your panels. With two directions (e.g. east and west roofs), fill in both arrays. |
 | **SMHI weather warnings** | On by default: the battery is charged to the outage level when a warning covers your location. |
 | **Battery** | Capacity and charge power. The defaults match a 21.68 kWh Qapasity Arctic. |

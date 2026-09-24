@@ -75,7 +75,7 @@ npx homey app install    # install permanently
 
 - [ ] Verify on the inverter that a 0 A charge slot blocks discharge (hold) on TOU v2 firmware
 - [ ] Verify the battery discharges to the house outside charge slots with time-of-use enabled
-- [ ] Read the off-grid over-discharge SOC (`offGridDDepth` = 30 in SolisCloud data?) for correct backup time
+- [x] Read the off-grid over-discharge SOC (CID 469, 30 % on this inverter) for backup time and reserve warning
 - [ ] Identify the SolisCloud field that shows the house running on the backup output
 - [x] Learned load profile from observed consumption
 - [x] Solar forecast with learned calibration

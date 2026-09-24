@@ -14,6 +14,7 @@ class FakeInverter implements InverterTransport {
     storageModeRaw: 33,
     reserveSoc: 25,
     overDischargeSoc: 15,
+    offGridOverDischargeSoc: 30,
     forceChargeSoc: 10,
     maxChargeSoc: 100,
     maxChargeCurrentA: 16,

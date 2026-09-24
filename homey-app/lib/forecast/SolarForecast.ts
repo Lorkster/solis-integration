@@ -49,6 +49,16 @@ export class OpenMeteoProvider implements IrradianceProvider {
 
 const TEMP_COEFFICIENT = -0.004; // per °C, crystalline silicon
 
+/**
+ * True when solar output looks throttled by the inverter rather than limited by the sun: nothing is
+ * exported and the battery is not charging, yet solar covers the whole house load. Such samples say
+ * nothing about what the panels could produce and must not be used for calibration.
+ */
+export function looksCurtailed(pvKw: number, loadKw: number, gridKw: number, batteryKw: number): boolean {
+  const exportKw = Math.max(0, -gridKw);
+  return pvKw > 0.5 && exportKw < 0.5 && batteryKw < 0.2 && pvKw >= loadKw - 0.2;
+}
+
 /** Physical estimate of AC output (kW) for one array, before calibration. */
 export function modelPvKw(irr: Irradiance, array: SolarArray, performanceRatio: number): number {
   if (irr.gti <= 0) return 0;

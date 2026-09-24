@@ -2,7 +2,7 @@ import Homey from 'homey';
 
 import { BatteryController, type ControllerConfig, currentAction, type PlanState } from '../../lib/controller/BatteryController.js';
 import { LoadProfile, type LoadProfileData } from '../../lib/forecast/LoadProfile.js';
-import { type CalibrationData, SolarCalibration, SolarForecaster } from '../../lib/forecast/SolarForecast.js';
+import { type CalibrationData, looksCurtailed, SolarCalibration, SolarForecaster } from '../../lib/forecast/SolarForecast.js';
 import type { InverterTransport, LiveData } from '../../lib/inverter/types.js';
 import type { BatteryAction } from '../../lib/planner/planner.js';
 import { ElprisetJustNuProvider, type PriceArea } from '../../lib/prices/PriceProvider.js';
@@ -54,6 +54,8 @@ export default class SolisInverterDevice extends Homey.Device {
   private lastAction: BatteryAction | null = null;
   private lastSampleTime = 0;
   private planning = false;
+  /** Battery floor during a power outage, read from the inverter (Solis default 20-30 %). */
+  private offGridFloorSoc: number | null = null;
 
   override async onInit(): Promise<void> {
     const tz = this.homey.clock.getTimezone();
@@ -78,8 +80,15 @@ export default class SolisInverterDevice extends Homey.Device {
     this.homey.setInterval(() => this.refreshLive().catch(this.error), LIVE_INTERVAL_MS);
     this.homey.setInterval(() => this.replan().catch(this.error), PLAN_INTERVAL_MS);
     await this.refreshLive().catch(this.error);
+    await this.readInverterLimits().catch(this.error);
     await this.replan().catch(this.error);
     this.learnFromHistory().catch(this.error);
+  }
+
+  private async readInverterLimits(): Promise<void> {
+    const settings = await this.transport.readSettings();
+    this.offGridFloorSoc = settings.offGridOverDischargeSoc;
+    await this.setStoreValue('offGridFloorSoc', this.offGridFloorSoc);
   }
 
   override async onSettings({ changedKeys }: { changedKeys: string[] }): Promise<void> {
@@ -186,6 +195,7 @@ export default class SolisInverterDevice extends Homey.Device {
         level: w.level, title: w.title, area: w.areaName, start: w.start?.toISOString() ?? null, end: w.end?.toISOString() ?? null,
       })),
       outageUntil: this.controller.outage?.until.toISOString() ?? null,
+      offGridFloorSoc: this.backupFloor(),
       plan: state && {
         generatedAt: state.generatedAt.toISOString(),
         reserveSoc: state.reserveSoc,
@@ -280,7 +290,8 @@ export default class SolisInverterDevice extends Homey.Device {
       if (live.timestamp.getTime() > this.lastSampleTime) {
         this.lastSampleTime = live.timestamp.getTime();
         this.loadProfile.addSample(live.timestamp, live.loadPowerW / 1000);
-        this.pvQuarters.add(live.timestamp, live.pvPowerW / 1000);
+        const curtailed = looksCurtailed(live.pvPowerW / 1000, live.loadPowerW / 1000, live.gridPowerW / 1000, live.batteryPowerW / 1000);
+        this.pvQuarters.add(live.timestamp, curtailed ? NaN : live.pvPowerW / 1000);
         await this.setStoreValue('loadProfile', this.loadProfile.toJSON());
       }
       await this.setAvailable();
@@ -317,7 +328,8 @@ export default class SolisInverterDevice extends Homey.Device {
       try {
         for (const sample of await this.transport.getHistory(date, tz)) {
           load.addSample(sample.time, sample.loadW / 1000);
-          pv.add(sample.time, sample.pvW / 1000);
+          const curtailed = looksCurtailed(sample.pvW / 1000, sample.loadW / 1000, sample.gridW / 1000, sample.batteryW / 1000);
+          pv.add(sample.time, curtailed ? NaN : sample.pvW / 1000);
         }
       } catch (err) {
         this.error(`History for ${date} failed:`, err);
@@ -334,10 +346,13 @@ export default class SolisInverterDevice extends Homey.Device {
     await this.replan();
   }
 
-  /** Energy above the over-discharge floor divided by the current house load. */
+  private backupFloor(): number {
+    return this.offGridFloorSoc ?? (this.getStoreValue('offGridFloorSoc') as number | undefined) ?? 30;
+  }
+
+  /** Energy above the inverter's off-grid floor divided by the current house load. */
   private backupHours(live: LiveData): number {
-    const floor = 15; // TODO: read the off-grid over-discharge SOC from the inverter
-    const energyKwh = Math.max(0, live.socPct - floor) / 100 * this.controller.config.capacityKwh;
+    const energyKwh = Math.max(0, live.socPct - this.backupFloor()) / 100 * this.controller.config.capacityKwh;
     const loadKw = Math.max(live.loadPowerW / 1000, 0.3);
     return Math.min(99, energyKwh / loadKw);
   }
@@ -400,7 +415,13 @@ export default class SolisInverterDevice extends Homey.Device {
         const changes = await this.controller.apply(state);
         if (changes.length > 0) this.log('Inverter updated:', changes.join('; '));
       }
-      await this.unsetWarning();
+      const floor = this.backupFloor();
+      if (state.reserveSoc <= floor + 2) {
+        await this.setWarning(`Reserve ${state.reserveSoc} % is not above the inverter's power-outage limit of ${floor} %: `
+          + 'there is no backup energy. Raise the reserve in the settings.');
+      } else {
+        await this.unsetWarning();
+      }
       await this.homey.flow.getDeviceTriggerCard('plan_updated')
         .trigger(this, { summary: this.summarise(state), savings: Math.round(state.plan.savingsSek * 100) / 100 })
         .catch(this.error);

@@ -58,6 +58,7 @@ export class SolisCloudTransport implements InverterTransport {
       storageModeRaw: num(Cid.storageMode),
       reserveSoc: num(Cid.reserveSoc),
       overDischargeSoc: num(Cid.overDischargeSoc),
+      offGridOverDischargeSoc: num(Cid.offGridOverDischargeSoc),
       forceChargeSoc: num(Cid.forceChargeSoc),
       maxChargeSoc: num(Cid.maxChargeSoc),
       maxChargeCurrentA: num(Cid.maxChargeCurrent),
@@ -137,7 +138,12 @@ export function parseHistorySample(record: Record<string, unknown>): HistorySamp
   const time = new Date(Number(record.dataTimestamp));
   const loadW = scaled(record, 'familyLoadPower', POWER_UNITS, 'W');
   if (Number.isNaN(time.getTime()) || !Number.isFinite(loadW)) return null;
-  return { time, loadW, pvW: dcPvPowerW(record) };
+  // History reports pSum in W, positive when exporting; batteryPower in W with a direction flag
+  // (assumed 1 = discharging; only charging vs. not charging matters for curtailment detection).
+  const pSum = Number(record.pSum ?? 0);
+  const batteryAbs = Math.abs(Number(record.batteryPower ?? 0));
+  const batteryW = Number(record.currentDirectionBattery) === 1 ? -batteryAbs : batteryAbs;
+  return { time, loadW, pvW: dcPvPowerW(record), gridW: -pSum, batteryW };
 }
 
 export function parseLiveData(detail: Record<string, unknown>): LiveData {

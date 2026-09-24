@@ -166,6 +166,8 @@ class SolisClient:
             raise SolisError(f"HTTP {err.code}: {err.read().decode('utf-8', 'replace')[:300]}") from err
         except urllib.error.URLError as err:
             raise SolisError(f"Network error: {err.reason}") from err
+        except (TimeoutError, OSError) as err:  # socket timeouts are not wrapped in URLError
+            raise SolisError(f"Network error: {err}") from err
 
         if str(result.get("code")) != "0":
             raise SolisError(f"API code {result.get('code')}: {result.get('msg')}")

@@ -18,6 +18,7 @@ export interface InverterSettings {
   storageModeRaw: number;
   reserveSoc: number; // "backup SOC", used when the backup/reserve bit is set
   overDischargeSoc: number;
+  offGridOverDischargeSoc: number; // battery floor while running on the backup output
   forceChargeSoc: number;
   maxChargeSoc: number;
   maxChargeCurrentA: number;
@@ -51,6 +52,8 @@ export interface HistorySample {
   time: Date;
   loadW: number;
   pvW: number;
+  gridW: number; // positive = import
+  batteryW: number; // positive = charging
 }
 
 export interface InverterTransport {

@@ -47,8 +47,9 @@ describe('LoadProfile', () => {
 
 describe('parseHistorySample', () => {
   it('reads W-based history records', () => {
-    const sample = parseHistorySample({ dataTimestamp: '1790073746672', familyLoadPower: 3035.0 });
+    const sample = parseHistorySample({ dataTimestamp: '1790073746672', familyLoadPower: 3035.0, pSum: 715, batteryPower: 0 });
     assert.equal(sample?.loadW, 3035);
+    assert.equal(sample?.gridW, -715, 'exporting');
     assert.equal(sample?.time.getTime(), 1790073746672);
   });
 });

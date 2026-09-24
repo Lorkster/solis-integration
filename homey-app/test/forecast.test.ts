@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { type Irradiance, type IrradianceProvider, modelPvKw, type SolarArray, SolarCalibration, SolarForecaster } from '../lib/forecast/SolarForecast.js';
+import { type Irradiance, type IrradianceProvider, looksCurtailed, modelPvKw, type SolarArray, SolarCalibration, SolarForecaster } from '../lib/forecast/SolarForecast.js';
 import { containsPoint, parseWarnings } from '../lib/warnings/SmhiWarnings.js';
 import { TZ } from './helpers.js';
 
@@ -24,6 +24,13 @@ describe('solar model', () => {
     assert.ok(Math.abs(calibration.factorAt(afternoon) - 0.4) < 1e-9);
     calibration.add(afternoon, 0.5, 5, 11); // low light: ignored
     assert.ok(Math.abs(calibration.factorAt(afternoon) - 0.4) < 1e-9);
+  });
+
+  it('recognises throttled solar', () => {
+    assert.ok(looksCurtailed(2.25, 2.23, 0, 0), 'solar equals load, no export, battery idle');
+    assert.ok(!looksCurtailed(5.0, 2.5, -2.4, 0), 'exporting freely');
+    assert.ok(!looksCurtailed(5.0, 2.5, 0, 2.4), 'surplus goes into the battery');
+    assert.ok(!looksCurtailed(1.2, 2.5, 1.3, 0), 'solar below load: sun-limited');
   });
 
   it('sums arrays and applies calibration', async () => {
