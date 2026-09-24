@@ -38,8 +38,10 @@ export interface LiveData {
   batteryVoltageV: number;
   batteryChargedTotalKwh: number;
   batteryDischargedTotalKwh: number;
-  /** Best-effort indication that the house is fed from the inverter's backup output. */
-  onBackup: boolean | null;
+  /** True when the grid is missing (power cut), null when the data cannot tell. */
+  gridLost: boolean | null;
+  /** Load on the inverter's backup output (W). */
+  backupLoadW: number;
   /** SolisCloud remote-control current limit (EMS / Quick Control), null if not reported. */
   remoteControlEnabled: boolean | null;
   remoteCurrentLimitA: number | null;

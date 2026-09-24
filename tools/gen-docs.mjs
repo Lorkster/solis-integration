@@ -37,6 +37,12 @@ const MEANING = {
   measure_solis_reserve: 'Battery level kept for power outages right now (seasonal, raised during weather warnings).',
   measure_solis_backup_hours: 'How long the battery would last in a power outage at the current consumption, down to the inverter\'s outage limit.',
   alarm_solis_battery_locked: 'On when a leftover SolisCloud command keeps the battery at 0 A. See the troubleshooting section.',
+  alarm_solis_power_cut: 'On while the inverter sees no grid voltage: the battery powers the backup output.',
+  alarm_solis_off_plan: 'On when the battery has not done what the plan says for 20 minutes, or no data has arrived for 20 minutes. The device’s warning line says what is wrong.',
+  measure_solis_saved_today: 'What the battery saved today: the actual electricity cost compared with the same consumption and solar without a battery. Unit follows the price area’s currency.',
+  measure_solis_saved_month: 'What the battery saved this month, including a lower power fee when that is switched on.',
+  measure_solis_peak_month: 'Only with a power fee: the average of this month’s highest peaks so far, which the fee is based on.',
+  measure_solis_peak_now: 'Only with a power fee: the average import this hour (or quarter) is heading for, weighted like the grid company does.',
   alarm_solis_weather: 'On while a weather warning covers Homey\'s location.',
   solis_warning: 'Text of the active weather warning(s).',
   'meter_power.charged': 'Total energy charged into the battery. Used by Homey Energy.',
@@ -111,10 +117,24 @@ console.log('Updated', guidePath);
 if (!process.argv.includes('--no-images')) {
   const images = join(root, 'docs', 'images');
   mkdirSync(images, { recursive: true });
-  for (const [widget, height] of [['battery-plan', 780], ['battery-status', 560]]) {
-    for (const theme of ['light', 'dark']) {
-      const out = join(images, `${widget}-${theme}.png`);
-      execFileSync('node', [join(root, 'tools/widget-preview/render.mjs'), widget, theme, '384', String(height), out]);
+  // A power cut with the power fee switched on: the banner and the peak tile.
+  const mockLive = JSON.parse(readFileSync(join(root, 'tools/widget-preview/mock-view.json'), 'utf8')).live;
+  const powerCut = JSON.stringify({
+    live: { ...mockLive, gridW: 0, loadW: 4600 },
+    powerCut: { since: '2026-09-24T12:05:00Z' },
+    peak: { monthKw: 4.3, thresholdKw: 4.1, nowKw: 0, risk: false },
+    supply: { source: 'solar_battery', title: 'Solar + battery', solarPct: 70, batteryPct: 30, gridPct: 0, surplusW: 0 },
+  });
+  const renders = [
+    ['battery-plan', 'light', 780, 'battery-plan-light'], ['battery-plan', 'dark', 780, 'battery-plan-dark'],
+    ['battery-status', 'light', 620, 'battery-status-light'], ['battery-status', 'dark', 620, 'battery-status-dark'],
+    ['battery-status', 'light', 680, 'battery-status-power-cut', powerCut],
+  ];
+  for (const [widget, theme, height, name, override] of renders) {
+    {
+      const out = join(images, `${name}.png`);
+      execFileSync('node', [join(root, 'tools/widget-preview/render.mjs'), widget, theme, '384', String(height), out],
+        { env: { ...process.env, MOCK_OVERRIDE: override ?? '' } });
       // Trim empty space below the card.
       execFileSync('python', ['-c', `
 from PIL import Image

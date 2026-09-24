@@ -38,6 +38,10 @@ export default class SolisInverterDriver extends Homey.Driver {
       .registerRunListener(async ({ device }: DeviceArgs) => device.hasWeatherWarning());
     flow.getActionCard('restore_inverter')
       .registerRunListener(async ({ device }: DeviceArgs) => device.restoreInverter());
+    flow.getConditionCard('power_cut_active')
+      .registerRunListener(async ({ device }: DeviceArgs) => device.isPowerCut());
+    flow.getConditionCard('peak_risk_active')
+      .registerRunListener(async ({ device }: DeviceArgs) => device.isPeakRisk());
     flow.getActionCard('set_prices')
       .registerRunListener(async ({ device, prices }: DeviceArgs<{ prices: string }>) => device.setFlowPrices(prices));
     flow.getActionCard('replan_now')

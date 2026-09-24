@@ -1,0 +1,20 @@
+{
+  "type": "boolean",
+  "title": {
+    "en": "Not following the plan",
+    "sv": "Följer inte planen"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "icon": "/assets/icons/off-plan.svg",
+  "insights": true,
+  "insightsTitleTrue": {
+    "en": "Inverter stopped following the plan",
+    "sv": "Växelriktaren slutade följa planen"
+  },
+  "insightsTitleFalse": {
+    "en": "Inverter follows the plan again",
+    "sv": "Växelriktaren följer planen igen"
+  }
+}

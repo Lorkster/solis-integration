@@ -40,6 +40,8 @@
     .pill { display: flex; align-items: center; gap: 6px; margin-bottom: var(--homey-su-2, 8px); padding: 6px 10px; border-radius: 10px; font-size: 12px;
       background: color-mix(in srgb, var(--homey-color-warning, #fab219) 22%, transparent); }
     .pill svg { width: 16px; height: 16px; flex: none; }
+    .pill.alert { font-weight: 600; background: color-mix(in srgb, var(--homey-color-danger, #f44336) 22%, transparent); }
+    .tile.risk { box-shadow: inset 0 0 0 1.5px var(--homey-color-warning, #fab219); }
 
     .tiles { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--homey-su-2, 8px); margin-top: var(--homey-su-3, 12px); }
     .tile { padding: 10px; border-radius: 12px; background: var(--c-node); min-width: 0; }
@@ -66,6 +68,8 @@
         backup: 'Backup time', reserve: 'Reserve', price: 'Price now', extra: 'Extra power now',
         poweredBy: 'House powered by', fromSolar: 'solar', fromBattery: 'battery', fromGrid: 'grid',
         locked: 'Battery locked by SolisCloud – release it with Quick Control → Discharge (short duration)',
+        powerCut: (t) => `Power cut since ${t} – the battery powers the backup output`,
+        savedMonth: 'Saved this month', savedToday: 'Saved today', peak: 'Power peak this month',
         updated: (t) => `Data from ${t}`, waiting: 'Waiting for data…', notPaired: 'Add your Solis inverter in Homey to see its status.',
       },
       sv: {
@@ -74,6 +78,8 @@
         backup: 'Reservtid', reserve: 'Reserv', price: 'Pris nu', extra: 'Extra el nu',
         poweredBy: 'Huset drivs av', fromSolar: 'sol', fromBattery: 'batteri', fromGrid: 'nät',
         locked: 'Batteriet låst av SolisCloud – frigör med Snabbkontroll → Urladdning (kort tid)',
+        powerCut: (t) => `Strömavbrott sedan ${t} – batteriet driver reservutgången`,
+        savedMonth: 'Sparat denna månad', savedToday: 'Sparat i dag', peak: 'Effekttopp denna månad',
         updated: (t) => `Data från ${t}`, waiting: 'Väntar på data…', notPaired: 'Lägg till din Solis-växelriktare i Homey för att se status.',
       },
     };
@@ -88,6 +94,9 @@
       clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
       bolt: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
       warning: '<path d="M10.3 3.7L2.4 17.5A2 2 0 004.1 20.5h15.8a2 2 0 001.7-3L13.7 3.7a2 2 0 00-3.4 0z"/><path d="M12 9v4.5M12 16.8v.1"/>',
+      plugOff: '<path d="M9 2v5M15 2v5M6 7h12v4a6 6 0 01-6 6 6 6 0 01-6-6z"/><path d="M12 17v5"/><path d="M3 3l18 18"/>',
+      coins: '<ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6"/><path d="M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/>',
+      gauge: '<path d="M3.5 17a9 9 0 1117 0"/><path d="M12 13l4-5"/><circle cx="12" cy="13" r="1.2"/>',
     };
     const icon = (name) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${PATHS[name]}</svg>`;
 
@@ -187,6 +196,7 @@
       tile.querySelector('.v').textContent = value;
       tile.querySelector('.tile-unit').textContent = unit;
       root.appendChild(tile);
+      return tile;
     }
 
     function render() {
@@ -202,12 +212,15 @@
         root.appendChild(msg);
         return;
       }
-      const notices = (view.warnings || []).map((w) => `${w.title} · ${w.area}`);
-      if (view.batteryLocked) notices.unshift(t.locked);
-      for (const text of notices) {
+      const fmtTime = (iso) => new Date(iso).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit', timeZone: view.timeZone });
+      const notices = (view.warnings || []).map((w) => ['warning', `${w.title} · ${w.area}`]);
+      if (view.offPlan) notices.unshift(['warning', view.offPlan]);
+      if (view.batteryLocked) notices.unshift(['warning', t.locked]);
+      if (view.powerCut) notices.unshift(['plugOff', t.powerCut(fmtTime(view.powerCut.since)), 'alert']);
+      for (const [name, text, kind] of notices) {
         const pill = document.createElement('div');
-        pill.className = 'pill';
-        pill.innerHTML = icon('warning');
+        pill.className = kind ? `pill ${kind}` : 'pill';
+        pill.innerHTML = icon(name);
         pill.appendChild(document.createTextNode(text));
         root.appendChild(pill);
       }
@@ -235,6 +248,15 @@
       tile(tiles, 'tag', t.price, current ? current.price.toLocaleString(locale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '–', `${cur()}/kWh`);
       tile(tiles, 'bolt', t.extra, view.extraPowerCost === null || view.extraPowerCost === undefined
         ? '–' : view.extraPowerCost.toLocaleString(locale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 }), `${cur()}/kWh`);
+      const money = (v) => (v === null || v === undefined ? '–' : v.toLocaleString(locale(), { maximumFractionDigits: 0 }));
+      if (view.savings) tile(tiles, 'coins', t.savedMonth, money(view.savings.month), cur());
+      if (view.peak) {
+        const peakTile = tile(tiles, 'gauge', t.peak, view.peak.monthKw === null ? '–'
+          : view.peak.monthKw.toLocaleString(locale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 }), 'kW');
+        if (view.peak.risk && peakTile) peakTile.classList.add('risk');
+      } else if (view.savings) {
+        tile(tiles, 'coins', t.savedToday, money(view.savings.today), cur());
+      }
       root.appendChild(tiles);
 
       const footer = document.createElement('div');

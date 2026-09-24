@@ -1,5 +1,6 @@
 // Renders a Homey widget with mock data and Homey-like styling, then screenshots it with headless Edge.
 // Usage: node tools/widget-preview/render.mjs <widget-id> <light|dark> [width] [height] [out.png] [hover 0..1]
+// MOCK_OVERRIDE='{"powerCut":{...}}' replaces top-level fields of the mock data.
 import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -8,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const [widget = 'battery-plan', theme = 'light', width = '400', height = '600', out, hover] = process.argv.slice(2);
-const view = JSON.parse(readFileSync(join(here, 'mock-view.json'), 'utf8'));
+const view = { ...JSON.parse(readFileSync(join(here, 'mock-view.json'), 'utf8')), ...JSON.parse(process.env.MOCK_OVERRIDE || '{}') };
 const html = readFileSync(resolve(here, '../../homey-app/widgets', widget, 'public/index.html'), 'utf8');
 
 // Approximation of Homey's widget stylesheet (only the variables the widgets use).

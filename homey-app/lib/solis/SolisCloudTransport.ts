@@ -1,6 +1,7 @@
 import type {
   HistorySample, InverterInfo, InverterSettings, InverterSummary, InverterTransport, LiveData, TouSlot,
 } from '../inverter/types.js';
+import { gridLost } from '../inverter/PowerCut.js';
 import { utcOffsetHours } from '../time.js';
 import { CHARGE_SLOT_CIDS, Cid, DISCHARGE_SLOT_CIDS, SETTINGS_CIDS, type SlotCids, TOU_V2_MARKER } from './cids.js';
 import { SolisApiError, SolisCloudClient, type SolisCredentials } from './SolisCloudClient.js';
@@ -226,8 +227,8 @@ export function parseLiveData(detail: Record<string, unknown>): LiveData {
     batteryVoltageV: Number(detail.batteryVoltage),
     batteryChargedTotalKwh: energyKwh('batteryTotalChargeEnergy'),
     batteryDischargedTotalKwh: energyKwh('batteryTotalDischargeEnergy'),
-    // TODO: identify the field that shows the backup output feeding the house (outage test).
-    onBackup: null,
+    gridLost: gridLost(detail),
+    backupLoadW: powerW('bypassLoadPower'),
     remoteControlEnabled: detail.batteryCDEnableSet === undefined ? null : Number(detail.batteryCDEnableSet) === 1,
     remoteCurrentLimitA: detail.batteryCDISet === undefined ? null : Number(detail.batteryCDISet),
   };

@@ -2,6 +2,7 @@ import { controlledStorageMode, describeStorageMode, withFlag } from '../inverte
 import { DISABLED_SLOT, type InverterSettings, type InverterTransport, type LiveData, type TouSlot } from '../inverter/types.js';
 import { type BatteryAction, planBattery, type PlanInterval, type PlanResult } from '../planner/planner.js';
 import { planToSchedule, type Schedule } from '../planner/schedule.js';
+import { NO_POWER_TARIFF, peakWeight, type PowerTariffConfig } from '../energy/PowerTariff.js';
 import type { PriceArea, PriceProvider, SpotPrice } from '../prices/PriceProvider.js';
 import { buyPrice, sellPrice, type TariffConfig } from '../tariff.js';
 import { addDays, localDate, localParts } from '../time.js';
@@ -21,6 +22,7 @@ export interface ControllerConfig {
   maxSocPct: number;
   avgLoadKw: number;
   pvTrust: number; // 0..1, share of the PV forecast the plan relies on
+  powerTariff?: PowerTariffConfig;
 }
 
 export interface Override {
@@ -51,6 +53,11 @@ export class BatteryController {
   loadForecast: (time: Date) => number | null = () => null;
   /** Expected PV power in kW at a time; null = unknown (treated as no PV). */
   pvForecast: (time: Date) => number | null = () => null;
+  /** Weighted import level (kW) above which the month's power fee rises; 0 = unknown. */
+  peakThresholdKw: () => number = () => 0;
+  /** True when the last apply found settings changed outside the app since the app wrote them. */
+  externalChange = false;
+  private lastApplied: InverterSettings | null = null;
 
   constructor(
     private readonly transport: InverterTransport,
@@ -76,6 +83,7 @@ export class BatteryController {
     const upcoming = spot.filter((p) => p.end > quarterStart);
     if (upcoming.length === 0) throw new Error('No price data available');
 
+    const tariff = this.config.powerTariff ?? NO_POWER_TARIFF;
     const intervals: PlanInterval[] = upcoming.map((p) => ({
       start: p.start,
       end: p.end,
@@ -83,6 +91,7 @@ export class BatteryController {
       sell: sellPrice(p.perKwh, this.config.tariff),
       loadKw: this.loadForecast(p.start) ?? this.config.avgLoadKw,
       pvKw: (this.pvForecast(p.start) ?? 0) * this.config.pvTrust,
+      peakWeight: peakWeight(p.start, this.config.timeZone, tariff),
     }));
 
     const fixedActions = new Map<number, BatteryAction>();
@@ -104,6 +113,11 @@ export class BatteryController {
       cyclingCostPerKwh: this.config.cyclingCostPerKwh,
       minGainPerKwh: this.config.minGainPerKwh,
       fixedActions,
+      peak: tariff.enabled ? {
+        costPerKw: tariff.pricePerKwMonth / Math.max(1, tariff.peaks),
+        thresholdKw: this.peakThresholdKw(),
+        periodHours: tariff.periodMinutes / 60,
+      } : undefined,
     });
     const schedule = planToSchedule(plan.intervals, {
       now,
@@ -117,6 +131,11 @@ export class BatteryController {
     return { generatedAt: now, reserveSoc, plan, schedule, pricesUntil: upcoming[upcoming.length - 1].end };
   }
 
+  /** Forgets what was written last, e.g. after monitor mode, so earlier values are not taken as outside changes. */
+  forgetApplied(): void {
+    this.lastApplied = null;
+  }
+
   /** Writes the schedule to the inverter. Only changed values are written. Returns what changed. */
   async apply(state: PlanState): Promise<string[]> {
     const current = await this.transport.readSettings();
@@ -125,6 +144,8 @@ export class BatteryController {
     }
     const changes: string[] = [];
     const desired = this.desiredSettings(current, state);
+    this.externalChange = this.lastApplied !== null && !settingsEqual(current, this.lastApplied);
+    if (this.externalChange) this.log('Inverter settings were changed outside the app since the last update');
 
     // Slots first, so enabling time-of-use never activates stale slots.
     for (let i = 0; i < SLOT_COUNT; i++) {
@@ -146,6 +167,7 @@ export class BatteryController {
       changes.push(`storage mode ${describeStorageMode(current.storageModeRaw)} → ${describeStorageMode(desired.storageModeRaw)}`);
     }
     if (changes.length > 0) this.log('Applied', changes);
+    this.lastApplied = desired;
     return changes;
   }
 
@@ -154,6 +176,7 @@ export class BatteryController {
    * switch, so the inverter runs plain self-use. The reserve (backup) setting is kept.
    */
   async restoreInverter(): Promise<string[]> {
+    this.lastApplied = null;
     const current = await this.transport.readSettings();
     const changes: string[] = [];
     for (let i = 0; i < SLOT_COUNT; i++) {
@@ -208,6 +231,12 @@ export class BatteryController {
 export function currentAction(state: PlanState | null, now: Date): BatteryAction | null {
   const iv = state?.plan.intervals.find((i) => i.start <= now && i.end > now);
   return iv?.action ?? null;
+}
+
+function settingsEqual(a: InverterSettings, b: InverterSettings): boolean {
+  return a.storageModeRaw === b.storageModeRaw && a.reserveSoc === b.reserveSoc
+    && a.chargeSlots.every((slot, i) => slotsEqual(slot, b.chargeSlots[i]))
+    && a.dischargeSlots.every((slot, i) => slotsEqual(slot, b.dischargeSlots[i]));
 }
 
 function slotsEqual(a: TouSlot, b: TouSlot): boolean {

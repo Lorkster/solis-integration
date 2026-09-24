@@ -1,0 +1,16 @@
+{
+  "type": "number",
+  "title": {
+    "en": "Saved by the battery this month",
+    "sv": "Sparat med batteriet denna månad"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "icon": "/assets/icons/savings.svg",
+  "units": {
+    "en": "kr"
+  },
+  "decimals": 0,
+  "insights": true
+}

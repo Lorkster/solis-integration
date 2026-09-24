@@ -25,6 +25,7 @@ interface Block {
   end: Date;
   socStartPct: number;
   socEndPct: number;
+  chargeKw: number; // lowest planned charge power in the block
 }
 
 /**
@@ -58,12 +59,12 @@ export function planToSchedule(plan: PlannedInterval[], opts: ScheduleOptions): 
     }
   }
 
-  const currentA = Math.ceil(opts.maxChargeKw * 1000 / Math.max(opts.batteryVoltageV, 1));
+  const currentFor = (kw: number) => Math.ceil(Math.min(kw, opts.maxChargeKw) * 1000 / Math.max(opts.batteryVoltageV, 1));
   const chargeSlots: TouSlot[] = blocks.map((b) => ({
     enabled: true,
     start: localHHMM(b.start, opts.timeZone),
     end: slotEnd(b.end, opts.timeZone),
-    currentA: b.action === 'charge' ? currentA : 0,
+    currentA: b.action === 'charge' ? Math.max(1, currentFor(b.chargeKw)) : 0,
     soc: b.action === 'charge'
       ? Math.min(opts.maxSocPct, Math.ceil(b.socEndPct))
       : Math.max(0, Math.round(b.socStartPct)),
@@ -77,11 +78,13 @@ function toBlocks(plan: PlannedInterval[]): Block[] {
   for (const iv of plan) {
     if (iv.action === 'self_use') continue;
     const last = blocks[blocks.length - 1];
+    const chargeKw = iv.action === 'charge' ? iv.chargeKw ?? Infinity : 0;
     if (last && last.action === iv.action && last.end.getTime() === iv.start.getTime()) {
       last.end = iv.end;
       last.socEndPct = iv.socEndPct;
+      last.chargeKw = Math.min(last.chargeKw, chargeKw);
     } else {
-      blocks.push({ action: iv.action, start: iv.start, end: iv.end, socStartPct: iv.socStartPct, socEndPct: iv.socEndPct });
+      blocks.push({ action: iv.action, start: iv.start, end: iv.end, socStartPct: iv.socStartPct, socEndPct: iv.socEndPct, chargeKw });
     }
   }
   return blocks;
@@ -140,6 +143,8 @@ function mergeClosestCharges(blocks: Block[], timeZone: string, warnings: string
   const a = blocks[bestIndex];
   const b = blocks[bestIndex + 1];
   warnings.push(`Merged charge blocks at ${localHHMM(a.start, timeZone)} and ${localHHMM(b.start, timeZone)}`);
-  const merged: Block = { action: 'charge', start: a.start, end: b.end, socStartPct: a.socStartPct, socEndPct: b.socEndPct };
+  const merged: Block = {
+    action: 'charge', start: a.start, end: b.end, socStartPct: a.socStartPct, socEndPct: b.socEndPct, chargeKw: Math.min(a.chargeKw, b.chargeKw),
+  };
   return [...blocks.slice(0, bestIndex), merged, ...blocks.slice(bestIndex + 2)];
 }

@@ -1,0 +1,16 @@
+{
+  "type": "number",
+  "title": {
+    "en": "Power this hour (expected)",
+    "sv": "Effekt denna timme (väntad)"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "icon": "/assets/icons/peak.svg",
+  "units": {
+    "en": "kW"
+  },
+  "decimals": 2,
+  "insights": true
+}

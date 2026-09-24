@@ -1,0 +1,20 @@
+{
+  "type": "boolean",
+  "title": {
+    "en": "Power cut",
+    "sv": "Strömavbrott"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "icon": "/assets/icons/power-cut.svg",
+  "insights": true,
+  "insightsTitleTrue": {
+    "en": "Power cut started",
+    "sv": "Strömavbrott började"
+  },
+  "insightsTitleFalse": {
+    "en": "Power back",
+    "sv": "Strömmen tillbaka"
+  }
+}

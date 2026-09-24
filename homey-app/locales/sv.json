@@ -19,5 +19,21 @@
       "unsupported": "Stöds inte: växelriktaren saknar batteristyrning"
     },
     "monitorOnly": "Växelriktarens firmware använder det äldre schemat med 3 luckor. Appen kan visa planen men inte styra batteriet ännu."
-  }
+  },
+  "powerCut": {
+    "started": "Strömavbrott kl. {{time}}. Batteri {{battery}} % – cirka {{hours}} h reserv vid nuvarande förbrukning.",
+    "low": "Reserven börjar ta slut: batteri {{battery}} %, cirka {{hours}} h kvar.",
+    "ended": "Strömmen är tillbaka efter {{duration}}. Batteri {{battery}} %.",
+    "warning": "Strömavbrott sedan {{time}}: batteriet driver reservutgången."
+  },
+  "offPlan": {
+    "not_charging": "Planerad nätladdning, men batteriet laddar inte",
+    "discharging_while_saving": "Batteriet skulle sparas, men det laddar ur",
+    "not_covering_house": "Batteriet är över reserven men driver inte huset",
+    "unplanned_grid_charging": "Batteriet laddar från nätet utan att det är planerat",
+    "no_data": "Ingen ny data från växelriktaren sedan {{time}}",
+    "settings_changed": "Växelriktarens inställningar ändrades utanför appen; appen har skrivit sitt schema igen",
+    "notification": "Solis-batteriet: {{reason}}."
+  },
+  "summary": "I går sparade batteriet {{day}} {{currency}}; {{month}} {{currency}} hittills denna månad."
 }

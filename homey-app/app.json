@@ -303,6 +303,246 @@
             "filter": "driver_id=solis-inverter"
           }
         ]
+      },
+      {
+        "id": "power_cut_started",
+        "title": {
+          "en": "The power went out",
+          "sv": "Strömmen gick"
+        },
+        "hint": {
+          "en": "The inverter sees no grid voltage. The battery now powers what is connected to its backup output.",
+          "sv": "Växelriktaren ser ingen nätspänning. Batteriet driver nu det som är anslutet till reservutgången."
+        },
+        "tokens": [
+          {
+            "name": "battery",
+            "type": "number",
+            "title": {
+              "en": "Battery (%)",
+              "sv": "Batteri (%)"
+            },
+            "example": 78
+          },
+          {
+            "name": "backup_hours",
+            "type": "number",
+            "title": {
+              "en": "Backup time (h)",
+              "sv": "Reservtid (h)"
+            },
+            "example": 9.5
+          }
+        ],
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=solis-inverter"
+          }
+        ]
+      },
+      {
+        "id": "power_cut_ended",
+        "title": {
+          "en": "The power came back",
+          "sv": "Strömmen kom tillbaka"
+        },
+        "tokens": [
+          {
+            "name": "minutes",
+            "type": "number",
+            "title": {
+              "en": "Power cut length (min)",
+              "sv": "Avbrottets längd (min)"
+            },
+            "example": 85
+          },
+          {
+            "name": "battery",
+            "type": "number",
+            "title": {
+              "en": "Battery (%)",
+              "sv": "Batteri (%)"
+            },
+            "example": 61
+          }
+        ],
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=solis-inverter"
+          }
+        ]
+      },
+      {
+        "id": "backup_low",
+        "title": {
+          "en": "Backup is running low during a power cut",
+          "sv": "Reserven börjar ta slut under ett strömavbrott"
+        },
+        "hint": {
+          "en": "Less than 2 hours of backup left at the current use.",
+          "sv": "Mindre än 2 timmars reserv kvar vid nuvarande förbrukning."
+        },
+        "tokens": [
+          {
+            "name": "battery",
+            "type": "number",
+            "title": {
+              "en": "Battery (%)",
+              "sv": "Batteri (%)"
+            },
+            "example": 24
+          },
+          {
+            "name": "backup_hours",
+            "type": "number",
+            "title": {
+              "en": "Backup time (h)",
+              "sv": "Reservtid (h)"
+            },
+            "example": 1.6
+          }
+        ],
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=solis-inverter"
+          }
+        ]
+      },
+      {
+        "id": "off_plan",
+        "title": {
+          "en": "The inverter stopped following the plan",
+          "sv": "Växelriktaren slutade följa planen"
+        },
+        "hint": {
+          "en": "The battery has not done what the plan says for 20 minutes, the inverter settings were changed outside the app, or no data has arrived for 20 minutes.",
+          "sv": "Batteriet har inte gjort som planen säger på 20 minuter, växelriktarens inställningar ändrades utanför appen, eller ingen data har kommit på 20 minuter."
+        },
+        "tokens": [
+          {
+            "name": "reason",
+            "type": "string",
+            "title": {
+              "en": "Reason",
+              "sv": "Orsak"
+            },
+            "example": {
+              "en": "Planned grid charging, but the battery is not charging"
+            }
+          }
+        ],
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=solis-inverter"
+          }
+        ]
+      },
+      {
+        "id": "on_plan",
+        "title": {
+          "en": "The inverter follows the plan again",
+          "sv": "Växelriktaren följer planen igen"
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=solis-inverter"
+          }
+        ]
+      },
+      {
+        "id": "peak_risk",
+        "title": {
+          "en": "This hour's power is heading above the month's peak",
+          "sv": "Timmens effekt är på väg över månadens topp"
+        },
+        "hint": {
+          "en": "Fires once per period when the expected average import would raise this month's power fee. Switch something off to avoid it.",
+          "sv": "Körs en gång per period när den väntade medeleffekten skulle höja månadens effektavgift. Stäng av något för att undvika det."
+        },
+        "tokens": [
+          {
+            "name": "expected",
+            "type": "number",
+            "title": {
+              "en": "Expected (kW)",
+              "sv": "Väntad (kW)"
+            },
+            "example": 5.2
+          },
+          {
+            "name": "peak",
+            "type": "number",
+            "title": {
+              "en": "Month's peak level (kW)",
+              "sv": "Månadens toppnivå (kW)"
+            },
+            "example": 4.1
+          }
+        ],
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=solis-inverter"
+          }
+        ]
+      },
+      {
+        "id": "day_summary",
+        "title": {
+          "en": "Daily summary",
+          "sv": "Daglig sammanfattning"
+        },
+        "hint": {
+          "en": "Fires just after midnight with what the battery saved the day before.",
+          "sv": "Körs strax efter midnatt med vad batteriet sparade dagen innan."
+        },
+        "tokens": [
+          {
+            "name": "saved_day",
+            "type": "number",
+            "title": {
+              "en": "Saved yesterday",
+              "sv": "Sparat i går"
+            },
+            "example": 18.4
+          },
+          {
+            "name": "saved_month",
+            "type": "number",
+            "title": {
+              "en": "Saved this month",
+              "sv": "Sparat denna månad"
+            },
+            "example": 312
+          },
+          {
+            "name": "peak_month",
+            "type": "number",
+            "title": {
+              "en": "Power peak this month (kW)",
+              "sv": "Effekttopp denna månad (kW)"
+            },
+            "example": 4.1
+          }
+        ],
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=solis-inverter"
+          }
+        ]
       }
     ],
     "conditions": [
@@ -509,6 +749,38 @@
         "hint": {
           "en": "True while a weather warning at the chosen level covers Homey's location.",
           "sv": "Sant medan en vädervarning på vald nivå gäller Homeys plats."
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=solis-inverter"
+          }
+        ]
+      },
+      {
+        "id": "power_cut_active",
+        "title": {
+          "en": "There !{{is|is not}} a power cut",
+          "sv": "Det !{{är|är inte}} strömavbrott"
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=solis-inverter"
+          }
+        ]
+      },
+      {
+        "id": "peak_risk_active",
+        "title": {
+          "en": "This hour's power !{{is|is not}} heading above the month's peak",
+          "sv": "Timmens effekt !{{är|är inte}} på väg över månadens topp"
+        },
+        "hint": {
+          "en": "Use it to hold back loads such as car charging or water heating while it is true.",
+          "sv": "Använd det för att hålla tillbaka laster som billaddning eller varmvatten medan det är sant."
         },
         "args": [
           {
@@ -768,7 +1040,13 @@
         "measure_solis_pv_forecast",
         "measure_solis_reserve",
         "measure_solis_backup_hours",
+        "alarm_solis_power_cut",
+        "measure_solis_saved_today",
+        "measure_solis_saved_month",
+        "measure_solis_peak_month",
+        "measure_solis_peak_now",
         "alarm_solis_battery_locked",
+        "alarm_solis_off_plan",
         "alarm_solis_weather",
         "solis_warning",
         "meter_power.charged",
@@ -1747,6 +2025,437 @@
         {
           "type": "group",
           "label": {
+            "en": "Power fee (effektavgift)",
+            "sv": "Effektavgift"
+          },
+          "children": [
+            {
+              "id": "power_tariff_enabled",
+              "type": "checkbox",
+              "label": {
+                "en": "My grid fee includes a power fee",
+                "sv": "Mitt nätavtal har effektavgift"
+              },
+              "value": false,
+              "hint": {
+                "en": "The grid company charges per kW of the month's highest import peaks. The plan then avoids new peaks, and grid charging stays below the month's peak level.",
+                "sv": "Nätbolaget tar betalt per kW för månadens högsta effekttoppar. Planen undviker då nya toppar, och nätladdning håller sig under månadens toppnivå."
+              }
+            },
+            {
+              "id": "power_tariff_price",
+              "type": "number",
+              "label": {
+                "en": "Price per kW and month (incl. VAT)",
+                "sv": "Pris per kW och månad (inkl. moms)"
+              },
+              "value": 0,
+              "min": 0,
+              "max": 1000,
+              "step": 0.01,
+              "units": {
+                "en": "per kW",
+                "sv": "per kW"
+              }
+            },
+            {
+              "id": "power_tariff_peaks",
+              "type": "number",
+              "label": {
+                "en": "Number of peaks averaged",
+                "sv": "Antal toppar i medelvärdet"
+              },
+              "value": 3,
+              "min": 1,
+              "max": 10,
+              "step": 1
+            },
+            {
+              "id": "power_tariff_distinct_days",
+              "type": "checkbox",
+              "label": {
+                "en": "At most one peak per day",
+                "sv": "Högst en topp per dag"
+              },
+              "value": true
+            },
+            {
+              "id": "power_tariff_period",
+              "type": "dropdown",
+              "label": {
+                "en": "Peaks are measured per",
+                "sv": "Toppar mäts per"
+              },
+              "value": "60",
+              "values": [
+                {
+                  "id": "60",
+                  "label": {
+                    "en": "Hour",
+                    "sv": "Timme"
+                  }
+                },
+                {
+                  "id": "15",
+                  "label": {
+                    "en": "Quarter-hour",
+                    "sv": "Kvart"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "power_tariff_from",
+              "type": "dropdown",
+              "label": {
+                "en": "Counted from",
+                "sv": "Räknas från"
+              },
+              "value": "0",
+              "values": [
+                {
+                  "id": "0",
+                  "label": {
+                    "en": "00:00"
+                  }
+                },
+                {
+                  "id": "1",
+                  "label": {
+                    "en": "01:00"
+                  }
+                },
+                {
+                  "id": "2",
+                  "label": {
+                    "en": "02:00"
+                  }
+                },
+                {
+                  "id": "3",
+                  "label": {
+                    "en": "03:00"
+                  }
+                },
+                {
+                  "id": "4",
+                  "label": {
+                    "en": "04:00"
+                  }
+                },
+                {
+                  "id": "5",
+                  "label": {
+                    "en": "05:00"
+                  }
+                },
+                {
+                  "id": "6",
+                  "label": {
+                    "en": "06:00"
+                  }
+                },
+                {
+                  "id": "7",
+                  "label": {
+                    "en": "07:00"
+                  }
+                },
+                {
+                  "id": "8",
+                  "label": {
+                    "en": "08:00"
+                  }
+                },
+                {
+                  "id": "9",
+                  "label": {
+                    "en": "09:00"
+                  }
+                },
+                {
+                  "id": "10",
+                  "label": {
+                    "en": "10:00"
+                  }
+                },
+                {
+                  "id": "11",
+                  "label": {
+                    "en": "11:00"
+                  }
+                },
+                {
+                  "id": "12",
+                  "label": {
+                    "en": "12:00"
+                  }
+                },
+                {
+                  "id": "13",
+                  "label": {
+                    "en": "13:00"
+                  }
+                },
+                {
+                  "id": "14",
+                  "label": {
+                    "en": "14:00"
+                  }
+                },
+                {
+                  "id": "15",
+                  "label": {
+                    "en": "15:00"
+                  }
+                },
+                {
+                  "id": "16",
+                  "label": {
+                    "en": "16:00"
+                  }
+                },
+                {
+                  "id": "17",
+                  "label": {
+                    "en": "17:00"
+                  }
+                },
+                {
+                  "id": "18",
+                  "label": {
+                    "en": "18:00"
+                  }
+                },
+                {
+                  "id": "19",
+                  "label": {
+                    "en": "19:00"
+                  }
+                },
+                {
+                  "id": "20",
+                  "label": {
+                    "en": "20:00"
+                  }
+                },
+                {
+                  "id": "21",
+                  "label": {
+                    "en": "21:00"
+                  }
+                },
+                {
+                  "id": "22",
+                  "label": {
+                    "en": "22:00"
+                  }
+                },
+                {
+                  "id": "23",
+                  "label": {
+                    "en": "23:00"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "power_tariff_to",
+              "type": "dropdown",
+              "label": {
+                "en": "Counted until",
+                "sv": "Räknas till"
+              },
+              "value": "24",
+              "values": [
+                {
+                  "id": "1",
+                  "label": {
+                    "en": "01:00"
+                  }
+                },
+                {
+                  "id": "2",
+                  "label": {
+                    "en": "02:00"
+                  }
+                },
+                {
+                  "id": "3",
+                  "label": {
+                    "en": "03:00"
+                  }
+                },
+                {
+                  "id": "4",
+                  "label": {
+                    "en": "04:00"
+                  }
+                },
+                {
+                  "id": "5",
+                  "label": {
+                    "en": "05:00"
+                  }
+                },
+                {
+                  "id": "6",
+                  "label": {
+                    "en": "06:00"
+                  }
+                },
+                {
+                  "id": "7",
+                  "label": {
+                    "en": "07:00"
+                  }
+                },
+                {
+                  "id": "8",
+                  "label": {
+                    "en": "08:00"
+                  }
+                },
+                {
+                  "id": "9",
+                  "label": {
+                    "en": "09:00"
+                  }
+                },
+                {
+                  "id": "10",
+                  "label": {
+                    "en": "10:00"
+                  }
+                },
+                {
+                  "id": "11",
+                  "label": {
+                    "en": "11:00"
+                  }
+                },
+                {
+                  "id": "12",
+                  "label": {
+                    "en": "12:00"
+                  }
+                },
+                {
+                  "id": "13",
+                  "label": {
+                    "en": "13:00"
+                  }
+                },
+                {
+                  "id": "14",
+                  "label": {
+                    "en": "14:00"
+                  }
+                },
+                {
+                  "id": "15",
+                  "label": {
+                    "en": "15:00"
+                  }
+                },
+                {
+                  "id": "16",
+                  "label": {
+                    "en": "16:00"
+                  }
+                },
+                {
+                  "id": "17",
+                  "label": {
+                    "en": "17:00"
+                  }
+                },
+                {
+                  "id": "18",
+                  "label": {
+                    "en": "18:00"
+                  }
+                },
+                {
+                  "id": "19",
+                  "label": {
+                    "en": "19:00"
+                  }
+                },
+                {
+                  "id": "20",
+                  "label": {
+                    "en": "20:00"
+                  }
+                },
+                {
+                  "id": "21",
+                  "label": {
+                    "en": "21:00"
+                  }
+                },
+                {
+                  "id": "22",
+                  "label": {
+                    "en": "22:00"
+                  }
+                },
+                {
+                  "id": "23",
+                  "label": {
+                    "en": "23:00"
+                  }
+                },
+                {
+                  "id": "24",
+                  "label": {
+                    "en": "24:00"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "power_tariff_outside_weight",
+              "type": "number",
+              "label": {
+                "en": "Other hours count as",
+                "sv": "Övriga timmar räknas som"
+              },
+              "value": 0,
+              "min": 0,
+              "max": 100,
+              "step": 10,
+              "units": {
+                "en": "%"
+              },
+              "hint": {
+                "en": "0 % = not counted, 50 % = half (e.g. Ellevio's night hours 22–06).",
+                "sv": "0 % = räknas inte, 50 % = till hälften (t.ex. Ellevios natt 22–06)."
+              }
+            },
+            {
+              "id": "power_tariff_weekdays_only",
+              "type": "checkbox",
+              "label": {
+                "en": "Weekdays only",
+                "sv": "Endast vardagar"
+              },
+              "value": false
+            },
+            {
+              "id": "power_tariff_winter_only",
+              "type": "checkbox",
+              "label": {
+                "en": "November–March only",
+                "sv": "Endast november–mars"
+              },
+              "value": false
+            }
+          ]
+        },
+        {
+          "type": "group",
+          "label": {
             "en": "Planning",
             "sv": "Planering"
           },
@@ -1766,6 +2475,50 @@
               "step": 0.1,
               "units": {
                 "en": "kW"
+              }
+            }
+          ]
+        },
+        {
+          "type": "group",
+          "label": {
+            "en": "Notifications",
+            "sv": "Aviseringar"
+          },
+          "children": [
+            {
+              "id": "notify_power_cut",
+              "type": "checkbox",
+              "label": {
+                "en": "Power cuts",
+                "sv": "Strömavbrott"
+              },
+              "value": true,
+              "hint": {
+                "en": "A timeline notification when the power goes, when backup runs low (under 2 h) and when the power is back.",
+                "sv": "En avisering i tidslinjen när strömmen går, när reserven börjar ta slut (under 2 h) och när strömmen är tillbaka."
+              }
+            },
+            {
+              "id": "notify_off_plan",
+              "type": "checkbox",
+              "label": {
+                "en": "Inverter not following the plan",
+                "sv": "Växelriktaren följer inte planen"
+              },
+              "value": true
+            },
+            {
+              "id": "notify_daily",
+              "type": "checkbox",
+              "label": {
+                "en": "Daily summary",
+                "sv": "Daglig sammanfattning"
+              },
+              "value": false,
+              "hint": {
+                "en": "After midnight: what the battery saved yesterday and so far this month.",
+                "sv": "Efter midnatt: vad batteriet sparade i går och hittills denna månad."
               }
             }
           ]
@@ -1914,6 +2667,46 @@
         "sv": "Batteriet frigjort"
       }
     },
+    "alarm_solis_off_plan": {
+      "type": "boolean",
+      "title": {
+        "en": "Not following the plan",
+        "sv": "Följer inte planen"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/icons/off-plan.svg",
+      "insights": true,
+      "insightsTitleTrue": {
+        "en": "Inverter stopped following the plan",
+        "sv": "Växelriktaren slutade följa planen"
+      },
+      "insightsTitleFalse": {
+        "en": "Inverter follows the plan again",
+        "sv": "Växelriktaren följer planen igen"
+      }
+    },
+    "alarm_solis_power_cut": {
+      "type": "boolean",
+      "title": {
+        "en": "Power cut",
+        "sv": "Strömavbrott"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/icons/power-cut.svg",
+      "insights": true,
+      "insightsTitleTrue": {
+        "en": "Power cut started",
+        "sv": "Strömavbrott började"
+      },
+      "insightsTitleFalse": {
+        "en": "Power back",
+        "sv": "Strömmen tillbaka"
+      }
+    },
     "alarm_solis_weather": {
       "type": "boolean",
       "title": {
@@ -2014,6 +2807,38 @@
       "decimals": 0,
       "insights": true
     },
+    "measure_solis_peak_month": {
+      "type": "number",
+      "title": {
+        "en": "Power peak this month",
+        "sv": "Effekttopp denna månad"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/icons/peak.svg",
+      "units": {
+        "en": "kW"
+      },
+      "decimals": 2,
+      "insights": true
+    },
+    "measure_solis_peak_now": {
+      "type": "number",
+      "title": {
+        "en": "Power this hour (expected)",
+        "sv": "Effekt denna timme (väntad)"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/icons/peak.svg",
+      "units": {
+        "en": "kW"
+      },
+      "decimals": 2,
+      "insights": true
+    },
     "measure_solis_power_cost": {
       "type": "number",
       "title": {
@@ -2092,6 +2917,38 @@
         "en": "%"
       },
       "decimals": 0,
+      "insights": true
+    },
+    "measure_solis_saved_month": {
+      "type": "number",
+      "title": {
+        "en": "Saved by the battery this month",
+        "sv": "Sparat med batteriet denna månad"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/icons/savings.svg",
+      "units": {
+        "en": "kr"
+      },
+      "decimals": 0,
+      "insights": true
+    },
+    "measure_solis_saved_today": {
+      "type": "number",
+      "title": {
+        "en": "Saved by the battery today",
+        "sv": "Sparat med batteriet i dag"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/icons/savings.svg",
+      "units": {
+        "en": "kr"
+      },
+      "decimals": 2,
       "insights": true
     },
     "measure_solis_solar_share": {

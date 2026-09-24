@@ -1,0 +1,16 @@
+{
+  "type": "number",
+  "title": {
+    "en": "Power peak this month",
+    "sv": "Effekttopp denna månad"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "icon": "/assets/icons/peak.svg",
+  "units": {
+    "en": "kW"
+  },
+  "decimals": 2,
+  "insights": true
+}

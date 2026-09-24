@@ -5,7 +5,10 @@ Solis Smart Battery is a Homey Pro app for a Solis hybrid inverter with a batter
 - **plans the battery around electricity prices**: charges when power is cheap, saves the charge for
   expensive hours and lets the battery run the house when that pays off;
 - **learns your house**: your real consumption pattern and how your solar panels actually perform;
-- **keeps a reserve for power outages**, and fills the battery before weather warnings;
+- **keeps a reserve for power outages**, fills the battery before weather warnings and tells you
+  when the power goes and how long the battery will last;
+- **keeps power peaks down** when your grid company charges a power fee (effektavgift);
+- **shows what the battery actually saves**, measured, and **checks that the inverter follows the plan**;
 - **tells your flows what is going on**: what powers the house right now, whether there is solar to
   spare, and what one more kWh would cost.
 
@@ -19,6 +22,9 @@ Which inverters it works with: [Supported inverters](#supported-inverters).
 [Control modes](#control-modes) ·
 [How the plan is made](#how-the-plan-is-made) ·
 [Backup and power outages](#backup-and-power-outages) ·
+[Power fee](#power-fee-effektavgift) ·
+[Savings](#what-the-battery-saves) ·
+[Plan check](#is-the-inverter-following-the-plan) ·
 [Automations](#automations-flows) ·
 [Settings](#settings) ·
 [Troubleshooting](#troubleshooting) ·
@@ -125,6 +131,13 @@ Widget settings: *Time shown* (24, 36 or 48 hours) and *Show solar and load fore
 - **Price now**: what a kWh bought from the grid costs.
 - **Extra power now**: what one *more* kWh costs right now – see
   [Automations](#automations-flows) for why this is the value to act on.
+- **Saved this month**: what the battery has saved, measured – see [What the battery saves](#what-the-battery-saves).
+- **Power peak this month** (with a power fee) or **Saved today** (without one). The peak tile gets a
+  yellow edge while this hour's import is heading above the month's peak.
+- **Notices** at the top: a red banner during a power cut, and yellow ones for weather warnings, a
+  battery locked by SolisCloud, or an inverter that is not following the plan.
+
+<img src="images/battery-status-power-cut.png" width="340" alt="Battery status during a power cut, with the power fee switched on">
 
 ---
 
@@ -160,7 +173,13 @@ chosen as the device's tile indicator, and all numbers and alarms are kept in Ho
 | **Solar forecast today** | Solprognos idag | kWh | Expected solar production for the whole day, from the forecast calibrated against your panels. |
 | **Backup reserve** | Reservnivå | % | Battery level kept for power outages right now (seasonal, raised during weather warnings). |
 | **Backup time at current load** | Reservtid vid nuvarande förbrukning | h | How long the battery would last in a power outage at the current consumption, down to the inverter's outage limit. |
+| **Power cut** | Strömavbrott |  | On while the inverter sees no grid voltage: the battery powers the backup output. |
+| **Saved by the battery today** | Sparat med batteriet i dag | kr | What the battery saved today: the actual electricity cost compared with the same consumption and solar without a battery. Unit follows the price area’s currency. |
+| **Saved by the battery this month** | Sparat med batteriet denna månad | kr | What the battery saved this month, including a lower power fee when that is switched on. |
+| **Power peak this month** | Effekttopp denna månad | kW | Only with a power fee: the average of this month’s highest peaks so far, which the fee is based on. |
+| **Power this hour (expected)** | Effekt denna timme (väntad) | kW | Only with a power fee: the average import this hour (or quarter) is heading for, weighted like the grid company does. |
 | **Battery locked by SolisCloud** | Batteriet låst av SolisCloud |  | On when a leftover SolisCloud command keeps the battery at 0 A. See the troubleshooting section. |
+| **Not following the plan** | Följer inte planen |  | On when the battery has not done what the plan says for 20 minutes, or no data has arrived for 20 minutes. The device’s warning line says what is wrong. |
 | **Weather warning** | Vädervarning |  | On while a weather warning covers Homey's location. |
 | **Weather warning** | Vädervarning |  | Text of the active weather warning(s). |
 | **Energy charged** | Laddad energi | kWh | Total energy charged into the battery. Used by Homey Energy. |
@@ -233,6 +252,97 @@ covers Homey's location (or starts within the chosen number of hours), the app r
 warning ends. The flow action **Prepare for a power outage** does the same for a number of hours.
 **Cancel manual battery overrides** stops it early.
 
+### When the power goes
+
+The app sees a power cut when the inverter reports no grid voltage. Then:
+
+- the **Power cut** alarm switches on, the widget shows a red banner, and you get a notification in
+  Homey's timeline: *Power cut at 14:05. Battery 78 % – about 9 h of backup at the current use*;
+- in Automatic mode the app removes its charge and save periods from the inverter, so nothing holds
+  the battery back while it powers the house;
+- when less than 2 hours of backup are left, you get a second notification;
+- when the power is back, a last notification says how long the cut lasted, and the plan is written
+  to the inverter again.
+
+If your house is moved to the backup output with a manual switch, the notification is your reminder
+to switch. *Backup time* counts the energy down to the inverter's power-outage limit at the current
+consumption, so it grows when you switch things off.
+
+The flow cards **The power went out**, **Backup is running low during a power cut**, **The power came
+back** and **There is a power cut** let you act on it, for example switch off the water heater and
+the car charger during a cut. The notifications can be switched off under *Notifications* in the
+settings.
+
+> The grid-voltage signal is how Solis inverters report a missing grid. It has not been confirmed
+> during a real power cut on this installation yet; the first cut will show whether the alarm comes
+> as expected.
+
+---
+
+## Power fee (effektavgift)
+
+Many grid companies charge a monthly fee per kW of your highest import peaks, and more Swedish grid
+companies are introducing such fees. Switch it on under **Power fee** in the settings and copy the
+terms from your grid company's price list:
+
+| Setting | Example: Ellevio |
+|---|---|
+| Price per kW and month (incl. VAT) | from the price list |
+| Number of peaks averaged | 3 |
+| At most one peak per day | on |
+| Peaks are measured per | hour |
+| Counted from – until | 06:00 – 22:00 |
+| Other hours count as | 50 % (night hours count half) |
+
+With the fee switched on:
+
+- the app measures the import each hour (or quarter-hour) like the grid company does, and keeps the
+  month's highest peaks. When switched on, it reads this month's peaks from the SolisCloud history;
+- the plan avoids new peaks: grid charging stays below the month's peak level, and the battery is
+  saved for the hours where it keeps the peak down. Per kW, the fee costs far more than charging
+  at a cheaper hour saves;
+- **Power peak this month** shows the level the fee is based on, and **Power this hour (expected)**
+  where the current hour is heading;
+- the trigger **This hour's power is heading above the month's peak** and the condition with the
+  same name let you hold back loads before a new peak is set:
+
+> **When** This hour's power is heading above the month's peak
+> **Then** pause the car charger for 20 minutes
+
+---
+
+## What the battery saves
+
+The app measures, every five minutes, what your electricity actually costs, and compares it with what
+the same consumption and solar production would have cost **without a battery**. The difference is
+**Saved by the battery today** and **this month** (the month includes a lower power fee, when that is
+switched on). Charging losses count against the battery, so the figure is what you really gain.
+
+- Counting starts when the app is installed, and prices are those of your price source and settings.
+- The *Battery plan* widget's *"cheaper than plain self-use"* is something else: the plan's expected
+  gain over the next day compared with letting the inverter run on its own.
+- The **Daily summary** trigger (and an optional notification) reports the saving just after midnight.
+
+---
+
+## Is the inverter following the plan?
+
+In Automatic mode the app compares what the battery does with what the plan says. When a difference
+lasts 20 minutes, the **Not following the plan** alarm switches on, the device's warning line says
+what is wrong, and you get a notification:
+
+| Message | Usual cause |
+|---|---|
+| Planned grid charging, but the battery is not charging | A limit in SolisCloud (grid charging switched off, max charge current), or the battery is warm or cold |
+| Planned to save the battery, but it is discharging | The inverter did not take the save period, e.g. time-of-use switched off |
+| The battery is above the reserve but not powering the house | A SolisCloud command holding the battery (see [Troubleshooting](#troubleshooting)) |
+| The battery is charging from the grid without a plan | A SolisCloud energy-management strategy or the inverter's own force-charge level |
+| The inverter settings were changed outside the app | Someone changed the schedule in SolisCloud; the app has written its own again |
+| No new data from the inverter since … | The data logger is offline (Wi-Fi, power) or SolisCloud is down |
+
+The flow cards **The inverter stopped following the plan** (with the reason as a token) and **The
+inverter follows the plan again** let you act on it.
+
 ---
 
 ## Automations (Flows)
@@ -268,6 +378,10 @@ So the rule becomes one condition: **Extra power costs less than 2.00 kr/kWh now
 **Know what runs the house**
 > **When** What powers the house changed
 > **Then** send a notification: *House powered by [Powered by] – [From grid (%)] % from the grid*
+
+**Power cut**
+> **When** The power went out
+> **Then** turn off the water heater and the car charger
 
 **Weather warning**
 > **When** A weather warning was issued for my location
@@ -308,6 +422,13 @@ everything. Send today's and tomorrow's prices; the plan updates right away.
 | The weather warnings for my location ended | Fires when no warning at the chosen level covers Homey's location any more. |
 | The battery was locked by SolisCloud | A leftover SolisCloud remote command holds the battery at 0 A. Release it with Quick Control → Discharge with a duration in SolisCloud. |
 | The battery was released | Fires when the SolisCloud limit is back to normal and the battery works again. |
+| The power went out | The inverter sees no grid voltage. The battery now powers what is connected to its backup output. Tokens: Battery (%), Backup time (h) |
+| The power came back | Tokens: Power cut length (min), Battery (%) |
+| Backup is running low during a power cut | Less than 2 hours of backup left at the current use. Tokens: Battery (%), Backup time (h) |
+| The inverter stopped following the plan | The battery has not done what the plan says for 20 minutes, the inverter settings were changed outside the app, or no data has arrived for 20 minutes. Tokens: Reason |
+| The inverter follows the plan again |  |
+| This hour's power is heading above the month's peak | Fires once per period when the expected average import would raise this month's power fee. Switch something off to avoid it. Tokens: Expected (kW), Month's peak level (kW) |
+| Daily summary | Fires just after midnight with what the battery saved the day before. Tokens: Saved yesterday, Saved this month, Power peak this month (kW) |
 
 **And… (conditions)**
 
@@ -319,6 +440,8 @@ everything. Send today's and tomorrow's prices; the plan updates right away.
 | Planned action is / is not *[action]* | What the plan does in the current quarter-hour. In self-use the battery powers the house when needed, stores solar surplus, and stops at the reserve. |
 | Price is / is not among the *[hours]* cheapest hours today | Compares the current import price with today's quarter-hour prices. |
 | A weather warning is / is not active | True while a weather warning at the chosen level covers Homey's location. |
+| There is / is not a power cut |  |
+| This hour's power is / is not heading above the month's peak | Use it to hold back loads such as car charging or water heating while it is true. |
 
 **Then… (actions)**
 
@@ -411,11 +534,34 @@ Open the device and tap the gear icon.
 | Grid transfer fee high-load time (ex VAT) | 0.244 per kWh |  |
 | Export compensation on top of spot | 0.104 per kWh |  |
 
+**Power fee (effektavgift)**
+
+| Setting | Default | What it does |
+|---|---|---|
+| My grid fee includes a power fee | off | The grid company charges per kW of the month's highest import peaks. The plan then avoids new peaks, and grid charging stays below the month's peak level. |
+| Price per kW and month (incl. VAT) | 0 per kW |  |
+| Number of peaks averaged | 3 |  |
+| At most one peak per day | on |  |
+| Peaks are measured per | Hour |  |
+| Counted from | 00:00 |  |
+| Counted until | 24:00 |  |
+| Other hours count as | 0 % | 0 % = not counted, 50 % = half (e.g. Ellevio's night hours 22–06). |
+| Weekdays only | off |  |
+| November–March only | off |  |
+
 **Planning**
 
 | Setting | Default | What it does |
 |---|---|---|
 | Average house load | 2 kW | Used until a load profile is learned from history. |
+
+**Notifications**
+
+| Setting | Default | What it does |
+|---|---|---|
+| Power cuts | on | A timeline notification when the power goes, when backup runs low (under 2 h) and when the power is back. |
+| Inverter not following the plan | on |  |
+| Daily summary | off | After midnight: what the battery saved yesterday and so far this month. |
 
 **Inverter**
 
@@ -452,6 +598,7 @@ More problems and solutions (installation, API key, datalogger): see [INSTALL.md
 | Inverter values and settings | SolisCloud API with your own API key |
 | Electricity prices | Your choice: Nord Pool day-ahead prices via elprisetjustnu.se (Sweden) or Nord Pool's data portal (Nordics, Baltics, Germany, the Netherlands, Belgium, France, Austria, Poland), or prices sent from a flow |
 | Solar forecast | Your choice: Open-Meteo, Forecast.Solar or Solcast, for Homey's location |
+| Power peaks, savings, power cuts | Measured by the app from the inverter's values |
 | Weather warnings | Your choice: SMHI (Sweden) or MET Norway (Norway) |
 
 The app sends nothing else anywhere. Your API key is stored in the device settings on your Homey.

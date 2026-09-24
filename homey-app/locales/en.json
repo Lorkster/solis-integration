@@ -19,5 +19,21 @@
       "unsupported": "Not supported: no battery control on this inverter"
     },
     "monitorOnly": "This inverter's firmware uses the older 3-slot schedule. The app can show the plan but not control the battery yet."
-  }
+  },
+  "powerCut": {
+    "started": "Power cut at {{time}}. Battery {{battery}} % – about {{hours}} h of backup at the current use.",
+    "low": "Backup is running low: battery {{battery}} %, about {{hours}} h left.",
+    "ended": "The power is back after {{duration}}. Battery {{battery}} %.",
+    "warning": "Power cut since {{time}}: the battery powers the backup output."
+  },
+  "offPlan": {
+    "not_charging": "Planned grid charging, but the battery is not charging",
+    "discharging_while_saving": "Planned to save the battery, but it is discharging",
+    "not_covering_house": "The battery is above the reserve but not powering the house",
+    "unplanned_grid_charging": "The battery is charging from the grid without a plan",
+    "no_data": "No new data from the inverter since {{time}}",
+    "settings_changed": "The inverter settings were changed outside the app; the app has written its schedule again",
+    "notification": "Solis battery: {{reason}}."
+  },
+  "summary": "Yesterday the battery saved {{day}} {{currency}}; {{month}} {{currency}} so far this month."
 }

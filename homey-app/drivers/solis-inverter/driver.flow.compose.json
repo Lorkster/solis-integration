@@ -212,6 +212,197 @@
         "en": "Fires when the SolisCloud limit is back to normal and the battery works again.",
         "sv": "Körs när SolisCloud-gränsen är normal igen och batteriet fungerar."
       }
+    },
+    {
+      "id": "power_cut_started",
+      "title": {
+        "en": "The power went out",
+        "sv": "Strömmen gick"
+      },
+      "hint": {
+        "en": "The inverter sees no grid voltage. The battery now powers what is connected to its backup output.",
+        "sv": "Växelriktaren ser ingen nätspänning. Batteriet driver nu det som är anslutet till reservutgången."
+      },
+      "tokens": [
+        {
+          "name": "battery",
+          "type": "number",
+          "title": {
+            "en": "Battery (%)",
+            "sv": "Batteri (%)"
+          },
+          "example": 78
+        },
+        {
+          "name": "backup_hours",
+          "type": "number",
+          "title": {
+            "en": "Backup time (h)",
+            "sv": "Reservtid (h)"
+          },
+          "example": 9.5
+        }
+      ]
+    },
+    {
+      "id": "power_cut_ended",
+      "title": {
+        "en": "The power came back",
+        "sv": "Strömmen kom tillbaka"
+      },
+      "tokens": [
+        {
+          "name": "minutes",
+          "type": "number",
+          "title": {
+            "en": "Power cut length (min)",
+            "sv": "Avbrottets längd (min)"
+          },
+          "example": 85
+        },
+        {
+          "name": "battery",
+          "type": "number",
+          "title": {
+            "en": "Battery (%)",
+            "sv": "Batteri (%)"
+          },
+          "example": 61
+        }
+      ]
+    },
+    {
+      "id": "backup_low",
+      "title": {
+        "en": "Backup is running low during a power cut",
+        "sv": "Reserven börjar ta slut under ett strömavbrott"
+      },
+      "hint": {
+        "en": "Less than 2 hours of backup left at the current use.",
+        "sv": "Mindre än 2 timmars reserv kvar vid nuvarande förbrukning."
+      },
+      "tokens": [
+        {
+          "name": "battery",
+          "type": "number",
+          "title": {
+            "en": "Battery (%)",
+            "sv": "Batteri (%)"
+          },
+          "example": 24
+        },
+        {
+          "name": "backup_hours",
+          "type": "number",
+          "title": {
+            "en": "Backup time (h)",
+            "sv": "Reservtid (h)"
+          },
+          "example": 1.6
+        }
+      ]
+    },
+    {
+      "id": "off_plan",
+      "title": {
+        "en": "The inverter stopped following the plan",
+        "sv": "Växelriktaren slutade följa planen"
+      },
+      "hint": {
+        "en": "The battery has not done what the plan says for 20 minutes, the inverter settings were changed outside the app, or no data has arrived for 20 minutes.",
+        "sv": "Batteriet har inte gjort som planen säger på 20 minuter, växelriktarens inställningar ändrades utanför appen, eller ingen data har kommit på 20 minuter."
+      },
+      "tokens": [
+        {
+          "name": "reason",
+          "type": "string",
+          "title": {
+            "en": "Reason",
+            "sv": "Orsak"
+          },
+          "example": {
+            "en": "Planned grid charging, but the battery is not charging"
+          }
+        }
+      ]
+    },
+    {
+      "id": "on_plan",
+      "title": {
+        "en": "The inverter follows the plan again",
+        "sv": "Växelriktaren följer planen igen"
+      }
+    },
+    {
+      "id": "peak_risk",
+      "title": {
+        "en": "This hour's power is heading above the month's peak",
+        "sv": "Timmens effekt är på väg över månadens topp"
+      },
+      "hint": {
+        "en": "Fires once per period when the expected average import would raise this month's power fee. Switch something off to avoid it.",
+        "sv": "Körs en gång per period när den väntade medeleffekten skulle höja månadens effektavgift. Stäng av något för att undvika det."
+      },
+      "tokens": [
+        {
+          "name": "expected",
+          "type": "number",
+          "title": {
+            "en": "Expected (kW)",
+            "sv": "Väntad (kW)"
+          },
+          "example": 5.2
+        },
+        {
+          "name": "peak",
+          "type": "number",
+          "title": {
+            "en": "Month's peak level (kW)",
+            "sv": "Månadens toppnivå (kW)"
+          },
+          "example": 4.1
+        }
+      ]
+    },
+    {
+      "id": "day_summary",
+      "title": {
+        "en": "Daily summary",
+        "sv": "Daglig sammanfattning"
+      },
+      "hint": {
+        "en": "Fires just after midnight with what the battery saved the day before.",
+        "sv": "Körs strax efter midnatt med vad batteriet sparade dagen innan."
+      },
+      "tokens": [
+        {
+          "name": "saved_day",
+          "type": "number",
+          "title": {
+            "en": "Saved yesterday",
+            "sv": "Sparat i går"
+          },
+          "example": 18.4
+        },
+        {
+          "name": "saved_month",
+          "type": "number",
+          "title": {
+            "en": "Saved this month",
+            "sv": "Sparat denna månad"
+          },
+          "example": 312
+        },
+        {
+          "name": "peak_month",
+          "type": "number",
+          "title": {
+            "en": "Power peak this month (kW)",
+            "sv": "Effekttopp denna månad (kW)"
+          },
+          "example": 4.1
+        }
+      ]
     }
   ],
   "conditions": [
@@ -393,6 +584,24 @@
       "hint": {
         "en": "True while a weather warning at the chosen level covers Homey's location.",
         "sv": "Sant medan en vädervarning på vald nivå gäller Homeys plats."
+      }
+    },
+    {
+      "id": "power_cut_active",
+      "title": {
+        "en": "There !{{is|is not}} a power cut",
+        "sv": "Det !{{är|är inte}} strömavbrott"
+      }
+    },
+    {
+      "id": "peak_risk_active",
+      "title": {
+        "en": "This hour's power !{{is|is not}} heading above the month's peak",
+        "sv": "Timmens effekt !{{är|är inte}} på väg över månadens topp"
+      },
+      "hint": {
+        "en": "Use it to hold back loads such as car charging or water heating while it is true.",
+        "sv": "Använd det för att hålla tillbaka laster som billaddning eller varmvatten medan det är sant."
       }
     }
   ],

@@ -6,10 +6,14 @@ import {
   type CalibrationData, createPvPowerProvider, looksCurtailed, SolarCalibration, SolarForecaster, type SolarSource,
 } from '../../lib/forecast/SolarForecast.js';
 import { extraPowerCost, houseSupply, type HouseSupply, usesSource } from '../../lib/energy/EnergyFlow.js';
+import { type PeakData, PeakTracker, type PowerTariffConfig } from '../../lib/energy/PowerTariff.js';
+import { type SavingsData, SavingsTracker } from '../../lib/energy/Savings.js';
 import { LockDetector } from '../../lib/inverter/LockDetector.js';
+import { type Deviation, type Expectation, PlanMonitor } from '../../lib/inverter/PlanMonitor.js';
+import { type PowerCutEvent, type PowerCutState, PowerCutTracker } from '../../lib/inverter/PowerCut.js';
 import { type InverterInfo, type InverterTransport, type LiveData, supportLevel } from '../../lib/inverter/types.js';
 import type { BatteryAction } from '../../lib/planner/planner.js';
-import { intervalState, planPeriods, planSummary } from '../../lib/planner/summary.js';
+import { displayAction, intervalState, planPeriods, planSummary } from '../../lib/planner/summary.js';
 import {
   createPriceProvider, currencyForArea, FlowPriceProvider, parseFlowPrices, type PriceArea, type PriceSource,
 } from '../../lib/prices/PriceProvider.js';
@@ -25,6 +29,11 @@ const LIVE_INTERVAL_MS = 5 * 60_000;
 const PLAN_INTERVAL_MS = 30 * 60_000;
 const HISTORY_DAYS = 14;
 const OUTAGE_HOURS_WITHOUT_END = 24;
+/** Longest gap between two live samples that still counts as continuous measurement. */
+const MAX_SAMPLE_GAP_H = 10 / 60;
+const PEAK_CAPABILITIES = ['measure_solis_peak_month', 'measure_solis_peak_now'];
+
+const num = (value: unknown, fallback: number) => (Number.isFinite(Number(value)) && value !== '' && value !== null ? Number(value) : fallback);
 
 /** Averages samples per quarter hour and reports each completed quarter. */
 class QuarterAverager {
@@ -67,11 +76,24 @@ export default class SolisInverterDevice extends Homey.Device {
   private lastCostReported: number | null = null;
   private flowPrices!: FlowPriceProvider;
   private info: InverterInfo | null = null;
+  private powerCut!: PowerCutTracker;
+  private readonly monitor = new PlanMonitor();
+  private offPlan: Deviation | null = null;
+  private peaks!: PeakTracker; // actual import peaks
+  private peaksWithoutBattery!: PeakTracker; // what the peaks would have been without the battery
+  private savings!: SavingsTracker;
+  private peakRiskPeriod = 0;
+  private peakRisk = false;
+  private planError: string | null = null;
 
   override async onInit(): Promise<void> {
     const tz = this.homey.clock.getTimezone();
     this.flowPrices = new FlowPriceProvider(tz, this.getStoreValue('flowPrices') ?? []);
     this.info = (this.getStoreValue('inverterInfo') as InverterInfo | undefined) ?? null;
+    this.powerCut = new PowerCutTracker(this.getStoreValue('powerCut') as PowerCutState | undefined);
+    this.savings = new SavingsTracker(tz, this.getStoreValue('savings') as SavingsData | undefined);
+    this.peaks = new PeakTracker(tz, this.powerTariff(), this.getStoreValue('peaks') as PeakData | undefined);
+    this.peaksWithoutBattery = new PeakTracker(tz, this.powerTariff(), this.getStoreValue('peaksWithoutBattery') as PeakData | undefined);
     this.loadProfile = new LoadProfile(tz, this.getStoreValue('loadProfile') as LoadProfileData | undefined);
     this.pvQuarters = new QuarterAverager((start, kw) => {
       if (!this.solar) return;
@@ -88,6 +110,7 @@ export default class SolisInverterDevice extends Homey.Device {
     this.registerCapabilityListener('solis_control_mode', async (mode: ControlMode) => {
       if (mode === 'auto' && !this.canControl()) throw new Error(this.homey.__('device.monitorOnly'));
       this.log('Control mode →', mode);
+      this.controller.forgetApplied();
       this.homey.setTimeout(() => this.replan().catch(this.error), 1_000);
     });
 
@@ -98,6 +121,24 @@ export default class SolisInverterDevice extends Homey.Device {
     await this.readInverterLimits().catch(this.error);
     await this.replan().catch(this.error);
     this.learnFromHistory().catch(this.error);
+    this.learnPeaksFromHistory().catch(this.error);
+  }
+
+  /** Power fee settings (disabled unless switched on with a price). */
+  private powerTariff(): PowerTariffConfig {
+    const s = this.getSettings() as Settings;
+    return {
+      enabled: Boolean(s.power_tariff_enabled) && num(s.power_tariff_price, 0) > 0,
+      pricePerKwMonth: num(s.power_tariff_price, 0),
+      peaks: Math.max(1, Math.round(num(s.power_tariff_peaks, 3))),
+      distinctDays: s.power_tariff_distinct_days !== false,
+      periodMinutes: num(s.power_tariff_period, 60) === 15 ? 15 : 60,
+      winterOnly: Boolean(s.power_tariff_winter_only),
+      weekdaysOnly: Boolean(s.power_tariff_weekdays_only),
+      fromHour: num(s.power_tariff_from, 0),
+      toHour: num(s.power_tariff_to, 24),
+      outsideWeight: num(s.power_tariff_outside_weight, 0) / 100,
+    };
   }
 
   /** Model, firmware and what the app can do with this inverter; shown in the device settings. */
@@ -141,7 +182,16 @@ export default class SolisInverterDevice extends Homey.Device {
   override async onSettings({ changedKeys }: { changedKeys: string[] }): Promise<void> {
     this.log('Settings changed:', changedKeys);
     const solarChanged = changedKeys.some((k) => k.startsWith('pv_array') || k === 'pv_source' || k === 'solcast_sites');
+    const tariffChanged = changedKeys.some((k) => k.startsWith('power_tariff'));
     this.homey.setTimeout(async () => {
+      if (tariffChanged) {
+        // Peaks are measured differently now: start over from the history of this month.
+        const tz = this.homey.clock.getTimezone();
+        this.peaks = new PeakTracker(tz, this.powerTariff());
+        this.peaksWithoutBattery = new PeakTracker(tz, this.powerTariff());
+        await this.unsetStoreValue('peaksLearned').catch(this.error);
+        await this.migrateCapabilities();
+      }
       if (solarChanged) {
         // New orientation: the previous calibration no longer applies.
         await this.unsetStoreValue('solarCalibration').catch(this.error);
@@ -150,6 +200,7 @@ export default class SolisInverterDevice extends Homey.Device {
       this.createController();
       await this.replan().catch(this.error);
       if (solarChanged) this.learnFromHistory().catch(this.error);
+      if (tariffChanged) this.learnPeaksFromHistory().catch(this.error);
     }, 500);
   }
 
@@ -167,6 +218,8 @@ export default class SolisInverterDevice extends Homey.Device {
   }
 
   async setControlMode(mode: ControlMode): Promise<void> {
+    if (mode === 'auto' && !this.canControl()) throw new Error(this.homey.__('device.monitorOnly'));
+    if (mode !== this.controlMode) this.controller.forgetApplied();
     await this.setCapabilityValue('solis_control_mode', mode);
     await this.replan();
   }
@@ -227,6 +280,14 @@ export default class SolisInverterDevice extends Homey.Device {
     return this.warnings.length > 0;
   }
 
+  isPowerCut(): boolean {
+    return this.powerCut.active;
+  }
+
+  isPeakRisk(): boolean {
+    return this.peakRisk;
+  }
+
   isPriceAmongCheapest(hours: number): boolean {
     const now = new Date();
     const tz = this.homey.clock.getTimezone();
@@ -273,6 +334,15 @@ export default class SolisInverterDevice extends Homey.Device {
         surplusW: Math.round(this.supply.surplusW),
       },
       extraPowerCost: round(this.extraPowerCost() ?? NaN, 2),
+      powerCut: this.powerCut.since && { since: this.powerCut.since.toISOString() },
+      offPlan: this.offPlan && this.deviationText(this.offPlan),
+      savings: { today: round(this.savedToday(), 2), month: round(this.savedThisMonth(), 0) },
+      peak: this.powerTariff().enabled ? {
+        monthKw: round(this.peaks.feeLevelKw(), 2),
+        thresholdKw: round(this.peaks.thresholdKw(), 2),
+        nowKw: round(this.projectedPeakKw() ?? NaN, 2),
+        risk: this.peakRisk,
+      } : null,
       plan: state && {
         generatedAt: state.generatedAt.toISOString(),
         reserveSoc: state.reserveSoc,
@@ -304,7 +374,8 @@ export default class SolisInverterDevice extends Homey.Device {
 
   /** Capabilities were renamed during development; keep existing devices in line with the driver. */
   private async migrateCapabilities(): Promise<void> {
-    const wanted = (this.driver.manifest as { capabilities: string[] }).capabilities;
+    const hidden = this.powerTariff().enabled ? [] : PEAK_CAPABILITIES;
+    const wanted = (this.driver.manifest as { capabilities: string[] }).capabilities.filter((c) => !hidden.includes(c));
     for (const cap of this.getCapabilities()) {
       if (!wanted.includes(cap)) await this.removeCapability(cap).catch(this.error);
     }
@@ -342,6 +413,7 @@ export default class SolisInverterDevice extends Homey.Device {
       maxSocPct: Number(s.max_soc),
       avgLoadKw: Number(s.avg_load_kw),
       pvTrust: Number(s.pv_trust) / 100,
+      powerTariff: this.powerTariff(),
     };
 
     this.solar = null;
@@ -368,6 +440,7 @@ export default class SolisInverterDevice extends Homey.Device {
     this.controller = new BatteryController(this.transport, prices, config, (...args) => this.log(...args));
     this.controller.loadForecast = (time) => this.loadProfile.predict(time);
     this.controller.pvForecast = (time) => this.solar?.forecastAt(time) ?? null;
+    this.controller.peakThresholdKw = () => this.peaks?.thresholdKw() ?? 0;
     if (previous) {
       this.controller.overrides = previous.overrides;
       this.controller.outage = previous.outage;
@@ -379,9 +452,17 @@ export default class SolisInverterDevice extends Homey.Device {
   /** Price capabilities show the price area's currency. */
   private async applyCurrencyUnits(): Promise<void> {
     const units = `${this.currency}/kWh`;
-    for (const cap of ['measure_solis_price', 'measure_solis_power_cost']) {
+    const sign = ({ SEK: 'kr', NOK: 'kr', DKK: 'kr', EUR: '€', PLN: 'zł' } as Record<string, string>)[this.currency] ?? this.currency;
+    const wanted: Record<string, string> = {
+      measure_solis_price: units,
+      measure_solis_power_cost: units,
+      measure_solis_saved_today: sign,
+      measure_solis_saved_month: sign,
+    };
+    for (const [cap, unit] of Object.entries(wanted)) {
+      if (!this.hasCapability(cap)) continue;
       const current = (this.getCapabilityOptions(cap) as { units?: unknown }).units;
-      if (current !== units) await this.setCapabilityOptions(cap, { units });
+      if (current !== unit) await this.setCapabilityOptions(cap, { units: unit });
     }
   }
 
@@ -413,7 +494,10 @@ export default class SolisInverterDevice extends Homey.Device {
       const live = await this.transport.getLiveData();
       this.live = live;
       if (live.timestamp.getTime() > this.lastSampleTime) {
+        const gapH = this.lastSampleTime ? (live.timestamp.getTime() - this.lastSampleTime) / 3_600_000 : LIVE_INTERVAL_MS / 3_600_000;
         this.lastSampleTime = live.timestamp.getTime();
+        await this.measure(live, Math.min(gapH, MAX_SAMPLE_GAP_H));
+        await this.updatePowerCut(live);
         this.loadProfile.addSample(live.timestamp, live.loadPowerW / 1000);
         const curtailed = looksCurtailed(live.pvPowerW / 1000, live.loadPowerW / 1000, live.gridPowerW / 1000, live.batteryPowerW / 1000);
         this.pvQuarters.add(live.timestamp, curtailed ? NaN : live.pvPowerW / 1000);
@@ -437,7 +521,245 @@ export default class SolisInverterDevice extends Homey.Device {
     } catch (err) {
       this.error('Live data failed:', err);
       if (!this.live) await this.setUnavailable(`SolisCloud: ${(err as Error).message}`);
+    } finally {
+      await this.checkPlan().catch(this.error);
+      await this.refreshWarning().catch(this.error);
     }
+  }
+
+  // --- measured savings and power peaks ------------------------------------------------------
+
+  /** Books one live sample into the savings and peak trackers. */
+  private async measure(live: LiveData, hours: number): Promise<void> {
+    const t = live.timestamp;
+    const iv = this.planState?.plan.intervals.find((i) => i.start <= t && i.end > t);
+    if (iv && !this.powerCut.active) {
+      this.savings.add({ time: t, hours, gridW: live.gridPowerW, loadW: live.loadPowerW, pvW: live.pvPowerW, buy: iv.buy, sell: iv.sell });
+    }
+    const tariff = this.powerTariff();
+    if (tariff.enabled) {
+      this.peaks.addSample(t, live.gridPowerW);
+      this.peaksWithoutBattery.addSample(t, live.loadPowerW - live.pvPowerW);
+      const month = localDate(t, this.homey.clock.getTimezone()).slice(0, 7);
+      this.savings.setPowerFeeSaving(month, this.peaksWithoutBattery.feeSoFar() - this.peaks.feeSoFar());
+      await this.setStoreValue('peaks', this.peaks.toJSON());
+      await this.setStoreValue('peaksWithoutBattery', this.peaksWithoutBattery.toJSON());
+      await this.updatePeakRisk(live);
+    }
+    await this.setStoreValue('savings', this.savings.toJSON());
+    await this.dailySummary();
+    const set = (cap: string, value: number | null) => (this.hasCapability(cap) && value !== null && Number.isFinite(value)
+      ? this.setCapabilityValue(cap, value) : undefined);
+    await Promise.all([
+      set('measure_solis_saved_today', Math.round(this.savedToday() * 100) / 100),
+      set('measure_solis_saved_month', Math.round(this.savedThisMonth())),
+      set('measure_solis_peak_month', Math.round(this.peaks.feeLevelKw() * 100) / 100),
+      set('measure_solis_peak_now', this.projectedPeakKw()),
+    ]);
+  }
+
+  private savedToday(): number {
+    return this.savings.savedOn(localDate(new Date(), this.homey.clock.getTimezone()));
+  }
+
+  private savedThisMonth(): number {
+    return this.savings.savedInMonth(localDate(new Date(), this.homey.clock.getTimezone()).slice(0, 7));
+  }
+
+  /** Where this hour's (or quarter's) weighted average import is heading, or null outside counted hours. */
+  private projectedPeakKw(): number | null {
+    if (!this.live || !this.powerTariff().enabled) return null;
+    const kw = this.peaks.projectedKw(new Date(), this.live.gridPowerW);
+    return kw === null ? null : Math.round(kw * 100) / 100;
+  }
+
+  /** Warns (once per period) when the import is heading above the month's peak level. */
+  private async updatePeakRisk(live: LiveData): Promise<void> {
+    const now = new Date();
+    const expected = this.peaks.projectedKw(now, live.gridPowerW);
+    const level = this.peaks.thresholdKw();
+    this.peakRisk = expected !== null && level > 0 && expected > level;
+    const periodMs = this.powerTariff().periodMinutes * 60_000;
+    const period = Math.floor(now.getTime() / periodMs) * periodMs;
+    if (this.peakRisk && period !== this.peakRiskPeriod) {
+      this.peakRiskPeriod = period;
+      await this.homey.flow.getDeviceTriggerCard('peak_risk')
+        .trigger(this, { expected: Math.round(expected! * 100) / 100, peak: Math.round(level * 100) / 100 }).catch(this.error);
+    }
+  }
+
+  /** Just after midnight: what the battery saved the day before. */
+  private async dailySummary(): Promise<void> {
+    const tz = this.homey.clock.getTimezone();
+    const today = localDate(new Date(), tz);
+    const last = this.getStoreValue('summaryDay') as string | undefined;
+    if (last === today) return;
+    await this.setStoreValue('summaryDay', today);
+    if (!last) return;
+    const day = Math.round(this.savings.savedOn(last) * 100) / 100;
+    const month = Math.round(this.savings.savedInMonth(last.slice(0, 7)));
+    await this.homey.flow.getDeviceTriggerCard('day_summary')
+      .trigger(this, { saved_day: day, saved_month: month, peak_month: Math.round(this.peaks.feeLevelKw() * 100) / 100 })
+      .catch(this.error);
+    if (this.getSetting('notify_daily')) {
+      await this.notify(this.homey.__('summary', { day: this.formatMoney(day), month: this.formatMoney(month), currency: this.currencySign() }));
+    }
+  }
+
+  /** Seeds this month's peaks from SolisCloud's 5-minute history when the power fee is switched on. */
+  private async learnPeaksFromHistory(): Promise<void> {
+    if (!this.powerTariff().enabled || !this.transport.getHistory || this.getStoreValue('peaksLearned')) return;
+    const tz = this.homey.clock.getTimezone();
+    const tariff = this.powerTariff();
+    const peaks = new PeakTracker(tz, tariff);
+    const without = new PeakTracker(tz, tariff);
+    const month = localDate(new Date(), tz).slice(0, 7);
+    for (let d = HISTORY_DAYS; d >= 1; d--) {
+      const date = localDate(addDays(new Date(), -d), tz);
+      if (!date.startsWith(month)) continue;
+      try {
+        for (const sample of await this.transport.getHistory(date, tz)) {
+          peaks.addSample(sample.time, sample.gridW);
+          without.addSample(sample.time, sample.loadW - sample.pvW);
+        }
+      } catch (err) {
+        this.error(`History for ${date} failed:`, err);
+      }
+    }
+    this.peaks = peaks;
+    this.peaksWithoutBattery = without;
+    await this.setStoreValue('peaks', peaks.toJSON());
+    await this.setStoreValue('peaksWithoutBattery', without.toJSON());
+    await this.setStoreValue('peaksLearned', true);
+    this.log(`Power peaks this month from history: ${peaks.topPeaks().map((kw) => kw.toFixed(2)).join(', ')} kW`);
+    await this.replan();
+  }
+
+  // --- power cuts ----------------------------------------------------------------------------
+
+  private async updatePowerCut(live: LiveData): Promise<void> {
+    const events = this.powerCut.update(live.timestamp, live.gridLost, this.backupHours(live));
+    if (events.length === 0) return;
+    await this.setStoreValue('powerCut', this.powerCut.toJSON());
+    await this.setCapabilityValue('alarm_solis_power_cut', this.powerCut.active);
+    for (const event of events) await this.onPowerCutEvent(event, live);
+  }
+
+  private async onPowerCutEvent(event: PowerCutEvent, live: LiveData): Promise<void> {
+    const tz = this.homey.clock.getTimezone();
+    const battery = Math.round(live.socPct);
+    const hours = Math.round(this.backupHours(live) * 10) / 10;
+    const notify = Boolean(this.getSetting('notify_power_cut') ?? true);
+    this.log('Power cut event:', event, `battery ${battery} %, backup ${hours} h`);
+    if (event === 'started') {
+      await this.homey.flow.getDeviceTriggerCard('power_cut_started').trigger(this, { battery, backup_hours: hours }).catch(this.error);
+      if (notify) await this.notify(this.homey.__('powerCut.started', { time: localHHMM(live.timestamp, tz), battery, hours: this.formatNumber(hours) }));
+      // A save or charge slot must not hold the battery back while it powers the house.
+      if (this.controlMode === 'auto') await this.controller.restoreInverter().catch(this.error);
+    } else if (event === 'backup_low') {
+      await this.homey.flow.getDeviceTriggerCard('backup_low').trigger(this, { battery, backup_hours: hours }).catch(this.error);
+      if (notify) await this.notify(this.homey.__('powerCut.low', { battery, hours: this.formatNumber(hours) }));
+    } else {
+      const since = this.getStoreValue('powerCutStarted') as string | undefined;
+      const minutes = since ? Math.round((live.timestamp.getTime() - new Date(since).getTime()) / 60_000) : 0;
+      await this.homey.flow.getDeviceTriggerCard('power_cut_ended').trigger(this, { minutes, battery }).catch(this.error);
+      if (notify) await this.notify(this.homey.__('powerCut.ended', { duration: this.formatDuration(minutes), battery }));
+      this.homey.setTimeout(() => this.replan().catch(this.error), 1_000);
+    }
+    if (event === 'started') await this.setStoreValue('powerCutStarted', live.timestamp.toISOString());
+  }
+
+  // --- is the inverter following the plan? --------------------------------------------------
+
+  /** What the battery should be doing now, or null when the app does not control it right now. */
+  private expectation(): Expectation | null {
+    const state = this.planState;
+    if (!state || this.controlMode !== 'auto' || !this.canControl() || this.powerCut.active) return null;
+    const now = new Date();
+    const index = state.plan.intervals.findIndex((iv) => iv.start <= now && iv.end > now);
+    if (index < 0) return null;
+    const action = displayAction(state.plan.intervals[index], state.reserveSoc);
+    let end = index;
+    while (end + 1 < state.plan.intervals.length && state.plan.intervals[end + 1].action === action) end++;
+    return {
+      action,
+      targetSoc: state.plan.intervals[end].socEndPct,
+      reserveSoc: state.reserveSoc,
+      maxSoc: this.controller.config.maxSocPct,
+    };
+  }
+
+  private async checkPlan(): Promise<void> {
+    const live = this.live;
+    const sample = live && { time: live.timestamp, socPct: live.socPct, batteryW: live.batteryPowerW, gridW: live.gridPowerW };
+    this.monitor.update(new Date(), sample, this.expectation());
+    // A battery locked by SolisCloud has its own alarm and instructions.
+    const deviation = this.monitor.deviation === 'not_covering_house' && this.lock.locked ? null : this.monitor.deviation;
+    if (deviation === this.offPlan) return;
+    this.offPlan = deviation;
+    await this.setCapabilityValue('alarm_solis_off_plan', deviation !== null);
+    if (deviation) await this.reportOffPlan(this.deviationText(deviation));
+    else await this.homey.flow.getDeviceTriggerCard('on_plan').trigger(this, {}).catch(this.error);
+  }
+
+  private async reportOffPlan(reason: string): Promise<void> {
+    this.log('Off plan:', reason);
+    await this.homey.flow.getDeviceTriggerCard('off_plan').trigger(this, { reason }).catch(this.error);
+    if (this.getSetting('notify_off_plan') ?? true) await this.notify(this.homey.__('offPlan.notification', { reason }));
+  }
+
+  private deviationText(deviation: Deviation): string {
+    const since = this.live ? localHHMM(this.live.timestamp, this.homey.clock.getTimezone()) : '–';
+    return this.homey.__(`offPlan.${deviation}`, { time: since });
+  }
+
+  /** The device's warning line: the most important current problem, if any. */
+  private async refreshWarning(): Promise<void> {
+    const tz = this.homey.clock.getTimezone();
+    const floor = this.backupFloor();
+    const reserve = this.planState?.reserveSoc;
+    let text: string | null = null;
+    if (this.powerCut.since) {
+      text = this.homey.__('powerCut.warning', { time: localHHMM(this.powerCut.since, tz) });
+    } else if (this.lock.locked) {
+      text = 'Battery locked by a SolisCloud remote command (0 A). Release it in SolisCloud: '
+        + 'Quick Control → Discharge with a short duration. The limit returns to normal when it ends.';
+    } else if (this.planError) {
+      text = `Planning failed: ${this.planError}`;
+    } else if (this.offPlan) {
+      text = this.deviationText(this.offPlan);
+    } else if (!this.canControl()) {
+      text = this.homey.__('device.monitorOnly');
+    } else if (reserve !== undefined && reserve <= floor + 2) {
+      text = `Reserve ${reserve} % is not above the inverter's power-outage limit of ${floor} %: `
+        + 'there is no backup energy. Raise the reserve in the settings.';
+    }
+    if (text) await this.setWarning(text);
+    else await this.unsetWarning();
+  }
+
+  // --- formatting and notifications ----------------------------------------------------------
+
+  private async notify(excerpt: string): Promise<void> {
+    await this.homey.notifications.createNotification({ excerpt }).catch(this.error);
+  }
+
+  private currencySign(): string {
+    return ({ SEK: 'kr', NOK: 'kr', DKK: 'kr', EUR: '€', PLN: 'zł' } as Record<string, string>)[this.currency] ?? this.currency;
+  }
+
+  private formatNumber(value: number): string {
+    return value.toLocaleString(this.homey.i18n.getLanguage() === 'sv' ? 'sv-SE' : 'en-GB', { maximumFractionDigits: 1 });
+  }
+
+  private formatMoney(value: number): string {
+    return value.toLocaleString(this.homey.i18n.getLanguage() === 'sv' ? 'sv-SE' : 'en-GB', { maximumFractionDigits: 0 });
+  }
+
+  private formatDuration(minutes: number): string {
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    return h > 0 ? `${h} h ${m} min` : `${m} min`;
   }
 
   /** Publishes where the house's power comes from and what extra power costs, with flow triggers. */
@@ -540,7 +862,7 @@ export default class SolisInverterDevice extends Homey.Device {
   /** Energy above the inverter's off-grid floor divided by the current house load. */
   private backupHours(live: LiveData): number {
     const energyKwh = Math.max(0, live.socPct - this.backupFloor()) / 100 * this.controller.config.capacityKwh;
-    const loadKw = Math.max(live.loadPowerW / 1000, 0.3);
+    const loadKw = Math.max(live.loadPowerW / 1000, Number.isFinite(live.backupLoadW) ? live.backupLoadW / 1000 : 0, 0.3);
     return Math.min(99, energyKwh / loadKw);
   }
 
@@ -600,29 +922,21 @@ export default class SolisInverterDevice extends Homey.Device {
       await this.updatePlanCapabilities(state, now);
       await this.updatePowerCost();
 
-      if (this.controlMode === 'auto' && this.canControl()) {
+      if (this.controlMode === 'auto' && this.canControl() && !this.powerCut.active) {
         const changes = await this.controller.apply(state);
         if (changes.length > 0) this.log('Inverter updated:', changes.join('; '));
+        if (this.controller.externalChange && changes.length > 0) await this.reportOffPlan(this.homey.__('offPlan.settings_changed'));
       }
-      const floor = this.backupFloor();
-      if (this.lock.locked) {
-        await this.setWarning('Battery locked by a SolisCloud remote command (0 A). Release it in SolisCloud: '
-          + 'Quick Control → Discharge with a short duration. The limit returns to normal when it ends.');
-      } else if (!this.canControl()) {
-        await this.setWarning(this.homey.__('device.monitorOnly'));
-      } else if (state.reserveSoc <= floor + 2) {
-        await this.setWarning(`Reserve ${state.reserveSoc} % is not above the inverter's power-outage limit of ${floor} %: `
-          + 'there is no backup energy. Raise the reserve in the settings.');
-      } else {
-        await this.unsetWarning();
-      }
+      this.planError = null;
+      await this.refreshWarning();
       await this.homey.flow.getDeviceTriggerCard('plan_updated')
         .trigger(this, { summary: this.summarise(state), savings: Math.round(state.plan.savingsSek * 100) / 100 })
         .catch(this.error);
       this.homey.api.realtime('plan', null);
     } catch (err) {
       this.error('Planning failed:', err);
-      await this.setWarning(`Planning failed: ${(err as Error).message}`).catch(this.error);
+      this.planError = (err as Error).message;
+      await this.refreshWarning().catch(this.error);
     } finally {
       this.planning = false;
     }

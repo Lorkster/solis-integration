@@ -11,6 +11,10 @@
  *
  * The battery never discharges to the grid (self-use only), which matches the tariff: export
  * pays roughly spot while import costs spot + fees + VAT.
+ *
+ * With a power-based grid fee, import above the month's peak level costs extra, and grid charging
+ * is limited to the headroom below that level: per kW such fees cost far more than any price
+ * difference between hours can earn.
  */
 
 export type BatteryAction = 'self_use' | 'charge' | 'hold';
@@ -23,6 +27,18 @@ export interface PlanInterval {
   sell: number; // SEK/kWh received for export
   loadKw: number; // expected average house load
   pvKw: number; // expected average PV production
+  /** How much import in this interval counts towards a power-based grid fee (0–1). */
+  peakWeight?: number;
+}
+
+/** Power-based grid fee as seen by the planner. */
+export interface PeakCost {
+  /** Cost per kW that a fee period's average import ends above the threshold. */
+  costPerKw: number;
+  /** Weighted import level (kW) above which the month's fee rises. */
+  thresholdKw: number;
+  /** Length of a fee period (1 = hourly peaks, 0.25 = quarter-hour peaks). */
+  periodHours: number;
 }
 
 export interface PlanInput {
@@ -49,6 +65,8 @@ export interface PlanInput {
   switchPenaltySek?: number;
   /** Action in effect before the first interval (for the switch penalty). */
   initialAction?: BatteryAction;
+  /** Power-based grid fee; omitted when the grid company has none. */
+  peak?: PeakCost;
 }
 
 export interface PlannedInterval {
@@ -61,6 +79,8 @@ export interface PlannedInterval {
   socEndPct: number;
   gridKwh: number; // positive = import
   batteryKwh: number; // stored energy change, positive = charging
+  /** Grid charging power (kW, AC side) for charge intervals, 0 otherwise. */
+  chargeKw: number;
   /**
    * What one more kWh taken out of the battery at the start of this interval costs later, in SEK
    * (the slope of the optimal cost-to-go). High before an expensive peak, low when the battery
@@ -84,6 +104,7 @@ interface Step {
   delta: number; // stored energy change, kWh
   gridKwh: number;
   cost: number;
+  chargeKw: number;
 }
 
 export function planBattery(input: PlanInput): PlanResult {
@@ -99,6 +120,7 @@ export function planBattery(input: PlanInput): PlanResult {
   const penalty = input.reservePenaltyPerKwhHour ?? 20;
   const terminalValue = input.terminalValuePerKwh ?? defaultTerminalValue(input, eff);
 
+  const peak = input.peak && input.peak.costPerKw > 0 && input.peak.thresholdKw > 0 ? input.peak : null;
   const toIndex = (e: number) => Math.min(states - 1, Math.max(0, Math.round(e / ENERGY_STEP_KWH)));
   const toEnergy = (i: number) => i * ENERGY_STEP_KWH;
 
@@ -106,7 +128,9 @@ export function planBattery(input: PlanInput): PlanResult {
     const iv = input.intervals[t];
     const hours = (iv.end.getTime() - iv.start.getTime()) / 3_600_000;
     const netKwh = (iv.loadKw - iv.pvKw) * hours; // positive = house needs energy
+    const weight = peak ? iv.peakWeight ?? 0 : 0;
     let delta = 0;
+    let chargeKw = 0;
 
     if (action === 'self_use') {
       if (netKwh >= 0) {
@@ -117,16 +141,23 @@ export function planBattery(input: PlanInput): PlanResult {
         delta = Math.min(-netKwh * eff, maxE - e, input.maxChargeKw * hours * eff);
       }
     } else if (action === 'charge') {
-      delta = Math.max(0, Math.min(input.maxChargeKw * hours * eff, maxE - e));
+      // With a power fee, charge only in the headroom below the peak level.
+      const headroomKw = weight > 0 ? Math.max(0, peak!.thresholdKw / weight - netKwh / hours) : Infinity;
+      chargeKw = Math.min(input.maxChargeKw, headroomKw);
+      delta = Math.max(0, Math.min(chargeKw * hours * eff, maxE - e));
     }
 
     const gridKwh = netKwh + (delta > 0 ? delta / eff : delta * eff);
     let cost = gridKwh >= 0 ? gridKwh * iv.buy : gridKwh * iv.sell;
+    if (weight > 0) {
+      const aboveKw = weight * gridKwh / hours - peak!.thresholdKw;
+      if (aboveKw > 0) cost += peak!.costPerKw * aboveKw * hours / peak!.periodHours;
+    }
     if (delta < 0) cost += -delta * input.cyclingCostPerKwh;
     if (action === 'charge' && delta > 0) cost += delta * input.minGainPerKwh;
     const deficit = reserveE - (e + delta);
     if (deficit > 0) cost += deficit * hours * penalty;
-    return { delta, gridKwh, cost };
+    return { delta, gridKwh, cost, chargeKw };
   };
 
   // Backward pass over (energy level, previous action).
@@ -236,6 +267,7 @@ function simulate(
       socEndPct: endE / input.capacityKwh * 100,
       gridKwh: s.gridKwh,
       batteryKwh: s.delta,
+      chargeKw: s.chargeKw,
       storedEnergyValue: 0, // filled in by planBattery
     });
     cost += s.cost;

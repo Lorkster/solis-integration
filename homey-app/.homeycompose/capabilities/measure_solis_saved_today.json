@@ -1,0 +1,16 @@
+{
+  "type": "number",
+  "title": {
+    "en": "Saved by the battery today",
+    "sv": "Sparat med batteriet i dag"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "icon": "/assets/icons/savings.svg",
+  "units": {
+    "en": "kr"
+  },
+  "decimals": 2,
+  "insights": true
+}

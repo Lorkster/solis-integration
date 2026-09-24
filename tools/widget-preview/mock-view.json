@@ -1,1211 +1,1219 @@
 {
- "ready": true,
- "timeZone": "Europe/Stockholm",
- "language": "en",
- "controlMode": "auto",
- "mockNow": "2026-09-23T12:10:00.000Z",
- "live": {
-  "at": "2026-09-23T12:10:00.000Z",
-  "socPct": 38,
-  "batteryW": -1240,
-  "pvW": 3350,
-  "gridW": 180,
-  "loadW": 4770,
-  "backupHours": 1
- },
- "warnings": [],
- "outageUntil": null,
- "plan": {
-  "generatedAt": "2026-09-23T12:10:00.000Z",
-  "reserveSoc": 25,
-  "savingsSek": 21.8,
+  "ready": true,
+  "timeZone": "Europe/Stockholm",
+  "language": "en",
+  "controlMode": "auto",
+  "mockNow": "2026-09-23T12:10:00.000Z",
+  "live": {
+    "at": "2026-09-23T12:10:00.000Z",
+    "socPct": 38,
+    "batteryW": -1240,
+    "pvW": 3350,
+    "gridW": 180,
+    "loadW": 4770,
+    "backupHours": 1
+  },
   "warnings": [],
-  "slots": [
-   {
-    "enabled": true,
-    "start": "14:00",
-    "end": "15:45",
-    "currentA": 16,
-    "soc": 88
-   },
-   {
-    "enabled": true,
-    "start": "15:45",
-    "end": "16:45",
-    "currentA": 0,
-    "soc": 88
-   },
-   {
-    "enabled": true,
-    "start": "02:45",
-    "end": "06:30",
-    "currentA": 16,
-    "soc": 100
-   }
-  ],
-  "learnedLoad": true,
-  "solarForecast": true,
-  "intervals": [
-   {
-    "t": "2026-09-23T12:00:00.000Z",
-    "price": 2.623,
-    "soc": 45.1,
-    "loadKw": 2.87,
-    "pvKw": 4.2,
-    "state": "grid_charge"
-   },
-   {
-    "t": "2026-09-23T12:15:00.000Z",
-    "price": 2.621,
-    "soc": 52.2,
-    "loadKw": 2.45,
-    "pvKw": 3.98,
-    "state": "grid_charge"
-   },
-   {
-    "t": "2026-09-23T12:30:00.000Z",
-    "price": 2.633,
-    "soc": 59.3,
-    "loadKw": 2.46,
-    "pvKw": 3.75,
-    "state": "grid_charge"
-   },
-   {
-    "t": "2026-09-23T12:45:00.000Z",
-    "price": 2.635,
-    "soc": 66.4,
-    "loadKw": 2.82,
-    "pvKw": 3.48,
-    "state": "grid_charge"
-   },
-   {
-    "t": "2026-09-23T13:00:00.000Z",
-    "price": 2.645,
-    "soc": 73.6,
-    "loadKw": 2.57,
-    "pvKw": 2.59,
-    "state": "grid_charge"
-   },
-   {
-    "t": "2026-09-23T13:15:00.000Z",
-    "price": 2.67,
-    "soc": 80.7,
-    "loadKw": 2.71,
-    "pvKw": 2.34,
-    "state": "grid_charge"
-   },
-   {
-    "t": "2026-09-23T13:30:00.000Z",
-    "price": 2.735,
-    "soc": 87.8,
-    "loadKw": 2.8,
-    "pvKw": 2.09,
-    "state": "grid_charge"
-   },
-   {
-    "t": "2026-09-23T13:45:00.000Z",
-    "price": 2.836,
-    "soc": 87.8,
-    "loadKw": 2.91,
-    "pvKw": 1.88,
-    "state": "save"
-   },
-   {
-    "t": "2026-09-23T14:00:00.000Z",
-    "price": 2.777,
-    "soc": 87.8,
-    "loadKw": 2.71,
-    "pvKw": 0.95,
-    "state": "save"
-   },
-   {
-    "t": "2026-09-23T14:15:00.000Z",
-    "price": 2.997,
-    "soc": 87.8,
-    "loadKw": 2.72,
-    "pvKw": 0.85,
-    "state": "save"
-   },
-   {
-    "t": "2026-09-23T14:30:00.000Z",
-    "price": 3.223,
-    "soc": 87.8,
-    "loadKw": 2.84,
-    "pvKw": 0.75,
-    "state": "save"
-   },
-   {
-    "t": "2026-09-23T14:45:00.000Z",
-    "price": 3.523,
-    "soc": 84.7,
-    "loadKw": 3.06,
-    "pvKw": 0.64,
-    "state": "battery"
-   },
-   {
-    "t": "2026-09-23T15:00:00.000Z",
-    "price": 3.17,
-    "soc": 81.1,
-    "loadKw": 3.25,
-    "pvKw": 0.39,
-    "state": "battery"
-   },
-   {
-    "t": "2026-09-23T15:15:00.000Z",
-    "price": 3.378,
-    "soc": 77.6,
-    "loadKw": 3.17,
-    "pvKw": 0.31,
-    "state": "battery"
-   },
-   {
-    "t": "2026-09-23T15:30:00.000Z",
-    "price": 3.631,
-    "soc": 73.7,
-    "loadKw": 3.38,
-    "pvKw": 0.24,
-    "state": "battery"
-   },
-   {
-    "t": "2026-09-23T15:45:00.000Z",
-    "price": 3.901,
-    "soc": 69.8,
-    "loadKw": 3.34,
-    "pvKw": 0.18,
-    "state": "battery"
-   },
-   {
-    "t": "2026-09-23T16:00:00.000Z",
-    "price": 3.718,
-    "soc": 66.8,
-    "loadKw": 2.92,
-    "pvKw": 0.51,
-    "state": "battery"
-   },
-   {
-    "t": "2026-09-23T16:15:00.000Z",
-    "price": 3.791,
-    "soc": 62.5,
-    "loadKw": 3.78,
-    "pvKw": 0.32,
-    "state": "battery"
-   },
-   {
-    "t": "2026-09-23T16:30:00.000Z",
-    "price": 4.106,
-    "soc": 58.2,
-    "loadKw": 3.7,
-    "pvKw": 0.18,
-    "state": "battery"
-   },
-   {
-    "t": "2026-09-23T16:45:00.000Z",
-    "price": 4.184,
-    "soc": 53.3,
-    "loadKw": 4.05,
-    "pvKw": 0.04,
-    "state": "battery"
-   },
-   {
-    "t": "2026-09-23T17:00:00.000Z",
-    "price": 4.102,
-    "soc": 49,
-    "loadKw": 3.49,
-    "pvKw": 0,
-    "state": "battery"
-   },
-   {
-    "t": "2026-09-23T17:15:00.000Z",
-    "price": 4.011,
-    "soc": 45,
-    "loadKw": 3.32,
-    "pvKw": 0,
-    "state": "battery"
-   },
-   {
-    "t": "2026-09-23T17:30:00.000Z",
-    "price": 4.128,
-    "soc": 41.8,
-    "loadKw": 2.64,
-    "pvKw": 0,
-    "state": "battery"
-   },
-   {
-    "t": "2026-09-23T17:45:00.000Z",
-    "price": 4.227,
-    "soc": 38,
-    "loadKw": 3.07,
-    "pvKw": 0,
-    "state": "battery"
-   },
-   {
-    "t": "2026-09-23T18:00:00.000Z",
-    "price": 4.095,
-    "soc": 34,
-    "loadKw": 3.28,
-    "pvKw": 0,
-    "state": "battery"
-   },
-   {
-    "t": "2026-09-23T18:15:00.000Z",
-    "price": 3.75,
-    "soc": 30.3,
-    "loadKw": 3.09,
-    "pvKw": 0,
-    "state": "battery"
-   },
-   {
-    "t": "2026-09-23T18:30:00.000Z",
-    "price": 3.246,
-    "soc": 26.4,
-    "loadKw": 3.24,
-    "pvKw": 0,
-    "state": "battery"
-   },
-   {
-    "t": "2026-09-23T18:45:00.000Z",
-    "price": 2.992,
-    "soc": 26.4,
-    "loadKw": 2.94,
-    "pvKw": 0,
-    "state": "at_reserve"
-   },
-   {
-    "t": "2026-09-23T19:00:00.000Z",
-    "price": 3.1,
-    "soc": 26.4,
-    "loadKw": 2.82,
-    "pvKw": 0,
-    "state": "at_reserve"
-   },
-   {
-    "t": "2026-09-23T19:15:00.000Z",
-    "price": 2.989,
-    "soc": 26.4,
-    "loadKw": 2.77,
-    "pvKw": 0,
-    "state": "at_reserve"
-   },
-   {
-    "t": "2026-09-23T19:30:00.000Z",
-    "price": 2.735,
-    "soc": 26.4,
-    "loadKw": 3.21,
-    "pvKw": 0,
-    "state": "at_reserve"
-   },
-   {
-    "t": "2026-09-23T19:45:00.000Z",
-    "price": 2.542,
-    "soc": 26.4,
-    "loadKw": 3.15,
-    "pvKw": 0,
-    "state": "at_reserve"
-   },
-   {
-    "t": "2026-09-23T20:00:00.000Z",
-    "price": 2.599,
-    "soc": 26.4,
-    "loadKw": 3.01,
-    "pvKw": 0,
-    "state": "at_reserve"
-   },
-   {
-    "t": "2026-09-23T20:15:00.000Z",
-    "price": 2.518,
-    "soc": 26.4,
-    "loadKw": 3.05,
-    "pvKw": 0,
-    "state": "at_reserve"
-   },
-   {
-    "t": "2026-09-23T20:30:00.000Z",
-    "price": 2.455,
-    "soc": 26.4,
-    "loadKw": 3.05,
-    "pvKw": 0,
-    "state": "at_reserve"
-   },
-   {
-    "t": "2026-09-23T20:45:00.000Z",
-    "price": 2.428,
-    "soc": 26.4,
-    "loadKw": 2.92,
-    "pvKw": 0,
-    "state": "at_reserve"
-   },
-   {
-    "t": "2026-09-23T21:00:00.000Z",
-    "price": 2.435,
-    "soc": 26.4,
-    "loadKw": 2.86,
-    "pvKw": 0,
-    "state": "at_reserve"
-   },
-   {
-    "t": "2026-09-23T21:15:00.000Z",
-    "price": 2.402,
-    "soc": 26.4,
-    "loadKw": 3.22,
-    "pvKw": 0,
-    "state": "at_reserve"
-   },
-   {
-    "t": "2026-09-23T21:30:00.000Z",
-    "price": 2.324,
-    "soc": 26.4,
-    "loadKw": 2.75,
-    "pvKw": 0,
-    "state": "at_reserve"
-   },
-   {
-    "t": "2026-09-23T21:45:00.000Z",
-    "price": 2.276,
-    "soc": 26.4,
-    "loadKw": 3.21,
-    "pvKw": 0,
-    "state": "at_reserve"
-   },
-   {
-    "t": "2026-09-23T22:00:00.000Z",
-    "price": 2.34,
-    "soc": 26.4,
-    "loadKw": 2.94,
-    "pvKw": 0,
-    "state": "at_reserve"
-   },
-   {
-    "t": "2026-09-23T22:15:00.000Z",
-    "price": 2.669,
-    "soc": 26.4,
-    "loadKw": 3.01,
-    "pvKw": 0,
-    "state": "at_reserve"
-   },
-   {
-    "t": "2026-09-23T22:30:00.000Z",
-    "price": 2.594,
-    "soc": 26.4,
-    "loadKw": 2.93,
-    "pvKw": 0,
-    "state": "at_reserve"
-   },
-   {
-    "t": "2026-09-23T22:45:00.000Z",
-    "price": 2.555,
-    "soc": 26.4,
-    "loadKw": 2.85,
-    "pvKw": 0,
-    "state": "at_reserve"
-   },
-   {
-    "t": "2026-09-23T23:00:00.000Z",
-    "price": 2.375,
-    "soc": 26.4,
-    "loadKw": 2.82,
-    "pvKw": 0,
-    "state": "at_reserve"
-   },
-   {
-    "t": "2026-09-23T23:15:00.000Z",
-    "price": 2.357,
-    "soc": 26.4,
-    "loadKw": 2.62,
-    "pvKw": 0,
-    "state": "at_reserve"
-   },
-   {
-    "t": "2026-09-23T23:30:00.000Z",
-    "price": 2.379,
-    "soc": 26.4,
-    "loadKw": 2.61,
-    "pvKw": 0,
-    "state": "at_reserve"
-   },
-   {
-    "t": "2026-09-23T23:45:00.000Z",
-    "price": 2.383,
-    "soc": 26.4,
-    "loadKw": 2.67,
-    "pvKw": 0,
-    "state": "at_reserve"
-   },
-   {
-    "t": "2026-09-24T00:00:00.000Z",
-    "price": 2.471,
-    "soc": 26.4,
-    "loadKw": 2.43,
-    "pvKw": 0,
-    "state": "at_reserve"
-   },
-   {
-    "t": "2026-09-24T00:15:00.000Z",
-    "price": 2.435,
-    "soc": 26.4,
-    "loadKw": 2.7,
-    "pvKw": 0,
-    "state": "at_reserve"
-   },
-   {
-    "t": "2026-09-24T00:30:00.000Z",
-    "price": 2.429,
-    "soc": 26.4,
-    "loadKw": 2.87,
-    "pvKw": 0,
-    "state": "at_reserve"
-   },
-   {
-    "t": "2026-09-24T00:45:00.000Z",
-    "price": 2.396,
-    "soc": 33.5,
-    "loadKw": 2.64,
-    "pvKw": 0,
-    "state": "grid_charge"
-   },
-   {
-    "t": "2026-09-24T01:00:00.000Z",
-    "price": 2.327,
-    "soc": 40.6,
-    "loadKw": 2.59,
-    "pvKw": 0,
-    "state": "grid_charge"
-   },
-   {
-    "t": "2026-09-24T01:15:00.000Z",
-    "price": 2.323,
-    "soc": 47.7,
-    "loadKw": 3.19,
-    "pvKw": 0,
-    "state": "grid_charge"
-   },
-   {
-    "t": "2026-09-24T01:30:00.000Z",
-    "price": 2.301,
-    "soc": 54.8,
-    "loadKw": 2.85,
-    "pvKw": 0,
-    "state": "grid_charge"
-   },
-   {
-    "t": "2026-09-24T01:45:00.000Z",
-    "price": 2.281,
-    "soc": 61.9,
-    "loadKw": 2.88,
-    "pvKw": 0,
-    "state": "grid_charge"
-   },
-   {
-    "t": "2026-09-24T02:00:00.000Z",
-    "price": 2.285,
-    "soc": 69,
-    "loadKw": 2.96,
-    "pvKw": 0,
-    "state": "grid_charge"
-   },
-   {
-    "t": "2026-09-24T02:15:00.000Z",
-    "price": 2.288,
-    "soc": 76.1,
-    "loadKw": 2.93,
-    "pvKw": 0,
-    "state": "grid_charge"
-   },
-   {
-    "t": "2026-09-24T02:30:00.000Z",
-    "price": 2.291,
-    "soc": 83.2,
-    "loadKw": 2.73,
-    "pvKw": 0,
-    "state": "grid_charge"
-   },
-   {
-    "t": "2026-09-24T02:45:00.000Z",
-    "price": 2.364,
-    "soc": 90.3,
-    "loadKw": 2.73,
-    "pvKw": 0,
-    "state": "grid_charge"
-   },
-   {
-    "t": "2026-09-24T03:00:00.000Z",
-    "price": 2.414,
-    "soc": 97.5,
-    "loadKw": 2.68,
-    "pvKw": 0,
-    "state": "grid_charge"
-   },
-   {
-    "t": "2026-09-24T03:15:00.000Z",
-    "price": 2.501,
-    "soc": 100,
-    "loadKw": 2.63,
-    "pvKw": 0,
-    "state": "grid_charge"
-   },
-   {
-    "t": "2026-09-24T03:30:00.000Z",
-    "price": 2.566,
-    "soc": 100,
-    "loadKw": 2.7,
-    "pvKw": 0,
-    "state": "grid_charge"
-   },
-   {
-    "t": "2026-09-24T03:45:00.000Z",
-    "price": 2.646,
-    "soc": 100,
-    "loadKw": 2.95,
-    "pvKw": 0,
-    "state": "grid_charge"
-   },
-   {
-    "t": "2026-09-24T04:00:00.000Z",
-    "price": 2.59,
-    "soc": 100,
-    "loadKw": 2.76,
-    "pvKw": 0,
-    "state": "grid_charge"
-   },
-   {
-    "t": "2026-09-24T04:15:00.000Z",
-    "price": 2.853,
-    "soc": 100,
-    "loadKw": 2.99,
-    "pvKw": 0,
-    "state": "grid_charge"
-   },
-   {
-    "t": "2026-09-24T04:30:00.000Z",
-    "price": 3.023,
-    "soc": 96.3,
-    "loadKw": 3.04,
-    "pvKw": 0,
-    "state": "battery"
-   },
-   {
-    "t": "2026-09-24T04:45:00.000Z",
-    "price": 3.231,
-    "soc": 93,
-    "loadKw": 2.72,
-    "pvKw": 0,
-    "state": "battery"
-   },
-   {
-    "t": "2026-09-24T05:00:00.000Z",
-    "price": 3.291,
-    "soc": 89.8,
-    "loadKw": 2.68,
-    "pvKw": 0.05,
-    "state": "battery"
-   },
-   {
-    "t": "2026-09-24T05:15:00.000Z",
-    "price": 3.373,
-    "soc": 86.6,
-    "loadKw": 2.74,
-    "pvKw": 0.18,
-    "state": "battery"
-   },
-   {
-    "t": "2026-09-24T05:30:00.000Z",
-    "price": 3.456,
-    "soc": 83.8,
-    "loadKw": 2.57,
-    "pvKw": 0.34,
-    "state": "battery"
-   },
-   {
-    "t": "2026-09-24T05:45:00.000Z",
-    "price": 3.419,
-    "soc": 81.3,
-    "loadKw": 2.56,
-    "pvKw": 0.53,
-    "state": "battery"
-   },
-   {
-    "t": "2026-09-24T06:00:00.000Z",
-    "price": 3.487,
-    "soc": 78.9,
-    "loadKw": 2.41,
-    "pvKw": 0.55,
-    "state": "battery"
-   },
-   {
-    "t": "2026-09-24T06:15:00.000Z",
-    "price": 3.46,
-    "soc": 76.7,
-    "loadKw": 2.41,
-    "pvKw": 0.79,
-    "state": "battery"
-   },
-   {
-    "t": "2026-09-24T06:30:00.000Z",
-    "price": 3.436,
-    "soc": 74.9,
-    "loadKw": 2.36,
-    "pvKw": 1.07,
-    "state": "battery"
-   },
-   {
-    "t": "2026-09-24T06:45:00.000Z",
-    "price": 3.385,
-    "soc": 72.8,
-    "loadKw": 2.77,
-    "pvKw": 1.36,
-    "state": "battery"
-   },
-   {
-    "t": "2026-09-24T07:00:00.000Z",
-    "price": 3.384,
-    "soc": 71.5,
-    "loadKw": 3.05,
-    "pvKw": 2.43,
-    "state": "battery"
-   },
-   {
-    "t": "2026-09-24T07:15:00.000Z",
-    "price": 3.292,
-    "soc": 70.5,
-    "loadKw": 3.11,
-    "pvKw": 2.86,
-    "state": "battery"
-   },
-   {
-    "t": "2026-09-24T07:30:00.000Z",
-    "price": 3.198,
-    "soc": 70.1,
-    "loadKw": 2.96,
-    "pvKw": 3.28,
-    "state": "battery"
-   },
-   {
-    "t": "2026-09-24T07:45:00.000Z",
-    "price": 3.103,
-    "soc": 70.2,
-    "loadKw": 2.83,
-    "pvKw": 3.7,
-    "state": "at_reserve"
-   },
-   {
-    "t": "2026-09-24T08:00:00.000Z",
-    "price": 3.231,
-    "soc": 71,
-    "loadKw": 2.94,
-    "pvKw": 4.54,
-    "state": "solar_charge"
-   },
-   {
-    "t": "2026-09-24T08:15:00.000Z",
-    "price": 3.02,
-    "soc": 72.1,
-    "loadKw": 2.92,
-    "pvKw": 4.92,
-    "state": "solar_charge"
-   },
-   {
-    "t": "2026-09-24T08:30:00.000Z",
-    "price": 2.866,
-    "soc": 73.3,
-    "loadKw": 3.13,
-    "pvKw": 5.29,
-    "state": "solar_charge"
-   },
-   {
-    "t": "2026-09-24T08:45:00.000Z",
-    "price": 2.724,
-    "soc": 75,
-    "loadKw": 2.9,
-    "pvKw": 5.64,
-    "state": "solar_charge"
-   },
-   {
-    "t": "2026-09-24T09:00:00.000Z",
-    "price": 2.893,
-    "soc": 76,
-    "loadKw": 3.02,
-    "pvKw": 4.9,
-    "state": "solar_charge"
-   },
-   {
-    "t": "2026-09-24T09:15:00.000Z",
-    "price": 2.892,
-    "soc": 77.3,
-    "loadKw": 2.94,
-    "pvKw": 5.13,
-    "state": "solar_charge"
-   },
-   {
-    "t": "2026-09-24T09:30:00.000Z",
-    "price": 2.774,
-    "soc": 78.2,
-    "loadKw": 3.44,
-    "pvKw": 5.35,
-    "state": "solar_charge"
-   },
-   {
-    "t": "2026-09-24T09:45:00.000Z",
-    "price": 2.752,
-    "soc": 79.3,
-    "loadKw": 3.44,
-    "pvKw": 5.58,
-    "state": "solar_charge"
-   },
-   {
-    "t": "2026-09-24T10:00:00.000Z",
-    "price": 2.838,
-    "soc": 80.9,
-    "loadKw": 3.07,
-    "pvKw": 5.63,
-    "state": "solar_charge"
-   },
-   {
-    "t": "2026-09-24T10:15:00.000Z",
-    "price": 2.773,
-    "soc": 82.7,
-    "loadKw": 2.97,
-    "pvKw": 5.81,
-    "state": "solar_charge"
-   },
-   {
-    "t": "2026-09-24T10:30:00.000Z",
-    "price": 2.738,
-    "soc": 85.1,
-    "loadKw": 2.56,
-    "pvKw": 5.94,
-    "state": "solar_charge"
-   },
-   {
-    "t": "2026-09-24T10:45:00.000Z",
-    "price": 2.735,
-    "soc": 87.6,
-    "loadKw": 2.57,
-    "pvKw": 6.01,
-    "state": "solar_charge"
-   },
-   {
-    "t": "2026-09-24T11:00:00.000Z",
-    "price": 2.73,
-    "soc": 89.1,
-    "loadKw": 2.78,
-    "pvKw": 5.21,
-    "state": "solar_charge"
-   },
-   {
-    "t": "2026-09-24T11:15:00.000Z",
-    "price": 2.718,
-    "soc": 90.6,
-    "loadKw": 2.79,
-    "pvKw": 5.19,
-    "state": "solar_charge"
-   },
-   {
-    "t": "2026-09-24T11:30:00.000Z",
-    "price": 2.699,
-    "soc": 92.2,
-    "loadKw": 2.62,
-    "pvKw": 5.1,
-    "state": "solar_charge"
-   },
-   {
-    "t": "2026-09-24T11:45:00.000Z",
-    "price": 2.692,
-    "soc": 93.6,
-    "loadKw": 2.64,
-    "pvKw": 4.96,
-    "state": "solar_charge"
-   },
-   {
-    "t": "2026-09-24T12:00:00.000Z",
-    "price": 2.719,
-    "soc": 94.5,
-    "loadKw": 2.87,
-    "pvKw": 4.57,
-    "state": "solar_charge"
-   },
-   {
-    "t": "2026-09-24T12:15:00.000Z",
-    "price": 2.701,
-    "soc": 95.6,
-    "loadKw": 2.45,
-    "pvKw": 4.32,
-    "state": "solar_charge"
-   },
-   {
-    "t": "2026-09-24T12:30:00.000Z",
-    "price": 2.709,
-    "soc": 96.4,
-    "loadKw": 2.46,
-    "pvKw": 4.04,
-    "state": "solar_charge"
-   },
-   {
-    "t": "2026-09-24T12:45:00.000Z",
-    "price": 2.708,
-    "soc": 96.6,
-    "loadKw": 2.82,
-    "pvKw": 3.74,
-    "state": "at_reserve"
-   },
-   {
-    "t": "2026-09-24T13:00:00.000Z",
-    "price": 2.571,
-    "soc": 96.6,
-    "loadKw": 2.57,
-    "pvKw": 2.77,
-    "state": "save"
-   },
-   {
-    "t": "2026-09-24T13:15:00.000Z",
-    "price": 2.586,
-    "soc": 96.6,
-    "loadKw": 2.71,
-    "pvKw": 2.47,
-    "state": "save"
-   },
-   {
-    "t": "2026-09-24T13:30:00.000Z",
-    "price": 2.637,
-    "soc": 96.6,
-    "loadKw": 2.8,
-    "pvKw": 2.21,
-    "state": "save"
-   },
-   {
-    "t": "2026-09-24T13:45:00.000Z",
-    "price": 2.669,
-    "soc": 96.6,
-    "loadKw": 2.91,
-    "pvKw": 2.02,
-    "state": "save"
-   },
-   {
-    "t": "2026-09-24T14:00:00.000Z",
-    "price": 2.706,
-    "soc": 96.6,
-    "loadKw": 2.71,
-    "pvKw": 1.05,
-    "state": "save"
-   },
-   {
-    "t": "2026-09-24T14:15:00.000Z",
-    "price": 2.736,
-    "soc": 96.6,
-    "loadKw": 2.72,
-    "pvKw": 0.98,
-    "state": "save"
-   },
-   {
-    "t": "2026-09-24T14:30:00.000Z",
-    "price": 2.824,
-    "soc": 96.6,
-    "loadKw": 2.84,
-    "pvKw": 0.9,
-    "state": "save"
-   },
-   {
-    "t": "2026-09-24T14:45:00.000Z",
-    "price": 3.032,
-    "soc": 96.6,
-    "loadKw": 3.06,
-    "pvKw": 0.8,
-    "state": "save"
-   },
-   {
-    "t": "2026-09-24T15:00:00.000Z",
-    "price": 2.987,
-    "soc": 96.6,
-    "loadKw": 3.25,
-    "pvKw": 0.49,
-    "state": "save"
-   },
-   {
-    "t": "2026-09-24T15:15:00.000Z",
-    "price": 3.227,
-    "soc": 93.2,
-    "loadKw": 3.17,
-    "pvKw": 0.4,
-    "state": "battery"
-   },
-   {
-    "t": "2026-09-24T15:30:00.000Z",
-    "price": 3.46,
-    "soc": 89.4,
-    "loadKw": 3.38,
-    "pvKw": 0.31,
-    "state": "battery"
-   },
-   {
-    "t": "2026-09-24T15:45:00.000Z",
-    "price": 3.692,
-    "soc": 85.5,
-    "loadKw": 3.34,
-    "pvKw": 0.24,
-    "state": "battery"
-   },
-   {
-    "t": "2026-09-24T16:00:00.000Z",
-    "price": 3.434,
-    "soc": 82.6,
-    "loadKw": 2.92,
-    "pvKw": 0.66,
-    "state": "battery"
-   },
-   {
-    "t": "2026-09-24T16:15:00.000Z",
-    "price": 3.74,
-    "soc": 78.4,
-    "loadKw": 3.78,
-    "pvKw": 0.41,
-    "state": "battery"
-   },
-   {
-    "t": "2026-09-24T16:30:00.000Z",
-    "price": 3.943,
-    "soc": 74.2,
-    "loadKw": 3.7,
-    "pvKw": 0.21,
-    "state": "battery"
-   },
-   {
-    "t": "2026-09-24T16:45:00.000Z",
-    "price": 4.108,
-    "soc": 69.2,
-    "loadKw": 4.05,
-    "pvKw": 0,
-    "state": "battery"
-   },
-   {
-    "t": "2026-09-24T17:00:00.000Z",
-    "price": 3.919,
-    "soc": 65,
-    "loadKw": 3.49,
-    "pvKw": 0,
-    "state": "battery"
-   },
-   {
-    "t": "2026-09-24T17:15:00.000Z",
-    "price": 4.063,
-    "soc": 60.9,
-    "loadKw": 3.32,
-    "pvKw": 0,
-    "state": "battery"
-   },
-   {
-    "t": "2026-09-24T17:30:00.000Z",
-    "price": 3.991,
-    "soc": 57.7,
-    "loadKw": 2.64,
-    "pvKw": 0,
-    "state": "battery"
-   },
-   {
-    "t": "2026-09-24T17:45:00.000Z",
-    "price": 3.966,
-    "soc": 54,
-    "loadKw": 3.07,
-    "pvKw": 0,
-    "state": "battery"
-   },
-   {
-    "t": "2026-09-24T18:00:00.000Z",
-    "price": 3.969,
-    "soc": 50,
-    "loadKw": 3.28,
-    "pvKw": 0,
-    "state": "battery"
-   },
-   {
-    "t": "2026-09-24T18:15:00.000Z",
-    "price": 3.953,
-    "soc": 46.2,
-    "loadKw": 3.09,
-    "pvKw": 0,
-    "state": "battery"
-   },
-   {
-    "t": "2026-09-24T18:30:00.000Z",
-    "price": 3.921,
-    "soc": 42.3,
-    "loadKw": 3.24,
-    "pvKw": 0,
-    "state": "battery"
-   },
-   {
-    "t": "2026-09-24T18:45:00.000Z",
-    "price": 3.82,
-    "soc": 38.7,
-    "loadKw": 2.94,
-    "pvKw": 0,
-    "state": "battery"
-   },
-   {
-    "t": "2026-09-24T19:00:00.000Z",
-    "price": 3.656,
-    "soc": 35.3,
-    "loadKw": 2.82,
-    "pvKw": 0,
-    "state": "battery"
-   },
-   {
-    "t": "2026-09-24T19:15:00.000Z",
-    "price": 3.318,
-    "soc": 31.9,
-    "loadKw": 2.77,
-    "pvKw": 0,
-    "state": "battery"
-   },
-   {
-    "t": "2026-09-24T19:30:00.000Z",
-    "price": 3.104,
-    "soc": 28,
-    "loadKw": 3.21,
-    "pvKw": 0,
-    "state": "battery"
-   },
-   {
-    "t": "2026-09-24T19:45:00.000Z",
-    "price": 2.924,
-    "soc": 28,
-    "loadKw": 3.15,
-    "pvKw": 0,
-    "state": "at_reserve"
-   },
-   {
-    "t": "2026-09-24T20:00:00.000Z",
-    "price": 3.248,
-    "soc": 28,
-    "loadKw": 3.01,
-    "pvKw": 0,
-    "state": "at_reserve"
-   },
-   {
-    "t": "2026-09-24T20:15:00.000Z",
-    "price": 2.873,
-    "soc": 28,
-    "loadKw": 3.05,
-    "pvKw": 0,
-    "state": "at_reserve"
-   },
-   {
-    "t": "2026-09-24T20:30:00.000Z",
-    "price": 2.7,
-    "soc": 28,
-    "loadKw": 3.05,
-    "pvKw": 0,
-    "state": "at_reserve"
-   },
-   {
-    "t": "2026-09-24T20:45:00.000Z",
-    "price": 2.6,
-    "soc": 28,
-    "loadKw": 2.92,
-    "pvKw": 0,
-    "state": "at_reserve"
-   },
-   {
-    "t": "2026-09-24T21:00:00.000Z",
-    "price": 2.71,
-    "soc": 28,
-    "loadKw": 2.86,
-    "pvKw": 0,
-    "state": "at_reserve"
-   },
-   {
-    "t": "2026-09-24T21:15:00.000Z",
-    "price": 2.583,
-    "soc": 28,
-    "loadKw": 3.22,
-    "pvKw": 0,
-    "state": "at_reserve"
-   },
-   {
-    "t": "2026-09-24T21:30:00.000Z",
-    "price": 2.529,
-    "soc": 28,
-    "loadKw": 2.75,
-    "pvKw": 0,
-    "state": "at_reserve"
-   },
-   {
-    "t": "2026-09-24T21:45:00.000Z",
-    "price": 2.508,
-    "soc": 28,
-    "loadKw": 3.21,
-    "pvKw": 0,
-    "state": "at_reserve"
-   }
-  ],
-  "periods": [
-   {
-    "state": "grid_charge",
-    "start": "2026-09-23T12:00:00.000Z",
-    "end": "2026-09-23T13:45:00.000Z",
-    "socEnd": 88
-   },
-   {
-    "state": "save",
-    "start": "2026-09-23T13:45:00.000Z",
-    "end": "2026-09-23T14:45:00.000Z",
-    "socEnd": 88
-   },
-   {
-    "state": "battery",
-    "start": "2026-09-23T14:45:00.000Z",
-    "end": "2026-09-23T18:45:00.000Z",
-    "socEnd": 26
-   },
-   {
-    "state": "at_reserve",
-    "start": "2026-09-23T18:45:00.000Z",
-    "end": "2026-09-24T00:45:00.000Z",
-    "socEnd": 26
-   },
-   {
-    "state": "grid_charge",
-    "start": "2026-09-24T00:45:00.000Z",
-    "end": "2026-09-24T04:30:00.000Z",
-    "socEnd": 100
-   },
-   {
-    "state": "battery",
-    "start": "2026-09-24T04:30:00.000Z",
-    "end": "2026-09-24T08:00:00.000Z",
-    "socEnd": 70
-   },
-   {
-    "state": "solar_charge",
-    "start": "2026-09-24T08:00:00.000Z",
-    "end": "2026-09-24T13:00:00.000Z",
-    "socEnd": 97
-   },
-   {
-    "state": "save",
-    "start": "2026-09-24T13:00:00.000Z",
-    "end": "2026-09-24T15:15:00.000Z",
-    "socEnd": 97
-   },
-   {
-    "state": "battery",
-    "start": "2026-09-24T15:15:00.000Z",
-    "end": "2026-09-24T19:45:00.000Z",
-    "socEnd": 28
-   },
-   {
-    "state": "at_reserve",
-    "start": "2026-09-24T19:45:00.000Z",
-    "end": "2026-09-24T22:00:00.000Z",
-    "socEnd": 28
-   }
-  ]
- },
- "supply": {
-  "source": "solar_battery",
-  "title": "Solar + battery",
-  "solarPct": 70,
-  "batteryPct": 26,
-  "gridPct": 4,
-  "surplusW": 0
- },
- "extraPowerCost": 2.72,
- "batteryLocked": false
+  "outageUntil": null,
+  "plan": {
+    "generatedAt": "2026-09-23T12:10:00.000Z",
+    "reserveSoc": 25,
+    "savingsSek": 21.8,
+    "warnings": [],
+    "slots": [
+      {
+        "enabled": true,
+        "start": "14:00",
+        "end": "15:45",
+        "currentA": 16,
+        "soc": 88
+      },
+      {
+        "enabled": true,
+        "start": "15:45",
+        "end": "16:45",
+        "currentA": 0,
+        "soc": 88
+      },
+      {
+        "enabled": true,
+        "start": "02:45",
+        "end": "06:30",
+        "currentA": 16,
+        "soc": 100
+      }
+    ],
+    "learnedLoad": true,
+    "solarForecast": true,
+    "intervals": [
+      {
+        "t": "2026-09-23T12:00:00.000Z",
+        "price": 2.623,
+        "soc": 45.1,
+        "loadKw": 2.87,
+        "pvKw": 4.2,
+        "state": "grid_charge"
+      },
+      {
+        "t": "2026-09-23T12:15:00.000Z",
+        "price": 2.621,
+        "soc": 52.2,
+        "loadKw": 2.45,
+        "pvKw": 3.98,
+        "state": "grid_charge"
+      },
+      {
+        "t": "2026-09-23T12:30:00.000Z",
+        "price": 2.633,
+        "soc": 59.3,
+        "loadKw": 2.46,
+        "pvKw": 3.75,
+        "state": "grid_charge"
+      },
+      {
+        "t": "2026-09-23T12:45:00.000Z",
+        "price": 2.635,
+        "soc": 66.4,
+        "loadKw": 2.82,
+        "pvKw": 3.48,
+        "state": "grid_charge"
+      },
+      {
+        "t": "2026-09-23T13:00:00.000Z",
+        "price": 2.645,
+        "soc": 73.6,
+        "loadKw": 2.57,
+        "pvKw": 2.59,
+        "state": "grid_charge"
+      },
+      {
+        "t": "2026-09-23T13:15:00.000Z",
+        "price": 2.67,
+        "soc": 80.7,
+        "loadKw": 2.71,
+        "pvKw": 2.34,
+        "state": "grid_charge"
+      },
+      {
+        "t": "2026-09-23T13:30:00.000Z",
+        "price": 2.735,
+        "soc": 87.8,
+        "loadKw": 2.8,
+        "pvKw": 2.09,
+        "state": "grid_charge"
+      },
+      {
+        "t": "2026-09-23T13:45:00.000Z",
+        "price": 2.836,
+        "soc": 87.8,
+        "loadKw": 2.91,
+        "pvKw": 1.88,
+        "state": "save"
+      },
+      {
+        "t": "2026-09-23T14:00:00.000Z",
+        "price": 2.777,
+        "soc": 87.8,
+        "loadKw": 2.71,
+        "pvKw": 0.95,
+        "state": "save"
+      },
+      {
+        "t": "2026-09-23T14:15:00.000Z",
+        "price": 2.997,
+        "soc": 87.8,
+        "loadKw": 2.72,
+        "pvKw": 0.85,
+        "state": "save"
+      },
+      {
+        "t": "2026-09-23T14:30:00.000Z",
+        "price": 3.223,
+        "soc": 87.8,
+        "loadKw": 2.84,
+        "pvKw": 0.75,
+        "state": "save"
+      },
+      {
+        "t": "2026-09-23T14:45:00.000Z",
+        "price": 3.523,
+        "soc": 84.7,
+        "loadKw": 3.06,
+        "pvKw": 0.64,
+        "state": "battery"
+      },
+      {
+        "t": "2026-09-23T15:00:00.000Z",
+        "price": 3.17,
+        "soc": 81.1,
+        "loadKw": 3.25,
+        "pvKw": 0.39,
+        "state": "battery"
+      },
+      {
+        "t": "2026-09-23T15:15:00.000Z",
+        "price": 3.378,
+        "soc": 77.6,
+        "loadKw": 3.17,
+        "pvKw": 0.31,
+        "state": "battery"
+      },
+      {
+        "t": "2026-09-23T15:30:00.000Z",
+        "price": 3.631,
+        "soc": 73.7,
+        "loadKw": 3.38,
+        "pvKw": 0.24,
+        "state": "battery"
+      },
+      {
+        "t": "2026-09-23T15:45:00.000Z",
+        "price": 3.901,
+        "soc": 69.8,
+        "loadKw": 3.34,
+        "pvKw": 0.18,
+        "state": "battery"
+      },
+      {
+        "t": "2026-09-23T16:00:00.000Z",
+        "price": 3.718,
+        "soc": 66.8,
+        "loadKw": 2.92,
+        "pvKw": 0.51,
+        "state": "battery"
+      },
+      {
+        "t": "2026-09-23T16:15:00.000Z",
+        "price": 3.791,
+        "soc": 62.5,
+        "loadKw": 3.78,
+        "pvKw": 0.32,
+        "state": "battery"
+      },
+      {
+        "t": "2026-09-23T16:30:00.000Z",
+        "price": 4.106,
+        "soc": 58.2,
+        "loadKw": 3.7,
+        "pvKw": 0.18,
+        "state": "battery"
+      },
+      {
+        "t": "2026-09-23T16:45:00.000Z",
+        "price": 4.184,
+        "soc": 53.3,
+        "loadKw": 4.05,
+        "pvKw": 0.04,
+        "state": "battery"
+      },
+      {
+        "t": "2026-09-23T17:00:00.000Z",
+        "price": 4.102,
+        "soc": 49,
+        "loadKw": 3.49,
+        "pvKw": 0,
+        "state": "battery"
+      },
+      {
+        "t": "2026-09-23T17:15:00.000Z",
+        "price": 4.011,
+        "soc": 45,
+        "loadKw": 3.32,
+        "pvKw": 0,
+        "state": "battery"
+      },
+      {
+        "t": "2026-09-23T17:30:00.000Z",
+        "price": 4.128,
+        "soc": 41.8,
+        "loadKw": 2.64,
+        "pvKw": 0,
+        "state": "battery"
+      },
+      {
+        "t": "2026-09-23T17:45:00.000Z",
+        "price": 4.227,
+        "soc": 38,
+        "loadKw": 3.07,
+        "pvKw": 0,
+        "state": "battery"
+      },
+      {
+        "t": "2026-09-23T18:00:00.000Z",
+        "price": 4.095,
+        "soc": 34,
+        "loadKw": 3.28,
+        "pvKw": 0,
+        "state": "battery"
+      },
+      {
+        "t": "2026-09-23T18:15:00.000Z",
+        "price": 3.75,
+        "soc": 30.3,
+        "loadKw": 3.09,
+        "pvKw": 0,
+        "state": "battery"
+      },
+      {
+        "t": "2026-09-23T18:30:00.000Z",
+        "price": 3.246,
+        "soc": 26.4,
+        "loadKw": 3.24,
+        "pvKw": 0,
+        "state": "battery"
+      },
+      {
+        "t": "2026-09-23T18:45:00.000Z",
+        "price": 2.992,
+        "soc": 26.4,
+        "loadKw": 2.94,
+        "pvKw": 0,
+        "state": "at_reserve"
+      },
+      {
+        "t": "2026-09-23T19:00:00.000Z",
+        "price": 3.1,
+        "soc": 26.4,
+        "loadKw": 2.82,
+        "pvKw": 0,
+        "state": "at_reserve"
+      },
+      {
+        "t": "2026-09-23T19:15:00.000Z",
+        "price": 2.989,
+        "soc": 26.4,
+        "loadKw": 2.77,
+        "pvKw": 0,
+        "state": "at_reserve"
+      },
+      {
+        "t": "2026-09-23T19:30:00.000Z",
+        "price": 2.735,
+        "soc": 26.4,
+        "loadKw": 3.21,
+        "pvKw": 0,
+        "state": "at_reserve"
+      },
+      {
+        "t": "2026-09-23T19:45:00.000Z",
+        "price": 2.542,
+        "soc": 26.4,
+        "loadKw": 3.15,
+        "pvKw": 0,
+        "state": "at_reserve"
+      },
+      {
+        "t": "2026-09-23T20:00:00.000Z",
+        "price": 2.599,
+        "soc": 26.4,
+        "loadKw": 3.01,
+        "pvKw": 0,
+        "state": "at_reserve"
+      },
+      {
+        "t": "2026-09-23T20:15:00.000Z",
+        "price": 2.518,
+        "soc": 26.4,
+        "loadKw": 3.05,
+        "pvKw": 0,
+        "state": "at_reserve"
+      },
+      {
+        "t": "2026-09-23T20:30:00.000Z",
+        "price": 2.455,
+        "soc": 26.4,
+        "loadKw": 3.05,
+        "pvKw": 0,
+        "state": "at_reserve"
+      },
+      {
+        "t": "2026-09-23T20:45:00.000Z",
+        "price": 2.428,
+        "soc": 26.4,
+        "loadKw": 2.92,
+        "pvKw": 0,
+        "state": "at_reserve"
+      },
+      {
+        "t": "2026-09-23T21:00:00.000Z",
+        "price": 2.435,
+        "soc": 26.4,
+        "loadKw": 2.86,
+        "pvKw": 0,
+        "state": "at_reserve"
+      },
+      {
+        "t": "2026-09-23T21:15:00.000Z",
+        "price": 2.402,
+        "soc": 26.4,
+        "loadKw": 3.22,
+        "pvKw": 0,
+        "state": "at_reserve"
+      },
+      {
+        "t": "2026-09-23T21:30:00.000Z",
+        "price": 2.324,
+        "soc": 26.4,
+        "loadKw": 2.75,
+        "pvKw": 0,
+        "state": "at_reserve"
+      },
+      {
+        "t": "2026-09-23T21:45:00.000Z",
+        "price": 2.276,
+        "soc": 26.4,
+        "loadKw": 3.21,
+        "pvKw": 0,
+        "state": "at_reserve"
+      },
+      {
+        "t": "2026-09-23T22:00:00.000Z",
+        "price": 2.34,
+        "soc": 26.4,
+        "loadKw": 2.94,
+        "pvKw": 0,
+        "state": "at_reserve"
+      },
+      {
+        "t": "2026-09-23T22:15:00.000Z",
+        "price": 2.669,
+        "soc": 26.4,
+        "loadKw": 3.01,
+        "pvKw": 0,
+        "state": "at_reserve"
+      },
+      {
+        "t": "2026-09-23T22:30:00.000Z",
+        "price": 2.594,
+        "soc": 26.4,
+        "loadKw": 2.93,
+        "pvKw": 0,
+        "state": "at_reserve"
+      },
+      {
+        "t": "2026-09-23T22:45:00.000Z",
+        "price": 2.555,
+        "soc": 26.4,
+        "loadKw": 2.85,
+        "pvKw": 0,
+        "state": "at_reserve"
+      },
+      {
+        "t": "2026-09-23T23:00:00.000Z",
+        "price": 2.375,
+        "soc": 26.4,
+        "loadKw": 2.82,
+        "pvKw": 0,
+        "state": "at_reserve"
+      },
+      {
+        "t": "2026-09-23T23:15:00.000Z",
+        "price": 2.357,
+        "soc": 26.4,
+        "loadKw": 2.62,
+        "pvKw": 0,
+        "state": "at_reserve"
+      },
+      {
+        "t": "2026-09-23T23:30:00.000Z",
+        "price": 2.379,
+        "soc": 26.4,
+        "loadKw": 2.61,
+        "pvKw": 0,
+        "state": "at_reserve"
+      },
+      {
+        "t": "2026-09-23T23:45:00.000Z",
+        "price": 2.383,
+        "soc": 26.4,
+        "loadKw": 2.67,
+        "pvKw": 0,
+        "state": "at_reserve"
+      },
+      {
+        "t": "2026-09-24T00:00:00.000Z",
+        "price": 2.471,
+        "soc": 26.4,
+        "loadKw": 2.43,
+        "pvKw": 0,
+        "state": "at_reserve"
+      },
+      {
+        "t": "2026-09-24T00:15:00.000Z",
+        "price": 2.435,
+        "soc": 26.4,
+        "loadKw": 2.7,
+        "pvKw": 0,
+        "state": "at_reserve"
+      },
+      {
+        "t": "2026-09-24T00:30:00.000Z",
+        "price": 2.429,
+        "soc": 26.4,
+        "loadKw": 2.87,
+        "pvKw": 0,
+        "state": "at_reserve"
+      },
+      {
+        "t": "2026-09-24T00:45:00.000Z",
+        "price": 2.396,
+        "soc": 33.5,
+        "loadKw": 2.64,
+        "pvKw": 0,
+        "state": "grid_charge"
+      },
+      {
+        "t": "2026-09-24T01:00:00.000Z",
+        "price": 2.327,
+        "soc": 40.6,
+        "loadKw": 2.59,
+        "pvKw": 0,
+        "state": "grid_charge"
+      },
+      {
+        "t": "2026-09-24T01:15:00.000Z",
+        "price": 2.323,
+        "soc": 47.7,
+        "loadKw": 3.19,
+        "pvKw": 0,
+        "state": "grid_charge"
+      },
+      {
+        "t": "2026-09-24T01:30:00.000Z",
+        "price": 2.301,
+        "soc": 54.8,
+        "loadKw": 2.85,
+        "pvKw": 0,
+        "state": "grid_charge"
+      },
+      {
+        "t": "2026-09-24T01:45:00.000Z",
+        "price": 2.281,
+        "soc": 61.9,
+        "loadKw": 2.88,
+        "pvKw": 0,
+        "state": "grid_charge"
+      },
+      {
+        "t": "2026-09-24T02:00:00.000Z",
+        "price": 2.285,
+        "soc": 69,
+        "loadKw": 2.96,
+        "pvKw": 0,
+        "state": "grid_charge"
+      },
+      {
+        "t": "2026-09-24T02:15:00.000Z",
+        "price": 2.288,
+        "soc": 76.1,
+        "loadKw": 2.93,
+        "pvKw": 0,
+        "state": "grid_charge"
+      },
+      {
+        "t": "2026-09-24T02:30:00.000Z",
+        "price": 2.291,
+        "soc": 83.2,
+        "loadKw": 2.73,
+        "pvKw": 0,
+        "state": "grid_charge"
+      },
+      {
+        "t": "2026-09-24T02:45:00.000Z",
+        "price": 2.364,
+        "soc": 90.3,
+        "loadKw": 2.73,
+        "pvKw": 0,
+        "state": "grid_charge"
+      },
+      {
+        "t": "2026-09-24T03:00:00.000Z",
+        "price": 2.414,
+        "soc": 97.5,
+        "loadKw": 2.68,
+        "pvKw": 0,
+        "state": "grid_charge"
+      },
+      {
+        "t": "2026-09-24T03:15:00.000Z",
+        "price": 2.501,
+        "soc": 100,
+        "loadKw": 2.63,
+        "pvKw": 0,
+        "state": "grid_charge"
+      },
+      {
+        "t": "2026-09-24T03:30:00.000Z",
+        "price": 2.566,
+        "soc": 100,
+        "loadKw": 2.7,
+        "pvKw": 0,
+        "state": "grid_charge"
+      },
+      {
+        "t": "2026-09-24T03:45:00.000Z",
+        "price": 2.646,
+        "soc": 100,
+        "loadKw": 2.95,
+        "pvKw": 0,
+        "state": "grid_charge"
+      },
+      {
+        "t": "2026-09-24T04:00:00.000Z",
+        "price": 2.59,
+        "soc": 100,
+        "loadKw": 2.76,
+        "pvKw": 0,
+        "state": "grid_charge"
+      },
+      {
+        "t": "2026-09-24T04:15:00.000Z",
+        "price": 2.853,
+        "soc": 100,
+        "loadKw": 2.99,
+        "pvKw": 0,
+        "state": "grid_charge"
+      },
+      {
+        "t": "2026-09-24T04:30:00.000Z",
+        "price": 3.023,
+        "soc": 96.3,
+        "loadKw": 3.04,
+        "pvKw": 0,
+        "state": "battery"
+      },
+      {
+        "t": "2026-09-24T04:45:00.000Z",
+        "price": 3.231,
+        "soc": 93,
+        "loadKw": 2.72,
+        "pvKw": 0,
+        "state": "battery"
+      },
+      {
+        "t": "2026-09-24T05:00:00.000Z",
+        "price": 3.291,
+        "soc": 89.8,
+        "loadKw": 2.68,
+        "pvKw": 0.05,
+        "state": "battery"
+      },
+      {
+        "t": "2026-09-24T05:15:00.000Z",
+        "price": 3.373,
+        "soc": 86.6,
+        "loadKw": 2.74,
+        "pvKw": 0.18,
+        "state": "battery"
+      },
+      {
+        "t": "2026-09-24T05:30:00.000Z",
+        "price": 3.456,
+        "soc": 83.8,
+        "loadKw": 2.57,
+        "pvKw": 0.34,
+        "state": "battery"
+      },
+      {
+        "t": "2026-09-24T05:45:00.000Z",
+        "price": 3.419,
+        "soc": 81.3,
+        "loadKw": 2.56,
+        "pvKw": 0.53,
+        "state": "battery"
+      },
+      {
+        "t": "2026-09-24T06:00:00.000Z",
+        "price": 3.487,
+        "soc": 78.9,
+        "loadKw": 2.41,
+        "pvKw": 0.55,
+        "state": "battery"
+      },
+      {
+        "t": "2026-09-24T06:15:00.000Z",
+        "price": 3.46,
+        "soc": 76.7,
+        "loadKw": 2.41,
+        "pvKw": 0.79,
+        "state": "battery"
+      },
+      {
+        "t": "2026-09-24T06:30:00.000Z",
+        "price": 3.436,
+        "soc": 74.9,
+        "loadKw": 2.36,
+        "pvKw": 1.07,
+        "state": "battery"
+      },
+      {
+        "t": "2026-09-24T06:45:00.000Z",
+        "price": 3.385,
+        "soc": 72.8,
+        "loadKw": 2.77,
+        "pvKw": 1.36,
+        "state": "battery"
+      },
+      {
+        "t": "2026-09-24T07:00:00.000Z",
+        "price": 3.384,
+        "soc": 71.5,
+        "loadKw": 3.05,
+        "pvKw": 2.43,
+        "state": "battery"
+      },
+      {
+        "t": "2026-09-24T07:15:00.000Z",
+        "price": 3.292,
+        "soc": 70.5,
+        "loadKw": 3.11,
+        "pvKw": 2.86,
+        "state": "battery"
+      },
+      {
+        "t": "2026-09-24T07:30:00.000Z",
+        "price": 3.198,
+        "soc": 70.1,
+        "loadKw": 2.96,
+        "pvKw": 3.28,
+        "state": "battery"
+      },
+      {
+        "t": "2026-09-24T07:45:00.000Z",
+        "price": 3.103,
+        "soc": 70.2,
+        "loadKw": 2.83,
+        "pvKw": 3.7,
+        "state": "at_reserve"
+      },
+      {
+        "t": "2026-09-24T08:00:00.000Z",
+        "price": 3.231,
+        "soc": 71,
+        "loadKw": 2.94,
+        "pvKw": 4.54,
+        "state": "solar_charge"
+      },
+      {
+        "t": "2026-09-24T08:15:00.000Z",
+        "price": 3.02,
+        "soc": 72.1,
+        "loadKw": 2.92,
+        "pvKw": 4.92,
+        "state": "solar_charge"
+      },
+      {
+        "t": "2026-09-24T08:30:00.000Z",
+        "price": 2.866,
+        "soc": 73.3,
+        "loadKw": 3.13,
+        "pvKw": 5.29,
+        "state": "solar_charge"
+      },
+      {
+        "t": "2026-09-24T08:45:00.000Z",
+        "price": 2.724,
+        "soc": 75,
+        "loadKw": 2.9,
+        "pvKw": 5.64,
+        "state": "solar_charge"
+      },
+      {
+        "t": "2026-09-24T09:00:00.000Z",
+        "price": 2.893,
+        "soc": 76,
+        "loadKw": 3.02,
+        "pvKw": 4.9,
+        "state": "solar_charge"
+      },
+      {
+        "t": "2026-09-24T09:15:00.000Z",
+        "price": 2.892,
+        "soc": 77.3,
+        "loadKw": 2.94,
+        "pvKw": 5.13,
+        "state": "solar_charge"
+      },
+      {
+        "t": "2026-09-24T09:30:00.000Z",
+        "price": 2.774,
+        "soc": 78.2,
+        "loadKw": 3.44,
+        "pvKw": 5.35,
+        "state": "solar_charge"
+      },
+      {
+        "t": "2026-09-24T09:45:00.000Z",
+        "price": 2.752,
+        "soc": 79.3,
+        "loadKw": 3.44,
+        "pvKw": 5.58,
+        "state": "solar_charge"
+      },
+      {
+        "t": "2026-09-24T10:00:00.000Z",
+        "price": 2.838,
+        "soc": 80.9,
+        "loadKw": 3.07,
+        "pvKw": 5.63,
+        "state": "solar_charge"
+      },
+      {
+        "t": "2026-09-24T10:15:00.000Z",
+        "price": 2.773,
+        "soc": 82.7,
+        "loadKw": 2.97,
+        "pvKw": 5.81,
+        "state": "solar_charge"
+      },
+      {
+        "t": "2026-09-24T10:30:00.000Z",
+        "price": 2.738,
+        "soc": 85.1,
+        "loadKw": 2.56,
+        "pvKw": 5.94,
+        "state": "solar_charge"
+      },
+      {
+        "t": "2026-09-24T10:45:00.000Z",
+        "price": 2.735,
+        "soc": 87.6,
+        "loadKw": 2.57,
+        "pvKw": 6.01,
+        "state": "solar_charge"
+      },
+      {
+        "t": "2026-09-24T11:00:00.000Z",
+        "price": 2.73,
+        "soc": 89.1,
+        "loadKw": 2.78,
+        "pvKw": 5.21,
+        "state": "solar_charge"
+      },
+      {
+        "t": "2026-09-24T11:15:00.000Z",
+        "price": 2.718,
+        "soc": 90.6,
+        "loadKw": 2.79,
+        "pvKw": 5.19,
+        "state": "solar_charge"
+      },
+      {
+        "t": "2026-09-24T11:30:00.000Z",
+        "price": 2.699,
+        "soc": 92.2,
+        "loadKw": 2.62,
+        "pvKw": 5.1,
+        "state": "solar_charge"
+      },
+      {
+        "t": "2026-09-24T11:45:00.000Z",
+        "price": 2.692,
+        "soc": 93.6,
+        "loadKw": 2.64,
+        "pvKw": 4.96,
+        "state": "solar_charge"
+      },
+      {
+        "t": "2026-09-24T12:00:00.000Z",
+        "price": 2.719,
+        "soc": 94.5,
+        "loadKw": 2.87,
+        "pvKw": 4.57,
+        "state": "solar_charge"
+      },
+      {
+        "t": "2026-09-24T12:15:00.000Z",
+        "price": 2.701,
+        "soc": 95.6,
+        "loadKw": 2.45,
+        "pvKw": 4.32,
+        "state": "solar_charge"
+      },
+      {
+        "t": "2026-09-24T12:30:00.000Z",
+        "price": 2.709,
+        "soc": 96.4,
+        "loadKw": 2.46,
+        "pvKw": 4.04,
+        "state": "solar_charge"
+      },
+      {
+        "t": "2026-09-24T12:45:00.000Z",
+        "price": 2.708,
+        "soc": 96.6,
+        "loadKw": 2.82,
+        "pvKw": 3.74,
+        "state": "at_reserve"
+      },
+      {
+        "t": "2026-09-24T13:00:00.000Z",
+        "price": 2.571,
+        "soc": 96.6,
+        "loadKw": 2.57,
+        "pvKw": 2.77,
+        "state": "save"
+      },
+      {
+        "t": "2026-09-24T13:15:00.000Z",
+        "price": 2.586,
+        "soc": 96.6,
+        "loadKw": 2.71,
+        "pvKw": 2.47,
+        "state": "save"
+      },
+      {
+        "t": "2026-09-24T13:30:00.000Z",
+        "price": 2.637,
+        "soc": 96.6,
+        "loadKw": 2.8,
+        "pvKw": 2.21,
+        "state": "save"
+      },
+      {
+        "t": "2026-09-24T13:45:00.000Z",
+        "price": 2.669,
+        "soc": 96.6,
+        "loadKw": 2.91,
+        "pvKw": 2.02,
+        "state": "save"
+      },
+      {
+        "t": "2026-09-24T14:00:00.000Z",
+        "price": 2.706,
+        "soc": 96.6,
+        "loadKw": 2.71,
+        "pvKw": 1.05,
+        "state": "save"
+      },
+      {
+        "t": "2026-09-24T14:15:00.000Z",
+        "price": 2.736,
+        "soc": 96.6,
+        "loadKw": 2.72,
+        "pvKw": 0.98,
+        "state": "save"
+      },
+      {
+        "t": "2026-09-24T14:30:00.000Z",
+        "price": 2.824,
+        "soc": 96.6,
+        "loadKw": 2.84,
+        "pvKw": 0.9,
+        "state": "save"
+      },
+      {
+        "t": "2026-09-24T14:45:00.000Z",
+        "price": 3.032,
+        "soc": 96.6,
+        "loadKw": 3.06,
+        "pvKw": 0.8,
+        "state": "save"
+      },
+      {
+        "t": "2026-09-24T15:00:00.000Z",
+        "price": 2.987,
+        "soc": 96.6,
+        "loadKw": 3.25,
+        "pvKw": 0.49,
+        "state": "save"
+      },
+      {
+        "t": "2026-09-24T15:15:00.000Z",
+        "price": 3.227,
+        "soc": 93.2,
+        "loadKw": 3.17,
+        "pvKw": 0.4,
+        "state": "battery"
+      },
+      {
+        "t": "2026-09-24T15:30:00.000Z",
+        "price": 3.46,
+        "soc": 89.4,
+        "loadKw": 3.38,
+        "pvKw": 0.31,
+        "state": "battery"
+      },
+      {
+        "t": "2026-09-24T15:45:00.000Z",
+        "price": 3.692,
+        "soc": 85.5,
+        "loadKw": 3.34,
+        "pvKw": 0.24,
+        "state": "battery"
+      },
+      {
+        "t": "2026-09-24T16:00:00.000Z",
+        "price": 3.434,
+        "soc": 82.6,
+        "loadKw": 2.92,
+        "pvKw": 0.66,
+        "state": "battery"
+      },
+      {
+        "t": "2026-09-24T16:15:00.000Z",
+        "price": 3.74,
+        "soc": 78.4,
+        "loadKw": 3.78,
+        "pvKw": 0.41,
+        "state": "battery"
+      },
+      {
+        "t": "2026-09-24T16:30:00.000Z",
+        "price": 3.943,
+        "soc": 74.2,
+        "loadKw": 3.7,
+        "pvKw": 0.21,
+        "state": "battery"
+      },
+      {
+        "t": "2026-09-24T16:45:00.000Z",
+        "price": 4.108,
+        "soc": 69.2,
+        "loadKw": 4.05,
+        "pvKw": 0,
+        "state": "battery"
+      },
+      {
+        "t": "2026-09-24T17:00:00.000Z",
+        "price": 3.919,
+        "soc": 65,
+        "loadKw": 3.49,
+        "pvKw": 0,
+        "state": "battery"
+      },
+      {
+        "t": "2026-09-24T17:15:00.000Z",
+        "price": 4.063,
+        "soc": 60.9,
+        "loadKw": 3.32,
+        "pvKw": 0,
+        "state": "battery"
+      },
+      {
+        "t": "2026-09-24T17:30:00.000Z",
+        "price": 3.991,
+        "soc": 57.7,
+        "loadKw": 2.64,
+        "pvKw": 0,
+        "state": "battery"
+      },
+      {
+        "t": "2026-09-24T17:45:00.000Z",
+        "price": 3.966,
+        "soc": 54,
+        "loadKw": 3.07,
+        "pvKw": 0,
+        "state": "battery"
+      },
+      {
+        "t": "2026-09-24T18:00:00.000Z",
+        "price": 3.969,
+        "soc": 50,
+        "loadKw": 3.28,
+        "pvKw": 0,
+        "state": "battery"
+      },
+      {
+        "t": "2026-09-24T18:15:00.000Z",
+        "price": 3.953,
+        "soc": 46.2,
+        "loadKw": 3.09,
+        "pvKw": 0,
+        "state": "battery"
+      },
+      {
+        "t": "2026-09-24T18:30:00.000Z",
+        "price": 3.921,
+        "soc": 42.3,
+        "loadKw": 3.24,
+        "pvKw": 0,
+        "state": "battery"
+      },
+      {
+        "t": "2026-09-24T18:45:00.000Z",
+        "price": 3.82,
+        "soc": 38.7,
+        "loadKw": 2.94,
+        "pvKw": 0,
+        "state": "battery"
+      },
+      {
+        "t": "2026-09-24T19:00:00.000Z",
+        "price": 3.656,
+        "soc": 35.3,
+        "loadKw": 2.82,
+        "pvKw": 0,
+        "state": "battery"
+      },
+      {
+        "t": "2026-09-24T19:15:00.000Z",
+        "price": 3.318,
+        "soc": 31.9,
+        "loadKw": 2.77,
+        "pvKw": 0,
+        "state": "battery"
+      },
+      {
+        "t": "2026-09-24T19:30:00.000Z",
+        "price": 3.104,
+        "soc": 28,
+        "loadKw": 3.21,
+        "pvKw": 0,
+        "state": "battery"
+      },
+      {
+        "t": "2026-09-24T19:45:00.000Z",
+        "price": 2.924,
+        "soc": 28,
+        "loadKw": 3.15,
+        "pvKw": 0,
+        "state": "at_reserve"
+      },
+      {
+        "t": "2026-09-24T20:00:00.000Z",
+        "price": 3.248,
+        "soc": 28,
+        "loadKw": 3.01,
+        "pvKw": 0,
+        "state": "at_reserve"
+      },
+      {
+        "t": "2026-09-24T20:15:00.000Z",
+        "price": 2.873,
+        "soc": 28,
+        "loadKw": 3.05,
+        "pvKw": 0,
+        "state": "at_reserve"
+      },
+      {
+        "t": "2026-09-24T20:30:00.000Z",
+        "price": 2.7,
+        "soc": 28,
+        "loadKw": 3.05,
+        "pvKw": 0,
+        "state": "at_reserve"
+      },
+      {
+        "t": "2026-09-24T20:45:00.000Z",
+        "price": 2.6,
+        "soc": 28,
+        "loadKw": 2.92,
+        "pvKw": 0,
+        "state": "at_reserve"
+      },
+      {
+        "t": "2026-09-24T21:00:00.000Z",
+        "price": 2.71,
+        "soc": 28,
+        "loadKw": 2.86,
+        "pvKw": 0,
+        "state": "at_reserve"
+      },
+      {
+        "t": "2026-09-24T21:15:00.000Z",
+        "price": 2.583,
+        "soc": 28,
+        "loadKw": 3.22,
+        "pvKw": 0,
+        "state": "at_reserve"
+      },
+      {
+        "t": "2026-09-24T21:30:00.000Z",
+        "price": 2.529,
+        "soc": 28,
+        "loadKw": 2.75,
+        "pvKw": 0,
+        "state": "at_reserve"
+      },
+      {
+        "t": "2026-09-24T21:45:00.000Z",
+        "price": 2.508,
+        "soc": 28,
+        "loadKw": 3.21,
+        "pvKw": 0,
+        "state": "at_reserve"
+      }
+    ],
+    "periods": [
+      {
+        "state": "grid_charge",
+        "start": "2026-09-23T12:00:00.000Z",
+        "end": "2026-09-23T13:45:00.000Z",
+        "socEnd": 88
+      },
+      {
+        "state": "save",
+        "start": "2026-09-23T13:45:00.000Z",
+        "end": "2026-09-23T14:45:00.000Z",
+        "socEnd": 88
+      },
+      {
+        "state": "battery",
+        "start": "2026-09-23T14:45:00.000Z",
+        "end": "2026-09-23T18:45:00.000Z",
+        "socEnd": 26
+      },
+      {
+        "state": "at_reserve",
+        "start": "2026-09-23T18:45:00.000Z",
+        "end": "2026-09-24T00:45:00.000Z",
+        "socEnd": 26
+      },
+      {
+        "state": "grid_charge",
+        "start": "2026-09-24T00:45:00.000Z",
+        "end": "2026-09-24T04:30:00.000Z",
+        "socEnd": 100
+      },
+      {
+        "state": "battery",
+        "start": "2026-09-24T04:30:00.000Z",
+        "end": "2026-09-24T08:00:00.000Z",
+        "socEnd": 70
+      },
+      {
+        "state": "solar_charge",
+        "start": "2026-09-24T08:00:00.000Z",
+        "end": "2026-09-24T13:00:00.000Z",
+        "socEnd": 97
+      },
+      {
+        "state": "save",
+        "start": "2026-09-24T13:00:00.000Z",
+        "end": "2026-09-24T15:15:00.000Z",
+        "socEnd": 97
+      },
+      {
+        "state": "battery",
+        "start": "2026-09-24T15:15:00.000Z",
+        "end": "2026-09-24T19:45:00.000Z",
+        "socEnd": 28
+      },
+      {
+        "state": "at_reserve",
+        "start": "2026-09-24T19:45:00.000Z",
+        "end": "2026-09-24T22:00:00.000Z",
+        "socEnd": 28
+      }
+    ]
+  },
+  "supply": {
+    "source": "solar_battery",
+    "title": "Solar + battery",
+    "solarPct": 70,
+    "batteryPct": 26,
+    "gridPct": 4,
+    "surplusW": 0
+  },
+  "extraPowerCost": 2.72,
+  "batteryLocked": false,
+  "currency": "SEK",
+  "savings": {
+    "today": 18.4,
+    "month": 312
+  },
+  "powerCut": null,
+  "offPlan": null,
+  "peak": null
 }
