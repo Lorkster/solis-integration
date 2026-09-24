@@ -55,7 +55,7 @@ describe('planPeriods', () => {
 describe('planSummary', () => {
   const evening = plan('2026-09-24T18:15:00+02:00', [['self_use', 11, 61, -0.6], ['self_use', 60, 26, 0], ['charge', 7, 30, 1.5]]);
 
-  it('says what happens now and the next battery periods', () => {
+  it('says what happens now and the next planned actions', () => {
     assert.equal(planSummary(evening, new Date('2026-09-24T18:16:00+02:00'), RESERVE, MAX, TZ),
       'Battery powers house until 21:00 · Grid charging 12:00–13:45');
     assert.equal(planSummary(evening, new Date('2026-09-24T18:16:00+02:00'), RESERVE, MAX, TZ, 'sv'),

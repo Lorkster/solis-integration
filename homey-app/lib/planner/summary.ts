@@ -119,8 +119,9 @@ export function planPeriods(intervals: PlannedInterval[], reserveSoc: number, ma
 }
 
 /**
- * One short line for the device tile: what happens now and the next periods that involve the
- * battery, e.g. "Battery powers house until 21:00 · Grid charging 13:45–15:30".
+ * One short line for the device tile: what happens now and the next planned actions (grid charging
+ * and saving), e.g. "Battery powers house until 21:00 · Grid charging 13:45–15:30". The widget's list
+ * shows every period.
  */
 export function planSummary(
   intervals: PlannedInterval[],
@@ -136,7 +137,7 @@ export function planSummary(
   const [current, ...rest] = planPeriods(upcoming, reserveSoc, maxSoc);
   const head = `${names[current.state]} ${UNTIL[language]} ${localHHMM(current.end, timeZone)}`;
   const next = rest
-    .filter((p) => p.state === 'grid_charge' || p.state === 'save' || p.state === 'battery')
+    .filter((p) => PLANNED.has(p.state))
     .slice(0, 2)
     .map((p) => `${names[p.state]} ${localHHMM(p.start, timeZone)}–${localHHMM(p.end, timeZone)}`);
   return [head, ...next].join(' · ');
