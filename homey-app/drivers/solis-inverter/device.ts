@@ -133,17 +133,20 @@ export default class SolisInverterDevice extends Homey.Device {
   async addOverride(action: 'charge' | 'hold', minutes: number): Promise<void> {
     const now = new Date();
     this.controller.overrides.push({ action, from: now, until: addMinutes(now, minutes) });
+    await this.saveOverrides();
     await this.replan();
   }
 
   async prepareOutage(hours: number): Promise<void> {
     this.controller.outage = { targetSoc: Number(this.getSetting('outage_target')), until: addMinutes(new Date(), hours * 60) };
+    await this.saveOverrides();
     await this.replan();
   }
 
   async clearOverrides(): Promise<void> {
     this.controller.overrides = [];
     this.controller.outage = null;
+    await this.saveOverrides();
     // Do not re-arm outage preparation for warnings the user already dismissed.
     const dismissed = new Set((this.getStoreValue('dismissedWarnings') as string[] | undefined) ?? []);
     for (const w of this.warnings) dismissed.add(w.id);
@@ -313,6 +316,31 @@ export default class SolisInverterDevice extends Homey.Device {
     if (previous) {
       this.controller.overrides = previous.overrides;
       this.controller.outage = previous.outage;
+    } else {
+      this.restoreOverrides();
+    }
+  }
+
+  /** Manual overrides survive app restarts and updates. */
+  private async saveOverrides(): Promise<void> {
+    await this.setStoreValue('overrides', {
+      overrides: this.controller.overrides.map((o) => ({ action: o.action, from: o.from.toISOString(), until: o.until.toISOString() })),
+      outage: this.controller.outage && { targetSoc: this.controller.outage.targetSoc, until: this.controller.outage.until.toISOString() },
+    });
+  }
+
+  private restoreOverrides(): void {
+    const stored = this.getStoreValue('overrides') as {
+      overrides?: Array<{ action: 'charge' | 'hold'; from: string; until: string }>;
+      outage?: { targetSoc: number; until: string } | null;
+    } | undefined;
+    if (!stored) return;
+    const now = Date.now();
+    this.controller.overrides = (stored.overrides ?? [])
+      .map((o) => ({ action: o.action, from: new Date(o.from), until: new Date(o.until) }))
+      .filter((o) => o.until.getTime() > now);
+    if (stored.outage && new Date(stored.outage.until).getTime() > now) {
+      this.controller.outage = { targetSoc: stored.outage.targetSoc, until: new Date(stored.outage.until) };
     }
   }
 
