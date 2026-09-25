@@ -36,19 +36,6 @@
     "getView": {
       "method": "GET",
       "path": "/view"
-    },
-    "getDashboard": {
-      "method": "GET",
-      "path": "/dashboard",
-      "public": true
-    },
-    "getDashboardLink": {
-      "method": "GET",
-      "path": "/dashboard-link"
-    },
-    "setDashboardLink": {
-      "method": "PUT",
-      "path": "/dashboard-link"
     }
   },
   "esm": true,

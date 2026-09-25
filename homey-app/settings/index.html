@@ -38,15 +38,16 @@
     @media (min-width: 860px) { .grid { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); } }
     iframe { width: 100%; height: 520px; border: 0; border-radius: 20px; background: var(--card); display: block; }
     .notice { padding: 10px 14px; border-radius: 12px; margin-bottom: 12px; background: color-mix(in srgb, var(--danger) 16%, transparent); }
-    .help { padding: 16px; border-radius: 16px; background: var(--card); color: var(--muted); }
-    .link { margin-top: 20px; padding: 16px; border-radius: 16px; background: var(--card); }
-    .link h2 { margin: 0 0 6px; font-size: 15px; }
-    .link p { margin: 6px 0; color: var(--muted); }
-    .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
-    .row input[type=text] { flex: 1 1 260px; min-width: 0; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); font: 12px ui-monospace, Consolas, monospace; }
+    .help { padding: 16px; border-radius: 16px; background: var(--card); color: var(--muted); max-width: 520px; }
+    .help h2 { margin: 0 0 6px; font-size: 16px; color: var(--ink); }
+    .help label { display: block; margin-top: 12px; color: var(--ink); }
+    .help label span { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+    .help input { width: 100%; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); font: inherit; }
+    .small { font-size: 12px; }
+    .row { display: flex; gap: 8px; margin-top: 14px; }
+    .footer { margin-top: 16px; text-align: right; }
     button { padding: 8px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); font: inherit; cursor: pointer; }
     button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-    label.toggle { display: flex; gap: 8px; align-items: center; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -56,22 +57,19 @@
       <span id="updated" aria-live="polite"></span>
     </header>
     <div id="error" class="notice" role="alert" hidden></div>
-    <div id="help" class="help" hidden></div>
+    <form id="setup" class="help" hidden>
+      <h2 data-t="setupTitle"></h2>
+      <p data-t="setupText"></p>
+      <label><span data-t="address"></span><input type="text" id="address" placeholder="192.168.1.142" autocomplete="off" required></label>
+      <label><span data-t="apiKey"></span><input type="password" id="api-key" autocomplete="off" required></label>
+      <div class="row"><button class="primary" type="submit" data-t="save"></button></div>
+      <p class="small" data-t="setupNote"></p>
+    </form>
     <main class="grid" id="widgets" hidden>
       <iframe id="w-status" data-src="widget-battery-status.html" title="Battery status"></iframe>
       <iframe id="w-plan" data-src="widget-battery-plan.html" title="Battery plan" data-hours="36"></iframe>
     </main>
-    <section class="link" id="link" hidden>
-      <h2 data-t="linkTitle"></h2>
-      <p data-t="linkText"></p>
-      <label class="toggle"><input type="checkbox" id="link-on"> <span data-t="linkOn"></span></label>
-      <div class="row" id="link-row" hidden>
-        <input type="text" id="link-url" readonly aria-label="Dashboard link">
-        <button class="primary" id="link-copy" data-t="copy"></button>
-        <button id="link-new" data-t="newKey"></button>
-      </div>
-      <p id="link-note" data-t="linkNote"></p>
-    </section>
+    <p class="footer" id="forget-row" hidden><button id="forget" type="button" data-t="forget"></button></p>
   </div>
 
   <script>
@@ -79,19 +77,19 @@
     const TEXT = {
       en: {
         title: 'Solis Smart Battery', updated: (t) => `Updated ${t}`, offline: 'Cannot reach Homey: ',
-        help: 'Open this page with the link from the app\'s settings in Homey (Apps → Solis Smart Battery → Configure). The page must be on the same network as Homey.',
-        linkTitle: 'Dashboard in a browser or on a wall screen',
-        linkText: 'A read-only link to this dashboard that works in any browser on your home network, without logging in to Homey. Anyone on the network who has the link can see the values; nobody can change anything.',
-        linkOn: 'Allow the dashboard link', copy: 'Copy link', copied: 'Copied', newKey: 'New link',
-        linkNote: '"New link" makes the old one stop working.',
+        setupTitle: 'Connect to Homey',
+        setupText: 'This page reads the values straight from Homey on your home network, with a Homey API key. Create one in the Homey web app: Settings → API Keys → New API Key, with as few permissions as possible.',
+        address: "Homey's address on your network", apiKey: 'Homey API key', save: 'Connect',
+        setupNote: 'The address and key are stored in this browser only and are sent to nothing but your Homey.',
+        forget: 'Forget the key on this device',
       },
       sv: {
         title: 'Solis Smart Batteri', updated: (t) => `Uppdaterad ${t}`, offline: 'Når inte Homey: ',
-        help: 'Öppna sidan med länken från appens inställningar i Homey (Appar → Solis Smart Batteri → Konfigurera). Sidan måste vara i samma nätverk som Homey.',
-        linkTitle: 'Instrumentpanel i en webbläsare eller på en väggskärm',
-        linkText: 'En skrivskyddad länk till panelen som fungerar i valfri webbläsare i ditt hemnätverk, utan inloggning i Homey. Alla i nätverket som har länken kan se värdena; ingen kan ändra något.',
-        linkOn: 'Tillåt länken till panelen', copy: 'Kopiera länk', copied: 'Kopierad', newKey: 'Ny länk',
-        linkNote: '"Ny länk" gör att den gamla slutar fungera.',
+        setupTitle: 'Anslut till Homey',
+        setupText: 'Sidan läser värdena direkt från Homey i ditt hemnätverk, med en API-nyckel för Homey. Skapa en i Homeys webbapp: Inställningar → API-nycklar → Ny API-nyckel, med så få behörigheter som möjligt.',
+        address: 'Homeys adress i nätverket', apiKey: 'API-nyckel för Homey', save: 'Anslut',
+        setupNote: 'Adressen och nyckeln sparas bara i den här webbläsaren och skickas inte till något annat än din Homey.',
+        forget: 'Glöm nyckeln på den här enheten',
       },
     };
     let language = (navigator.language || 'en').startsWith('sv') ? 'sv' : 'en';
@@ -139,7 +137,7 @@
       }).catch(() => undefined);
     }
 
-    /** The widgets appear once there is data, so a wrong link shows only the error. */
+    /** The widgets appear once there is data, so a wrong key shows only the error. */
     function showWidgets() {
       mounted = true;
       document.getElementById('widgets').hidden = false;
@@ -202,51 +200,50 @@
       Homey.on('live', refresh);
       Homey.on('plan', refresh);
       start();
-      setupLink(api);
       Homey.ready();
     };
 
-    function setupLink(api) {
-      const section = document.getElementById('link');
-      const on = document.getElementById('link-on');
-      const row = document.getElementById('link-row');
-      const url = document.getElementById('link-url');
-      const show = (link) => {
-        section.hidden = false;
-        on.checked = link.enabled;
-        row.hidden = !link.enabled || !link.url;
-        url.value = link.url || '';
-      };
-      api('GET', '/dashboard-link').then(show).catch(() => undefined);
-      on.addEventListener('change', () => api('PUT', '/dashboard-link', { enabled: on.checked }).then(show));
-      document.getElementById('link-new').addEventListener('click', () => api('PUT', '/dashboard-link', { newKey: true }).then(show));
-      document.getElementById('link-copy').addEventListener('click', (event) => {
-        navigator.clipboard.writeText(url.value).then(() => {
-          event.target.textContent = t().copied;
-          setTimeout(() => { event.target.textContent = t().copy; }, 1500);
-        }, () => url.select());
-      });
-    }
-
-    // --- on its own (a browser or wall screen): data from Homey's local address with the link's key
-    const homeyUrl = params.get('homey');
-    const key = params.get('key');
-    if (homeyUrl && key) {
-      source = () => fetch(`${homeyUrl}/api/app/${APP_ID}/dashboard?key=${encodeURIComponent(key)}`, { cache: 'no-store' })
-        .then((r) => r.json().then((body) => {
-          if (!r.ok) throw new Error(body && body.error ? body.error : `HTTP ${r.status}`);
-          return body;
-        }));
+    // --- on its own (a browser or wall screen at home)
+    // Data straight from Homey's local API with a Homey API key: nothing public, nothing via the internet.
+    // The address and key live in this browser's storage only, never in the link.
+    const STORE = 'solis-dashboard';
+    const stored = () => {
+      try { return JSON.parse(localStorage.getItem(STORE) || 'null'); } catch { return null; }
+    };
+    /** "192.168.1.142" → Homey's local HTTPS name, which has a valid certificate. */
+    const homeyBase = (address) => {
+      const a = address.trim().replace(/\/+$/, '');
+      if (/^https?:\/\//.test(a)) return a;
+      return /^\d+\.\d+\.\d+\.\d+$/.test(a) ? `https://${a.replace(/\./g, '-')}.homey.homeylocal.com` : `http://${a}`;
+    };
+    function connect(config) {
+      source = () => fetch(`${homeyBase(config.address)}/api/app/${APP_ID}/view`, {
+        cache: 'no-store', headers: { Authorization: `Bearer ${config.key}` },
+      }).then((r) => r.json().catch(() => ({})).then((body) => {
+        if (!r.ok) throw new Error(body && body.error ? body.error : `HTTP ${r.status}`);
+        return body;
+      }));
+      document.getElementById('forget-row').hidden = false;
       start();
-    } else {
-      // Not in Homey and no link: explain, unless Homey's settings runtime calls onHomeyReady soon.
-      setTimeout(() => {
-        if (source) return;
-        const help = document.getElementById('help');
-        help.textContent = t().help;
-        help.hidden = false;
-      }, 1500);
     }
+    document.getElementById('forget').addEventListener('click', () => {
+      try { localStorage.removeItem(STORE); } catch { /* storage blocked */ }
+      location.reload();
+    });
+    document.getElementById('setup').addEventListener('submit', (event) => {
+      event.preventDefault();
+      const config = { address: document.getElementById('address').value, key: document.getElementById('api-key').value.trim() };
+      try { localStorage.setItem(STORE, JSON.stringify(config)); } catch { /* storage blocked: works until reload */ }
+      document.getElementById('setup').hidden = true;
+      connect(config);
+    });
+    // Inside Homey, the settings runtime calls onHomeyReady; elsewhere ask for the address and key once.
+    setTimeout(() => {
+      if (source) return;
+      const config = stored();
+      if (config && config.address && config.key) connect(config);
+      else document.getElementById('setup').hidden = false;
+    }, 800);
     applyTexts();
   </script>
 </body>

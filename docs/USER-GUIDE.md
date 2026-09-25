@@ -148,16 +148,24 @@ Widget settings: *Time shown* (24, 36 or 48 hours) and *Show solar and load fore
 
 ### Dashboard in a browser
 
-Homey's web app cannot show widgets, so the app has its own dashboard with both widgets:
+Homey's web app cannot show widgets, so the app has its own dashboard page with both widgets. The
+app has **no public or unauthenticated access**: every request needs your Homey login or a Homey
+API key.
 
-- **In the Homey web app** ([my.homey.app](https://my.homey.app), any browser, also away from home):
-  open **Apps → Solis Smart Battery → Configure**. It uses your Homey login.
-- **On a wall screen or tablet at home**, without logging in: on that same page, switch on
-  **Allow the dashboard link** and copy the link. It opens a full-screen page that reads the values
-  straight from Homey on your home network (through Homey's local address, so it only works at
-  home). The link is read-only: anyone on your network who has it can see the values, nobody can
-  change anything. **New link** makes the old one stop working. Add `&theme=dark` or `&theme=light`
-  to the end of the link to fix the colours; otherwise it follows the device.
+- **In the Homey web app**: open **Apps → Solis Smart Battery → Configure**. It uses your Homey
+  login, like everything else in the Homey app.
+- **On a wall screen or tablet at home**: the page in [`docs/dashboard/`](dashboard/) reads the
+  values straight from Homey on your home network. Nothing goes through the internet.
+  1. In the Homey web app, create an API key: **Settings → API Keys → New API Key**, with as few
+     permissions as possible.
+  2. Put the `docs/dashboard` folder on a computer on your home network that serves web pages (for
+     example a Raspberry Pi), or open `index.html` straight from disk.
+  3. Open the page, enter Homey's address (e.g. `192.168.1.142`) and the key. They are stored in
+     that browser only; **Forget the key on this device** removes them.
+  4. From away, reach it through your own VPN (for example Tailscale) – never by opening a port.
+
+  Add `#theme=dark` or `#theme=light` to the page address to fix the colours; otherwise it follows
+  the device.
 
 ---
 
