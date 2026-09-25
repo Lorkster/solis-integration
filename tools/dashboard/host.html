@@ -65,14 +65,16 @@
       <p class="small" data-t="setupNote"></p>
     </form>
     <main class="grid" id="widgets" hidden>
-      <iframe id="w-status" data-src="widget-battery-status.html" title="Battery status"></iframe>
-      <iframe id="w-plan" data-src="widget-battery-plan.html" title="Battery plan" data-hours="36"></iframe>
+      <iframe id="w-status" data-widget="battery-status" title="Battery status"></iframe>
+      <iframe id="w-plan" data-widget="battery-plan" title="Battery plan" data-hours="36"></iframe>
     </main>
     <p class="footer" id="forget-row" hidden><button id="forget" type="button" data-t="forget"></button></p>
   </div>
 
   <script>
     const APP_ID = 'com.lorkster.solisbattery';
+    // The widget files, built into this page so it is one file that also works opened from disk.
+    const WIDGETS = /*WIDGETS*/{}/*WIDGETS*/;
     const TEXT = {
       en: {
         title: 'Solis Smart Battery', updated: (t) => `Updated ${t}`, offline: 'Cannot reach Homey: ',
@@ -140,7 +142,7 @@
     function showWidgets() {
       mounted = true;
       document.getElementById('widgets').hidden = false;
-      for (const frame of document.querySelectorAll('iframe[data-src]')) mount(frame);
+      for (const frame of document.querySelectorAll('iframe[data-widget]')) mount(frame);
     }
 
     function showError(text) {
@@ -181,7 +183,7 @@
           __: (key) => key,
         });
       });
-      frame.src = frame.dataset.src;
+      frame.srcdoc = WIDGETS[frame.dataset.widget];
     }
 
     function start() {

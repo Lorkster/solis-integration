@@ -154,15 +154,17 @@ API key.
 
 - **In the Homey web app**: open **Apps → Solis Smart Battery → Configure**. It uses your Homey
   login, like everything else in the Homey app.
-- **On a wall screen or tablet at home**: the page in [`docs/dashboard/`](dashboard/) reads the
-  values straight from Homey on your home network. Nothing goes through the internet.
+- **On a wall screen, tablet or computer at home**: [`docs/dashboard/solis-dashboard.html`](dashboard/solis-dashboard.html)
+  is one self-contained file that reads the values straight from Homey on your home network.
+  Nothing goes through the internet, and no web server is needed.
   1. In the Homey web app, create an API key: **Settings → API Keys → New API Key**, with as few
      permissions as possible.
-  2. Put the `docs/dashboard` folder on a computer on your home network that serves web pages (for
-     example a Raspberry Pi), or open `index.html` straight from disk.
-  3. Open the page, enter Homey's address (e.g. `192.168.1.142`) and the key. They are stored in
-     that browser only; **Forget the key on this device** removes them.
-  4. From away, reach it through your own VPN (for example Tailscale) – never by opening a port.
+  2. Copy `solis-dashboard.html` to the device and open it in the browser (or put it on a local web
+     server, e.g. a Raspberry Pi, if the device cannot open files).
+  3. Enter Homey's address (e.g. `192.168.1.142`) and the key. They are stored in that browser only;
+     **Forget the key on this device** removes them.
+  4. From away, reach your home network through your own VPN (for example Tailscale) – never by
+     opening a port.
 
   Add `#theme=dark` or `#theme=light` to the page address to fix the colours; otherwise it follows
   the device.
