@@ -301,11 +301,43 @@ export class SolarForecaster {
     return this.modeled.get(Math.floor(time.getTime() / 900_000) * 900_000) ?? null;
   }
 
-  /** Calibrated expected PV power (kW) for the quarter containing `time`. */
+  /** Calibrated expected PV power (kW) for the quarter containing `time`, with the live correction. */
   forecastAt(time: Date): number | null {
+    const base = this.baseForecastAt(time);
+    if (base === null) return null;
+    return Math.min(this.config.maxAcKw, base * this.nowcastFactor(time));
+  }
+
+  /** Forecast from the service and the learned calibration only. */
+  baseForecastAt(time: Date): number | null {
     const modeled = this.modeledAt(time);
     if (modeled === null) return null;
     return Math.min(this.config.maxAcKw, modeled * this.calibration.factorAt(time));
+  }
+
+  private nowcast: { at: number; ratio: number } | null = null;
+
+  /**
+   * Compares what the panels deliver now with the forecast (weather today differs from the
+   * forecast: sunnier, cloudier, fog). The ratio corrects the next hours, fading out over about
+   * two hours. Throttled samples say nothing about the sun and must not be passed in.
+   */
+  observe(time: Date, actualKw: number): void {
+    const expected = this.baseForecastAt(time);
+    if (expected === null || !Number.isFinite(actualKw)) return;
+    if (expected < 0.1 * this.kwpTotal && actualKw < 0.1 * this.kwpTotal) {
+      this.nowcast = null; // too little light to judge
+      return;
+    }
+    this.nowcast = { at: time.getTime(), ratio: Math.min(3, Math.max(0.2, actualKw / Math.max(expected, 0.05))) };
+  }
+
+  private nowcastFactor(time: Date): number {
+    const n = this.nowcast;
+    if (!n) return 1;
+    const ahead = time.getTime() - n.at;
+    if (ahead < -15 * 60_000 || Date.now() - n.at > 30 * 60_000) return 1; // only forward, and only while fresh
+    return 1 + (n.ratio - 1) * Math.exp(-Math.max(0, ahead) / (120 * 60_000));
   }
 
   /** Feeds an observed quarter-hour average PV power into the calibration. */

@@ -15,7 +15,7 @@ import { type PowerCutEvent, type PowerCutState, PowerCutTracker } from '../../l
 import { type InverterInfo, type InverterTransport, type LiveData, supportLevel } from '../../lib/inverter/types.js';
 import { bestWindow, type BestWindow, isBestTimeNow } from '../../lib/planner/bestTime.js';
 import type { BatteryAction } from '../../lib/planner/planner.js';
-import { displayAction, intervalState, planPeriods, planSummary } from '../../lib/planner/summary.js';
+import { displayAction, intervalState, liveState, planPeriods, planSummary } from '../../lib/planner/summary.js';
 import {
   createPriceProvider, currencyForArea, FlowPriceProvider, parseFlowPrices, type PriceArea, type PriceSource,
 } from '../../lib/prices/PriceProvider.js';
@@ -347,6 +347,18 @@ export default class SolisInverterDevice extends Homey.Device {
     return cheapest.includes(current);
   }
 
+  /** What really happens now, when it differs from the plan's self-use period (else null). */
+  private nowState(): string | null {
+    const state = this.planState;
+    if (!state || !this.live) return null;
+    const now = new Date();
+    const [current] = planPeriods(state.plan.intervals.filter((iv) => iv.end > now), state.reserveSoc, this.controller.config.maxSocPct);
+    if (!current) return null;
+    const actual = liveState(current.state, { socPct: this.live.socPct, batteryW: this.live.batteryPowerW },
+      state.reserveSoc, this.controller.config.maxSocPct);
+    return actual && actual !== current.state ? actual : null;
+  }
+
   /** Data for the dashboard widgets. */
   getView(): unknown {
     const state = this.planState;
@@ -400,6 +412,7 @@ export default class SolisInverterDevice extends Homey.Device {
         slots: state.schedule.chargeSlots.filter((s) => s.enabled),
         learnedLoad: this.loadProfile.observations >= 96 * 3,
         solarForecast: Boolean(this.solar),
+        nowState: this.nowState(),
         periods: planPeriods(state.plan.intervals, state.reserveSoc, this.controller.config.maxSocPct).map((p) => ({
           state: p.state,
           start: p.start.toISOString(),
@@ -574,6 +587,7 @@ export default class SolisInverterDevice extends Homey.Device {
         this.loadProfile.addSample(live.timestamp, live.loadPowerW / 1000);
         const curtailed = looksCurtailed(live.pvPowerW / 1000, live.loadPowerW / 1000, live.gridPowerW / 1000, live.batteryPowerW / 1000);
         this.pvQuarters.add(live.timestamp, curtailed ? NaN : live.pvPowerW / 1000);
+        if (!curtailed) this.solar?.observe(live.timestamp, live.pvPowerW / 1000);
         // Throttling the app asked for (negative export price) is not a problem.
         const expected = this.controller.exportBlockedByApp ? null : this.solar?.forecastAt(live.timestamp) ?? null;
         this.throttle.update(live.timestamp, curtailed, expected, live.pvPowerW / 1000);
@@ -584,6 +598,8 @@ export default class SolisInverterDevice extends Homey.Device {
       await this.checkBestTimeTriggers().catch(this.error);
       await this.updateLock(live);
       await this.updateEnergyFlow(live);
+      // The tile's "now" follows live data between plan updates.
+      if (this.planState) await this.setCapabilityValue('solis_plan_status', this.summarise(this.planState));
       const set = (cap: string, value: number) => (Number.isFinite(value) ? this.setCapabilityValue(cap, value) : undefined);
       await Promise.all([
         set('measure_battery', live.socPct),
@@ -1070,7 +1086,8 @@ export default class SolisInverterDevice extends Homey.Device {
 
   private summarise(state: PlanState): string {
     const language = this.homey.i18n.getLanguage() === 'sv' ? 'sv' : 'en';
+    const live = this.live && { socPct: this.live.socPct, batteryW: this.live.batteryPowerW };
     return planSummary(state.plan.intervals, new Date(), state.reserveSoc, this.controller.config.maxSocPct,
-      this.homey.clock.getTimezone(), language);
+      this.homey.clock.getTimezone(), language, live ?? undefined);
   }
 }

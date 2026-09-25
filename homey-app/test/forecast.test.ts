@@ -52,6 +52,22 @@ describe('solar model', () => {
   });
 });
 
+describe('solar nowcast', () => {
+  it('corrects the next hours by what the panels deliver now, fading out', async () => {
+    const now = new Date();
+    const q = Math.floor(now.getTime() / 900_000) * 900_000;
+    const provider = { hasHistory: false, getPower: async () => new Map(Array.from({ length: 24 }, (_, i) => [q + i * 900_000, 2] as [number, number])) };
+    const forecaster = new SolarForecaster({ latitude: 59.8, longitude: 17, performanceRatio: 0.85, maxAcKw: 20, arrays: [{ kwp: 11, tilt: 35, azimuth: 0 }] },
+      new SolarCalibration(TZ), provider);
+    await forecaster.refresh();
+    assert.equal(forecaster.forecastAt(now), 2);
+    forecaster.observe(now, 3.3); // sunnier than forecast
+    assert.ok(Math.abs(forecaster.forecastAt(now)! - 3.3) < 0.05);
+    const later = forecaster.forecastAt(new Date(q + 4 * 3_600_000 - 900_000))!;
+    assert.ok(later > 2 && later < 2.3, 'fades towards the forecast over a few hours');
+  });
+});
+
 describe('SMHI warnings', () => {
   // A square around 59.5–60.0 N, 16.5–17.5 E (lon, lat order as in GeoJSON).
   const square = { type: 'Polygon' as const, coordinates: [[[16.5, 59.5], [17.5, 59.5], [17.5, 60.0], [16.5, 60.0], [16.5, 59.5]]] };

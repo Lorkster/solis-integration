@@ -105,7 +105,11 @@ list and on the device tile:
 | **At reserve · grid powers house** (grey) | The battery is down to the reserve, kept for power outages; the grid powers the house. |
 | **Full · solar powers house** (grey) | The battery is full; solar powers the house and the rest is sold. |
 
-- **Top line**: what is happening now, until when, and to which battery level.
+- **Top line**: what is happening now, until when, and to which battery level. When the weather
+  turns out differently from the forecast in a self-use period (a sunny morning that was expected to
+  be grey), the top line shows what really happens, marked *right now, differs from the forecast*.
+  The device tile does the same: *Solar charging now · Grid charging 13:45–15:30*. The solar forecast
+  for the next hours is also corrected by what the panels deliver now.
 - **Notices** (when relevant): weather warning, preparing for an outage, battery locked by SolisCloud,
   or *Monitor only – the app is not controlling the inverter*.
 - **Three charts on one time axis**, with the periods marked on top:

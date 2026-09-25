@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import type { BatteryAction, PlannedInterval } from '../lib/planner/planner.js';
-import { planPeriods, planSummary } from '../lib/planner/summary.js';
+import { liveState, planPeriods, planSummary } from '../lib/planner/summary.js';
 import { TZ } from './helpers.js';
 
 /** spec: [action, quarters, SOC at start, battery kWh per quarter (+ charging)] */
@@ -65,5 +65,24 @@ describe('planSummary', () => {
   it('hides saves too close to the reserve', () => {
     const idle = plan('2026-09-24T22:00:00+02:00', [['self_use', 4, 29, -0.3], ['hold', 8, 27]]);
     assert.equal(planSummary(idle, new Date('2026-09-24T22:00:00+02:00'), RESERVE, MAX, TZ), 'Battery powers house until 23:00');
+  });
+});
+
+describe('live state', () => {
+  it('shows what really happens in a self-use period (25 Sep morning)', () => {
+    // Planned at reserve until 10:00, but the sun came out: the battery charges from solar.
+    const morning = plan('2026-09-25T08:45:00+02:00', [['self_use', 5, 25, 0], ['self_use', 8, 25, 0.3], ['charge', 7, 40, 1.5]]);
+    const now = new Date('2026-09-25T08:57:00+02:00');
+    assert.equal(planSummary(morning, now, RESERVE, MAX, TZ, 'en', { socPct: 25, batteryW: 1650 }),
+      'Solar charging now · Grid charging 12:00–13:45');
+    assert.equal(planSummary(morning, now, RESERVE, MAX, TZ, 'en', { socPct: 25, batteryW: 0 }),
+      'At reserve · grid powers house until 10:00 · Grid charging 12:00–13:45', 'as planned');
+  });
+
+  it('never overrides planned charging or saving', () => {
+    assert.equal(liveState('grid_charge', { socPct: 50, batteryW: 0 }, RESERVE, MAX), null);
+    assert.equal(liveState('save', { socPct: 50, batteryW: -2000 }, RESERVE, MAX), null);
+    assert.equal(liveState('at_reserve', { socPct: 60, batteryW: -2000 }, RESERVE, MAX), 'battery');
+    assert.equal(liveState('battery', { socPct: 60, batteryW: 0 }, RESERVE, MAX), null, 'idle mid-range: undecided');
   });
 });

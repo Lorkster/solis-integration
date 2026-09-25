@@ -102,6 +102,7 @@
           at_reserve: (u) => `until ${u} · grid powers the house`, full: (u) => `until ${u} · solar powers the house`,
         },
         quiet: 'At reserve / full',
+        nowSub: 'right now, differs from the forecast',
         monitor: 'Monitor only – the app is not controlling the inverter',
         locked: 'Battery locked by SolisCloud – release it with Quick Control → Discharge (short duration)',
         outage: (until) => `Preparing for a power outage until ${until}`,
@@ -129,6 +130,7 @@
           at_reserve: (u) => `till ${u} · nätet driver huset`, full: (u) => `till ${u} · solen driver huset`,
         },
         quiet: 'Vid reserv / fullt',
+        nowSub: 'just nu, avviker från prognosen',
         monitor: 'Endast övervakning – appen styr inte växelriktaren',
         locked: 'Batteriet låst av SolisCloud – frigör med Snabbkontroll → Urladdning (kort tid)',
         outage: (until) => `Förbereder för strömavbrott till ${until}`,
@@ -208,8 +210,10 @@
       const T = t();
       const current = intervals[0];
       const first = periods(intervals)[0];
-      const state = first ? first.state : current.state;
-      const sub = first ? T.subs[state](fmtTime(first.end), Math.round(first.socEnd)) : '';
+      const planned = first ? first.state : current.state;
+      // Live data wins over the forecast in self-use periods (e.g. a sunnier morning than expected).
+      const state = view.plan.nowState || planned;
+      const sub = view.plan.nowState ? T.nowSub : first ? T.subs[state](fmtTime(first.end), Math.round(first.socEnd)) : '';
       const soc = view.live ? view.live.socPct : Math.round(current.soc);
       const header = document.createElement('div');
       header.className = 'status';

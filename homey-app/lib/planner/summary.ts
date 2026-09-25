@@ -32,6 +32,32 @@ export const PERIOD_NAMES: Record<Language, Record<PeriodState, string>> = {
 };
 
 const UNTIL: Record<Language, string> = { en: 'until', sv: 'till' };
+const NOW: Record<Language, string> = { en: 'now', sv: 'nu' };
+
+/** States where the inverter runs plain self-use, so what happens follows the sun and the house. */
+const SELF_USE: ReadonlySet<PeriodState> = new Set(['battery', 'solar_charge', 'at_reserve', 'full']);
+/** Battery power (W) that counts as charging or discharging in live data. */
+const LIVE_MOVING_W = 300;
+
+export interface LiveSample {
+  socPct: number;
+  batteryW: number; // positive = charging
+}
+
+/**
+ * What is happening right now according to the inverter, for a period the plan expects to be plain
+ * self-use. The plan's forecast can be off (a sunnier morning than expected); reality wins then.
+ * Planned grid charging and saving are commands, so they are not overridden (the plan check
+ * reports when the inverter does not follow them). Returns null when live data does not decide.
+ */
+export function liveState(planned: PeriodState, live: LiveSample, reserveSoc: number, maxSoc: number): PeriodState | null {
+  if (!SELF_USE.has(planned)) return null;
+  if (live.batteryW > LIVE_MOVING_W) return 'solar_charge';
+  if (live.batteryW < -LIVE_MOVING_W) return 'battery';
+  if (live.socPct >= maxSoc - 2) return 'full';
+  if (live.socPct <= reserveSoc + 2) return 'at_reserve';
+  return null;
+}
 
 /**
  * A "save" only makes sense with a meaningful amount of energy above the reserve (5 percentage
@@ -120,8 +146,9 @@ export function planPeriods(intervals: PlannedInterval[], reserveSoc: number, ma
 
 /**
  * One short line for the device tile: what happens now and the next planned actions (grid charging
- * and saving), e.g. "Battery powers house until 21:00 · Grid charging 13:45–15:30". The widget's list
- * shows every period.
+ * and saving), e.g. "Battery powers house until 21:00 · Grid charging 13:45–15:30". With live data,
+ * a self-use period that turns out differently shows what really happens: "Solar charging now · …".
+ * The widget's list shows every period.
  */
 export function planSummary(
   intervals: PlannedInterval[],
@@ -130,12 +157,16 @@ export function planSummary(
   maxSoc: number,
   timeZone: string,
   language: Language = 'en',
+  live?: LiveSample,
 ): string {
   const names = PERIOD_NAMES[language];
   const upcoming = intervals.filter((iv) => iv.end > now && iv.start < new Date(now.getTime() + 86_400_000));
   if (upcoming.length === 0) return '';
   const [current, ...rest] = planPeriods(upcoming, reserveSoc, maxSoc);
-  const head = `${names[current.state]} ${UNTIL[language]} ${localHHMM(current.end, timeZone)}`;
+  const actual = live ? liveState(current.state, live, reserveSoc, maxSoc) : null;
+  const head = actual && actual !== current.state
+    ? `${names[actual]} ${NOW[language]}`
+    : `${names[current.state]} ${UNTIL[language]} ${localHHMM(current.end, timeZone)}`;
   const next = rest
     .filter((p) => PLANNED.has(p.state))
     .slice(0, 2)
