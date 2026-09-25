@@ -3,7 +3,7 @@ import { describe, it } from 'node:test';
 
 import { DISABLED_SLOT } from '../lib/inverter/types.js';
 import { SolisCloudClient } from '../lib/solis/SolisCloudClient.js';
-import { SolisCloudTransport } from '../lib/solis/SolisCloudTransport.js';
+import { parseLiveData, SolisCloudTransport } from '../lib/solis/SolisCloudTransport.js';
 
 /** In-memory inverter behind a fake SolisCloud: switch CIDs share one bit-field register. */
 class FakeCloud extends SolisCloudClient {
@@ -45,5 +45,19 @@ describe('SolisCloudTransport slot switches', () => {
     assert.equal(cloud.register, 0b11, 'both slot 1 and slot 2 enabled');
     await transport.writeChargeSlot(0, { ...DISABLED_SLOT }, { enabled: true, start: '13:45', end: '15:30', currentA: 16, soc: 84 });
     assert.equal(cloud.register, 0b10, 'disabling slot 1 leaves slot 2');
+  });
+});
+
+describe('SolisCloud live data', () => {
+  it('reads lifetime totals in their units (MWh on this inverter)', () => {
+    const live = parseLiveData({
+      dataTimestamp: '1790264410000', batteryCapacitySoc: 50, psum: -1.2, psumStr: 'kW', familyLoadPower: 2, familyLoadPowerStr: 'kW',
+      eTotal: 8.556, eTotalStr: 'MWh', gridPurchasedTotalEnergy: 20.421, gridPurchasedTotalEnergyStr: 'MWh',
+      gridSellTotalEnergy: 2.497, gridSellTotalEnergyStr: 'MWh', uAc1: 230, uAc2: 230, uAc3: 230,
+    });
+    assert.ok(Math.abs(live.pvTotalKwh - 8556) < 1e-6);
+    assert.ok(Math.abs(live.gridImportTotalKwh - 20421) < 1e-6);
+    assert.ok(Math.abs(live.gridExportTotalKwh - 2497) < 1e-6);
+    assert.equal(live.gridPowerW, 1200, 'import positive');
   });
 });

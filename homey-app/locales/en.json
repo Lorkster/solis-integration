@@ -54,5 +54,11 @@
   "summary": "Yesterday the battery saved {{day}} {{currency}}; {{month}} {{currency}} so far this month.",
   "bestTime": {
     "unknown": "No prices far enough ahead yet to find a time"
+  },
+  "child": {
+    "waiting": "Waiting for values from the inverter device",
+    "noInverter": "Add the Solis inverter (Home battery) first",
+    "solarName": "Solar panels",
+    "gridName": "Grid meter"
   }
 }

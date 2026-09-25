@@ -54,5 +54,11 @@
   "summary": "I går sparade batteriet {{day}} {{currency}}; {{month}} {{currency}} hittills denna månad.",
   "bestTime": {
     "unknown": "Inga priser långt nog framåt ännu för att hitta en tid"
+  },
+  "child": {
+    "waiting": "Väntar på värden från växelriktaren",
+    "noInverter": "Lägg till Solis-växelriktaren (Hembatteri) först",
+    "solarName": "Solpaneler",
+    "gridName": "Elnätsmätare"
   }
 }

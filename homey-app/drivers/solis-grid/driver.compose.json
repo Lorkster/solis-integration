@@ -1,0 +1,61 @@
+{
+  "name": {
+    "en": "Grid meter",
+    "sv": "Elnätsmätare"
+  },
+  "class": "sensor",
+  "capabilities": [
+    "measure_power",
+    "meter_power.imported",
+    "meter_power.exported"
+  ],
+  "capabilitiesOptions": {
+    "measure_power": {
+      "title": {
+        "en": "Grid power (+ buying, − selling)",
+        "sv": "Nätets effekt (+ köp, − sälj)"
+      }
+    },
+    "meter_power.imported": {
+      "title": {
+        "en": "Bought in total",
+        "sv": "Köpt totalt"
+      }
+    },
+    "meter_power.exported": {
+      "title": {
+        "en": "Sold in total",
+        "sv": "Sålt totalt"
+      }
+    }
+  },
+  "energy": {
+    "cumulative": true,
+    "cumulativeImportedCapability": "meter_power.imported",
+    "cumulativeExportedCapability": "meter_power.exported"
+  },
+  "platforms": [
+    "local"
+  ],
+  "connectivity": [
+    "cloud"
+  ],
+  "images": {
+    "small": "{{driverAssetsPath}}/images/small.png",
+    "large": "{{driverAssetsPath}}/images/large.png",
+    "xlarge": "{{driverAssetsPath}}/images/xlarge.png"
+  },
+  "pair": [
+    {
+      "id": "list_devices",
+      "template": "list_devices",
+      "navigation": {
+        "next": "add_devices"
+      }
+    },
+    {
+      "id": "add_devices",
+      "template": "add_devices"
+    }
+  ]
+}

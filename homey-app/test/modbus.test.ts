@@ -50,6 +50,16 @@ describe('Solis over Modbus', () => {
     assert.equal(live.loadPowerW, 3048);
     assert.equal(live.batteryChargedTotalKwh, 5224);
     assert.equal(live.gridLost, false);
+    assert.ok(Number.isNaN(live.pvTotalKwh), 'totals unknown when not read');
+  });
+
+  it('reads lifetime totals for Homey Energy', () => {
+    const live = parseModbusLive({
+      pv: Array(10).fill(0), grid: [2300, 2300, 2300], bat: [4200, 0, 0, 0, 0, 0, 50], loads: [1000, 0, 0, 0, 0, 0],
+      energy: [0, 0, 0, 0, 0, 0], meter: [0, 0],
+      totals: [0, 8556, 0, 20421, 0, 0, 0, 2497], // PV 8 556 kWh, bought 20 421, sold 2 497
+    }, new Date());
+    assert.deepEqual([live.pvTotalKwh, live.gridImportTotalKwh, live.gridExportTotalKwh], [8556, 20421, 2497]);
   });
 
   it('reads the schedule and switches from the shared bit register', async () => {

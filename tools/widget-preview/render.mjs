@@ -2,7 +2,7 @@
 // Usage: node tools/widget-preview/render.mjs <widget-id> <light|dark> [width] [height] [out.png] [hover 0..1]
 // MOCK_OVERRIDE='{"powerCut":{...}}' replaces top-level fields of the mock data.
 import { execFileSync } from 'node:child_process';
-import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
+import { existsSync, readFileSync, rmSync, statSync, writeFileSync, mkdtempSync, unlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -46,6 +46,16 @@ const file = join(dir, 'page.html');
 writeFileSync(file, page);
 const png = resolve(out ?? join(here, `${widget}-${theme}.png`));
 const edge = 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe';
-execFileSync(edge, ['--headless=new', '--disable-gpu', '--hide-scrollbars', `--window-size=${Math.max(Number(width), 600)},${height}`,
+try { unlinkSync(png); } catch { /* not there yet */ }
+const profile = mkdtempSync(join(tmpdir(), 'solis-edge-')); // own profile: never handed to a running Edge
+execFileSync(edge, ['--headless=new', `--user-data-dir=${profile}`, '--disable-gpu', '--hide-scrollbars', `--window-size=${Math.max(Number(width), 600)},${height}`,
   '--force-device-scale-factor=2', '--virtual-time-budget=3000', `--screenshot=${png}`, `file:///${file.split(String.fromCharCode(92)).join('/')}`], { stdio: 'ignore' });
+// The Edge launcher can exit before the screenshot is written: wait for the file (up to 20 s).
+const until = Date.now() + 20_000;
+while (!existsSync(png) || statSync(png).size === 0) {
+  if (Date.now() > until) throw new Error(`Edge did not write ${png}`);
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 200);
+}
+Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 300); // let it finish writing
+try { rmSync(profile, { recursive: true, force: true }); } catch { /* Edge may still hold it */ }
 console.log(png);

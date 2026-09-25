@@ -414,6 +414,20 @@ export default class SolisInverterDevice extends Homey.Device {
     await this.setCapabilityValue('solis_dashboard', json).catch(this.error);
   }
 
+  /** Latest live values, for the solar panel and grid meter devices. */
+  latestLive(): LiveData | null {
+    return this.live;
+  }
+
+  /** Passes new values to this inverter's solar panel and grid meter devices (Homey Energy). */
+  private async updateEnergyDevices(live: LiveData): Promise<void> {
+    const { id } = this.getData() as { id: string };
+    for (const driverId of ['solis-solar', 'solis-grid']) {
+      const devices = this.homey.drivers.getDriver(driverId).getDevices() as unknown as Array<{ getData(): { parent: string }; onLive(l: LiveData): Promise<void> }>;
+      for (const device of devices.filter((d) => d.getData().parent === id)) await device.onLive(live).catch(this.error);
+    }
+  }
+
   /** Data for the dashboard widgets. */
   getView(): unknown {
     const state = this.planState;
@@ -714,6 +728,7 @@ export default class SolisInverterDevice extends Homey.Device {
       ]);
       this.homey.api.realtime('live', null);
       await this.publishDashboard();
+      await this.updateEnergyDevices(live);
     } catch (err) {
       this.error('Live data failed:', err);
       if (!this.live) await this.setUnavailable(`SolisCloud: ${(err as Error).message}`);

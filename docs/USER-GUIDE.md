@@ -21,6 +21,7 @@ Which inverters it works with: [Supported inverters](#supported-inverters).
 [Dashboard in a browser](#dashboard-in-a-browser) ·
 [Connection](#connection-soliscloud-or-modbus) ·
 [The device](#the-device) ·
+[Homey Energy](#homey-energy) ·
 [Control modes](#control-modes) ·
 [How the plan is made](#how-the-plan-is-made) ·
 [Backup and power outages](#backup-and-power-outages) ·
@@ -204,7 +205,8 @@ The inverter appears as one device in Homey, called **Home battery** (*Hembatter
 rename it as you like. The inverter's model, rated power, firmware and what the app supports are in
 the device's settings under **Inverter**.
 
-The device has these values. The names are exactly as the app
+The device has these values. For Homey Energy there are two more devices, described in
+[Homey Energy](#homey-energy) below. The names are exactly as the app
 shows them (English, or Swedish when Homey is set to Swedish). Numeric values and alarms can be
 chosen as the device's tile indicator, and all numbers and alarms are kept in Homey Insights.
 
@@ -246,6 +248,23 @@ chosen as the device's tile indicator, and all numbers and alarms are kept in Ho
 <!-- /generated:capabilities -->
 
 The battery also appears in **Homey Energy** as a home battery, with its charged and discharged energy.
+
+---
+
+## Homey Energy
+
+Homey Energy needs one device per role. The battery device covers the battery; add these two for
+production and the grid (**Devices → + → Solis Smart Battery**):
+
+| Device | Shows in Homey Energy | Values |
+|---|---|---|
+| **Solar panels** | Solar production | Production now (W), produced in total (kWh) |
+| **Grid meter** | Import and export | Grid power (+ buying, − selling), bought and sold in total (kWh) |
+
+They take their values from the battery device, so they add no requests to SolisCloud or the
+inverter, and they update at the same pace (every 5 minutes, or every minute over Modbus). If
+another app already reports your grid meter (for example a P1 reader), add only one of them to
+avoid counting the grid twice.
 
 ---
 

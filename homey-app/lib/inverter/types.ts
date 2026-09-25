@@ -40,6 +40,10 @@ export interface LiveData {
   batteryVoltageV: number;
   batteryChargedTotalKwh: number;
   batteryDischargedTotalKwh: number;
+  /** Lifetime totals for Homey Energy (NaN when not reported). */
+  pvTotalKwh: number;
+  gridImportTotalKwh: number;
+  gridExportTotalKwh: number;
   /** True when the grid is missing (power cut), null when the data cannot tell. */
   gridLost: boolean | null;
   /** Load on the inverter's backup output (W). */

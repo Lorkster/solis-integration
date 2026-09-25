@@ -19,6 +19,8 @@ export const Reg = {
   battery: 33133, // voltage 0.1 V, current 0.1 A, direction (0 charge / 1 discharge) ... SOC at 33139
   loads: 33147, // house load W, backup load W, battery power u32 W, grid port power s32 W
   batteryEnergy: 33161, // total charged u32 kWh (33161-2), total discharged (33165-6)
+  pvTotal: 33029, // lifetime PV generation u32 kWh
+  gridTotals: 33169, // lifetime imported u32 kWh (33169-70), exported (33173-74)
   meterPower: 33263, // grid meter active power s32 W, negative while importing
   // Holding registers (function 03 / 06 / 16)
   maxSoc: 43010,
@@ -97,7 +99,8 @@ export class SolisModbusTransport implements InverterTransport {
       const loads = await m.readInput(Reg.loads, 6);
       const energy = await m.readInput(Reg.batteryEnergy, 6);
       const meter = await m.readInput(Reg.meterPower, 2);
-      return parseModbusLive({ pv, grid, bat, loads, energy, meter }, new Date());
+      const totals = [...await m.readInput(Reg.pvTotal, 2), ...await m.readInput(Reg.gridTotals, 6)];
+      return parseModbusLive({ pv, grid, bat, loads, energy, meter, totals }, new Date());
     });
   }
 
@@ -190,6 +193,7 @@ export interface ModbusLiveRegisters {
   loads: number[]; // 33147-33152
   energy: number[]; // 33161-33166
   meter: number[]; // 33263-33264
+  totals?: number[]; // 33029-33030, then 33169-33174
 }
 
 export function parseModbusLive(r: ModbusLiveRegisters, time: Date): LiveData {
@@ -206,6 +210,9 @@ export function parseModbusLive(r: ModbusLiveRegisters, time: Date): LiveData {
     batteryVoltageV: r.bat[0] / 10,
     batteryChargedTotalKwh: u32(r.energy[0], r.energy[1]),
     batteryDischargedTotalKwh: u32(r.energy[4], r.energy[5]),
+    pvTotalKwh: r.totals ? u32(r.totals[0], r.totals[1]) : NaN,
+    gridImportTotalKwh: r.totals ? u32(r.totals[2], r.totals[3]) : NaN,
+    gridExportTotalKwh: r.totals ? u32(r.totals[6], r.totals[7]) : NaN,
     gridLost: gridLost({ uAc1: volts[0], uAc2: volts[1], uAc3: volts[2] }),
     backupLoadW: r.loads[1],
     remoteControlEnabled: null, // SolisCloud's remote limit is not visible over Modbus

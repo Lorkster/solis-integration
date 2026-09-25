@@ -77,6 +77,9 @@ close the terminal. The app now appears in the Homey app under **More â†’ Apps â
 The first minute after adding it, the app reads 14 days of history from SolisCloud to learn your
 consumption pattern and how your solar panels actually perform.
 
+Optionally add **Solar panels** and **Grid meter** from the same app, so Homey Energy shows solar
+production and grid import and export (see [Homey Energy](docs/USER-GUIDE.md#homey-energy)).
+
 ### 6. Check the settings
 
 Open the device and tap the gear icon (settings). The most important groups:

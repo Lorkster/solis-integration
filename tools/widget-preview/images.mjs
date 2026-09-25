@@ -1,7 +1,7 @@
 // Renders the app and driver images from SVG illustrations with headless Edge.
 // Usage: node tools/widget-preview/images.mjs
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -49,12 +49,55 @@ const driverSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 100
   <path d="M580 525 L555 570 H578 L566 600 L600 552 H577 Z" fill="#a1a1aa"/>
 </svg>`;
 
+// Solar panels device: a tilted panel array under the sun, same style as the driver image.
+const solarSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">
+  <rect width="1000" height="1000" fill="#ffffff"/>
+  <circle cx="740" cy="230" r="90" fill="#f59e3b"/>
+  <g stroke="#f59e3b" stroke-width="22" stroke-linecap="round">
+    <path d="M740 85v-35M740 410v-35M595 230h-35M920 230h-35M638 128l-25-25M867 357l-25-25M638 332l-25 25M867 103l-25 25"/>
+  </g>
+  <path d="M170 520 L700 520 L820 800 L90 800 Z" fill="#27272a"/>
+  <g stroke="#a1a1aa" stroke-width="10">
+    <path d="M300 520 L260 800M430 520 L420 800M570 520 L580 800M700 520 L750 800"/>
+    <path d="M140 610 L740 610M115 705 L780 705"/>
+  </g>
+  <rect x="420" y="800" width="60" height="110" fill="#71717a"/>
+  <rect x="330" y="900" width="240" height="24" rx="12" fill="#71717a"/>
+</svg>`;
+
+// Grid meter device: a transmission tower next to an energy meter.
+const gridSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">
+  <rect width="1000" height="1000" fill="#ffffff"/>
+  <g stroke="#3f3f46" stroke-width="26" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <path d="M300 120 L180 900 M300 120 L420 900 M200 330 L400 330 M150 470 L450 470 M240 600 L360 600 M195 800 L405 800 M200 330 L360 600 M400 330 L240 600 M240 600 L405 800 M360 600 L195 800"/>
+  </g>
+  <rect x="540" y="300" width="340" height="460" rx="36" fill="#f4f4f5" stroke="#d4d4d8" stroke-width="10"/>
+  <rect x="590" y="360" width="240" height="110" rx="14" fill="#27272a"/>
+  <rect x="615" y="395" width="190" height="40" rx="8" fill="#3b82f6"/>
+  <circle cx="710" cy="590" r="70" fill="none" stroke="#a1a1aa" stroke-width="16"/>
+  <path d="M710 590 L750 545" stroke="#3b82f6" stroke-width="16" stroke-linecap="round"/>
+  <path d="M640 710 h140" stroke="#d4d4d8" stroke-width="16" stroke-linecap="round"/>
+</svg>`;
+
+/** The Edge launcher can exit before the screenshot is written: wait for the file (up to 20 s). */
+function waitForFile(file) {
+  const until = Date.now() + 20_000;
+  while (!existsSync(file) || statSync(file).size === 0) {
+    if (Date.now() > until) throw new Error(`Edge did not write ${file}`);
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 200);
+  }
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 300); // let it finish writing
+}
+
 function render(svg, width, height, out) {
   const dir = mkdtempSync(join(tmpdir(), 'img-'));
   const file = join(dir, 'page.html');
   writeFileSync(file, `<html><body style="margin:0">${svg.replace('<svg ', `<svg width="${width}" height="${height}" `)}</body></html>`);
-  execFileSync(edge, ['--headless=new', '--disable-gpu', '--hide-scrollbars', `--window-size=${Math.max(width, 600)},${height}`,
+  const profile = mkdtempSync(join(tmpdir(), 'solis-edge-')); // own profile: never handed to a running Edge
+  execFileSync(edge, ['--headless=new', `--user-data-dir=${profile}`, '--disable-gpu', '--hide-scrollbars', `--window-size=${Math.max(width, 600)},${height}`,
     `--screenshot=${out}`, `file:///${file.split(String.fromCharCode(92)).join('/')}`], { stdio: 'ignore' });
+  waitForFile(out);
+  try { rmSync(profile, { recursive: true, force: true }); } catch { /* Edge may still hold it */ }
   return out;
 }
 
@@ -66,9 +109,12 @@ const jobs = [
   [driverSvg, 75, 75, 'drivers/solis-inverter/assets/images/small.png'],
   [driverSvg, 500, 500, 'drivers/solis-inverter/assets/images/large.png'],
   [driverSvg, 1000, 1000, 'drivers/solis-inverter/assets/images/xlarge.png'],
+  ...['solis-solar', 'solis-grid'].flatMap((driver) => [[75, 'small'], [500, 'large'], [1000, 'xlarge']]
+    .map(([size, name]) => [driver === 'solis-solar' ? solarSvg : gridSvg, size, size, `drivers/${driver}/assets/images/${name}.png`])),
 ];
 for (const [svg, w, h, rel] of jobs) {
-  const shot = render(svg, w, h, join(tmp, `${w}x${h}.png`));
+  mkdirSync(dirname(join(app, rel)), { recursive: true });
+  const shot = render(svg, w, h, join(tmp, `${rel.replace(/[\/]/g, "_")}`));
   // Edge enforces a minimum window width; crop to the requested size.
   execFileSync('python', ['-c', `from PIL import Image; Image.open(r"${shot}").crop((0,0,${w},${h})).save(r"${join(app, rel)}", optimize=True)`]);
   console.log(rel);
