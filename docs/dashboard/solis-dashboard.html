@@ -60,7 +60,7 @@
     <form id="setup" class="help" hidden>
       <h2 data-t="setupTitle"></h2>
       <p data-t="setupText"></p>
-      <label><span data-t="address"></span><input type="text" id="address" placeholder="192.168.1.142" autocomplete="off" required></label>
+      <label><span data-t="address"></span><input type="text" id="address" placeholder="192.168.1.20" autocomplete="off" required></label>
       <label><span data-t="apiKey"></span><input type="password" id="api-key" autocomplete="off" required></label>
       <div class="row"><button class="primary" type="submit" data-t="save"></button></div>
       <p class="small" data-t="setupNote"></p>
@@ -215,7 +215,7 @@
     const stored = () => {
       try { return JSON.parse(localStorage.getItem(STORE) || 'null'); } catch { return null; }
     };
-    /** "192.168.1.142" → Homey's local HTTPS name, which has a valid certificate. */
+    /** "192.168.1.20" → Homey's local HTTPS name, which has a valid certificate. */
     const homeyBase = (address) => {
       const a = address.trim().replace(/\/+$/, '');
       if (/^https?:\/\//.test(a)) return a;

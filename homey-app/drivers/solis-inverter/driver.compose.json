@@ -203,8 +203,8 @@
           },
           "value": "",
           "hint": {
-            "en": "IP address of the data logger (S2-WL-ST) or RS485 gateway, e.g. 192.168.1.97. Reserve it in the router so it does not change.",
-            "sv": "IP-adress till dataloggern (S2-WL-ST) eller RS485-gatewayen, t.ex. 192.168.1.97. Reservera den i routern så att den inte ändras."
+            "en": "IP address of the data logger (S2-WL-ST) or RS485 gateway, e.g. 192.168.1.50. Reserve it in the router so it does not change.",
+            "sv": "IP-adress till dataloggern (S2-WL-ST) eller RS485-gatewayen, t.ex. 192.168.1.50. Reservera den i routern så att den inte ändras."
           }
         },
         {

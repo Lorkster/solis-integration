@@ -168,7 +168,7 @@ API key.
      Remove the key in Homey if the device is lost.
   2. Copy `solis-dashboard.html` to the device and open it in the browser (or put it on a local web
      server, e.g. a Raspberry Pi, if the device cannot open files).
-  3. Enter Homey's address (e.g. `192.168.1.142`) and the key. They are stored in that browser only;
+  3. Enter Homey's address (e.g. `192.168.1.20`) and the key. They are stored in that browser only;
      **Forget the key on this device** removes the key and keeps the address for next time.
   4. From away, reach your home network through your own VPN (for example Tailscale) – never by
      opening a port.
@@ -651,7 +651,7 @@ Open the device and tap the gear icon.
 | Switch to the other connection if this one fails | on | After three failures in a row. The app tries the chosen connection again after 30 minutes. Needs both to be set up. |
 | Key ID | (from pairing) | SolisCloud API key. Leave empty if you only use Modbus. |
 | Key secret | (from pairing) |  |
-| Modbus address | (from pairing) | IP address of the data logger (S2-WL-ST) or RS485 gateway, e.g. 192.168.1.97. Reserve it in the router so it does not change. |
+| Modbus address | (from pairing) | IP address of the data logger (S2-WL-ST) or RS485 gateway, e.g. 192.168.1.50. Reserve it in the router so it does not change. |
 | Modbus port | 502 |  |
 | Modbus unit id | 1 |  |
 | Modbus update interval | 60 s | How often values are read over Modbus. SolisCloud updates every 5 minutes. |

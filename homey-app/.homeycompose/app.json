@@ -1,6 +1,6 @@
 {
   "id": "com.lorkster.solisbattery",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "compatibility": ">=12.4.0",
   "sdk": 3,
   "runtime": "nodejs",
@@ -36,5 +36,10 @@
       "method": "GET",
       "path": "/view"
     }
-  }
+  },
+  "support": "https://github.com/Lorkster/solis-integration/issues",
+  "bugs": {
+    "url": "https://github.com/Lorkster/solis-integration/issues"
+  },
+  "homepage": "https://github.com/Lorkster/solis-integration"
 }

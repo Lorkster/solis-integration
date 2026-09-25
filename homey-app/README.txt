@@ -1,1 +1,3 @@
-Price-optimised charging for Solis hybrid inverters with a backup reserve for power outages.
+Plans your Solis home battery around tomorrow's electricity prices, your own consumption and the solar forecast: it charges when power is cheap, saves the charge for expensive hours and keeps a reserve for power cuts. It learns how your house uses power and how your panels perform, fills the battery ahead of weather warnings and tells you when the power goes.
+
+Works with Solis hybrid inverters through SolisCloud or locally over Modbus TCP. Flows can follow what powers the house, what one more kWh costs right now and the best time to run an appliance; widgets show the plan and the power flow, and Homey Energy gets the battery, solar production and the grid.
