@@ -1,0 +1,18 @@
+{
+  "id": "clear_overrides",
+  "title": {
+    "en": "Cancel manual battery overrides",
+    "sv": "Avbryt manuella batteriåtgärder"
+  },
+  "hint": {
+    "en": "Ends manual charge/save overrides and outage preparation, including preparation for the current weather warning.",
+    "sv": "Avslutar manuell laddning/sparning och avbrottsförberedelse, även för den aktuella vädervarningen."
+  },
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=solis-inverter"
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "id": "hold_battery",
+  "title": {
+    "en": "Save the battery charge",
+    "sv": "Spara batteriladdningen"
+  },
+  "titleFormatted": {
+    "en": "Save the battery charge for [[minutes]] minutes",
+    "sv": "Spara batteriladdningen i [[minutes]] minuter"
+  },
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=solis-inverter"
+    },
+    {
+      "type": "number",
+      "name": "minutes",
+      "min": 15,
+      "max": 1440,
+      "step": 15,
+      "placeholder": {
+        "en": "60"
+      },
+      "title": {
+        "en": "Duration (minutes)",
+        "sv": "Längd (minuter)"
+      }
+    }
+  ],
+  "hint": {
+    "en": "Overrides the plan: the battery neither charges nor discharges for the given time.",
+    "sv": "Går före planen: batteriet varken laddar eller laddar ur under angiven tid."
+  }
+}

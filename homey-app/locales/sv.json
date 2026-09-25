@@ -30,6 +30,7 @@
       "basic": "Stöds med det äldre schemat med 3 luckor (ingen målnivå per lucka; ännu inte testat på en sådan växelriktare; bara via SolisCloud)"
     },
     "monitorOnly": "Växelriktarens äldre schema med 3 luckor kan bara skrivas via SolisCloud. Byt anslutning till SolisCloud för att låta appen styra batteriet.",
+    "cannotControl": "Appen kan inte skriva växelriktarens schema över den nuvarande anslutningen, så den visar bara planen.",
     "fallback": "reserv",
     "weightsLearning": "lär sig – ungefär två soldagar behövs"
   },
@@ -46,7 +47,7 @@
     "unplanned_grid_charging": "Batteriet laddar från nätet utan att det är planerat",
     "no_data": "Ingen ny data från växelriktaren sedan {{time}}",
     "settings_changed": "Växelriktarens inställningar ändrades utanför appen; appen har skrivit sitt schema igen",
-    "notification": "Solis-batteriet: {{reason}}.",
+    "notification": "Hembatteriet: {{reason}}.",
     "export_blocked": "Export till nätet är avstängd i växelriktaren, så solöverskottet går förlorat",
     "export_limited": "Exporten är begränsad till {{limit}} W i växelriktaren, så solöverskottet går förlorat",
     "solar_throttled": "Solen verkar strypas: produktionen följer husets förbrukning fast prognosen väntar mer"
@@ -57,7 +58,7 @@
   },
   "child": {
     "waiting": "Väntar på värden från växelriktaren",
-    "noInverter": "Lägg till Solis-växelriktaren (Hembatteri) först",
+    "noInverter": "Lägg till din växelriktare (Hembatteri) först",
     "solarName": "Solpaneler",
     "gridName": "Elnätsmätare"
   },

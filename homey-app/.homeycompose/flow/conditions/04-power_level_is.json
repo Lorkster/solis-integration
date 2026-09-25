@@ -1,0 +1,53 @@
+{
+  "id": "power_level_is",
+  "title": {
+    "en": "Extra power !{{is|is not}}",
+    "sv": "Extra el !{{är|är inte}}"
+  },
+  "titleFormatted": {
+    "en": "Extra power !{{is|is not}} [[level]] now",
+    "sv": "Extra el !{{är|är inte}} [[level]] nu"
+  },
+  "hint": {
+    "en": "Compares what one more kWh costs now with the limits in the settings (automatic: the cheapest and priciest share of the next 24 hours).",
+    "sv": "Jämför vad en kWh till kostar nu med gränserna i inställningarna (automatiskt: billigaste och dyraste andelen av kommande 24 timmar)."
+  },
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=solis-inverter"
+    },
+    {
+      "type": "dropdown",
+      "name": "level",
+      "values": [
+        {
+          "id": "cheap",
+          "title": {
+            "en": "cheap",
+            "sv": "billig"
+          }
+        },
+        {
+          "id": "normal",
+          "title": {
+            "en": "normal",
+            "sv": "normal"
+          }
+        },
+        {
+          "id": "expensive",
+          "title": {
+            "en": "expensive",
+            "sv": "dyr"
+          }
+        }
+      ],
+      "title": {
+        "en": "Level",
+        "sv": "Nivå"
+      }
+    }
+  ]
+}

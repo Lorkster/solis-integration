@@ -1,0 +1,14 @@
+{
+  "id": "on_plan",
+  "title": {
+    "en": "The inverter follows the plan again",
+    "sv": "Växelriktaren följer planen igen"
+  },
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=solis-inverter"
+    }
+  ]
+}

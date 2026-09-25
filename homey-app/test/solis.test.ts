@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { controlledStorageMode, hasFlag } from '../lib/inverter/storageMode.js';
-import { contentMd5, signRequest, SolisApiError, SolisCloudClient } from '../lib/solis/SolisCloudClient.js';
-import { parseLiveData } from '../lib/solis/SolisCloudTransport.js';
+import { controlledStorageMode, hasFlag } from '../lib/brands/solis/storageMode.js';
+import { contentMd5, signRequest, SolisApiError, SolisCloudClient } from '../lib/brands/solis/SolisCloudClient.js';
+import { parseLiveData } from '../lib/brands/solis/SolisCloudTransport.js';
 import { buyPrice, DEFAULT_TARIFF, isHighLoadTime } from '../lib/tariff.js';
 import { TZ } from './helpers.js';
 

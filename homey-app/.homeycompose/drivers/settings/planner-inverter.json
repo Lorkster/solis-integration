@@ -1,0 +1,54 @@
+{
+  "type": "group",
+  "label": {
+    "en": "Inverter",
+    "sv": "Växelriktare"
+  },
+  "children": [
+    {
+      "id": "inverter_model",
+      "type": "label",
+      "label": {
+        "en": "Model",
+        "sv": "Modell"
+      },
+      "value": "–"
+    },
+    {
+      "id": "inverter_power",
+      "type": "label",
+      "label": {
+        "en": "Rated power",
+        "sv": "Märkeffekt"
+      },
+      "value": "–"
+    },
+    {
+      "id": "inverter_firmware",
+      "type": "label",
+      "label": {
+        "en": "Firmware",
+        "sv": "Firmware"
+      },
+      "value": "–"
+    },
+    {
+      "id": "inverter_support",
+      "type": "label",
+      "label": {
+        "en": "App support",
+        "sv": "Stöd i appen"
+      },
+      "value": "–"
+    },
+    {
+      "id": "inverter_connection",
+      "type": "label",
+      "label": {
+        "en": "Connection in use",
+        "sv": "Anslutning som används"
+      },
+      "value": "–"
+    }
+  ]
+}

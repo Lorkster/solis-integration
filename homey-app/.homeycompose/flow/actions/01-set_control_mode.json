@@ -1,0 +1,46 @@
+{
+  "id": "set_control_mode",
+  "title": {
+    "en": "Set control mode",
+    "sv": "Ändra styrläge"
+  },
+  "titleFormatted": {
+    "en": "Set control mode to [[mode]]",
+    "sv": "Ändra styrläge till [[mode]]"
+  },
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=solis-inverter"
+    },
+    {
+      "type": "dropdown",
+      "name": "mode",
+      "values": [
+        {
+          "id": "monitor",
+          "title": {
+            "en": "Monitor only",
+            "sv": "Endast övervaka"
+          }
+        },
+        {
+          "id": "auto",
+          "title": {
+            "en": "Automatic",
+            "sv": "Automatisk"
+          }
+        }
+      ],
+      "title": {
+        "en": "Mode",
+        "sv": "Läge"
+      }
+    }
+  ],
+  "hint": {
+    "en": "Monitor only never changes the inverter. Automatic writes the plan to the inverter.",
+    "sv": "Endast övervaka ändrar aldrig växelriktaren. Automatisk skriver planen till växelriktaren."
+  }
+}

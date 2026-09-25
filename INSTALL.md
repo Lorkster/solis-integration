@@ -1,4 +1,4 @@
-# Installing Solis Smart Battery on Homey Pro
+# Installing Home Battery Planner on Homey Pro
 
 The app is not in the Homey App Store. It is installed from your computer with Homey's official
 command-line tool (the Homey CLI). This takes about 10 minutes the first time. Afterwards the app runs
@@ -60,14 +60,14 @@ npx homey app install
 
 The first time, the CLI asks **Choose an active Homey**: pick yours with the arrow keys and press Enter.
 The CLI then builds the app and uploads it to your Homey. When it reports that the app is installed, you can
-close the terminal. The app now appears in the Homey app under **More → Apps → Solis Smart Battery**.
+close the terminal. The app now appears in the Homey app under **More → Apps → Home Battery Planner**.
 
 > Use `npx homey app install`, not `npx homey app run`. `run` is for development: the app stops as soon
 > as you close the terminal.
 
 ### 5. Add the inverter in Homey
 
-1. In the Homey app, go to **Devices → + (add) → Solis Smart Battery → Solis hybrid inverter**.
+1. In the Homey app, go to **Devices → + (add) → Home Battery Planner → Solis hybrid inverter**.
 2. The first screen explains where to find the API key:
    **soliscloud.com → Account → Basic Settings → API Management**. Copy the **Key ID** and **Key Secret**.
 3. Enter them, pick your inverter from the list and finish. It is added as **Home battery**;
@@ -101,7 +101,7 @@ weather warnings.
 ### 7. Add the dashboard widgets
 
 In the Homey app, open a dashboard (or create one), tap the **pencil** to edit it, then
-**+ Add Widget → Apps → Solis Smart Battery** and choose (step-by-step instructions with pictures:
+**+ Add Widget → Apps → Home Battery Planner** and choose (step-by-step instructions with pictures:
 [user guide](docs/USER-GUIDE.md#adding-the-widgets-to-a-dashboard)):
 
 - **Battery plan**: prices, planned charging and saving, solar and load forecast, battery level.
@@ -159,7 +159,7 @@ after the app is gone**. So hand control back first:
    - delete the device (**device → settings → Remove device**) while the control mode is
      **Automatic**: the app then clears its schedule automatically, or
    - run a flow with the action **"Hand control back to the inverter"**, then delete the device.
-2. **Uninstall the app**: Homey app → **More → Apps → Solis Smart Battery → Uninstall**.
+2. **Uninstall the app**: Homey app → **More → Apps → Home Battery Planner → Uninstall**.
 3. **Check the inverter** in SolisCloud (**Inverter Control**): time-of-use should be off and the
    charge slots empty. Set it up the way you want, or switch the SolisCloud EMS back on.
 

@@ -1,0 +1,113 @@
+{
+  "type": "group",
+  "label": {
+    "en": "Battery",
+    "sv": "Batteri"
+  },
+  "children": [
+    {
+      "id": "capacity_kwh",
+      "type": "number",
+      "label": {
+        "en": "Capacity"
+      },
+      "value": 21.68,
+      "min": 1,
+      "max": 200,
+      "step": 0.01,
+      "units": {
+        "en": "kWh"
+      }
+    },
+    {
+      "id": "max_charge_kw",
+      "type": "number",
+      "label": {
+        "en": "Grid charge power"
+      },
+      "hint": {
+        "en": "Limited by the inverter's max charge current (16 A ≈ 6.7 kW at 420 V)."
+      },
+      "value": 6.5,
+      "min": 0.5,
+      "max": 20,
+      "step": 0.1,
+      "units": {
+        "en": "kW"
+      }
+    },
+    {
+      "id": "max_discharge_kw",
+      "type": "number",
+      "label": {
+        "en": "Max discharge power"
+      },
+      "value": 10,
+      "min": 0.5,
+      "max": 20,
+      "step": 0.1,
+      "units": {
+        "en": "kW"
+      }
+    },
+    {
+      "id": "max_soc",
+      "type": "number",
+      "label": {
+        "en": "Max charge level"
+      },
+      "value": 100,
+      "min": 50,
+      "max": 100,
+      "step": 1,
+      "units": {
+        "en": "%"
+      }
+    },
+    {
+      "id": "round_trip_efficiency",
+      "type": "number",
+      "label": {
+        "en": "Round-trip efficiency"
+      },
+      "value": 90,
+      "min": 50,
+      "max": 100,
+      "step": 1,
+      "units": {
+        "en": "%"
+      }
+    },
+    {
+      "id": "cycling_cost",
+      "type": "number",
+      "label": {
+        "en": "Battery wear cost"
+      },
+      "hint": {
+        "en": "Cost per kWh discharged. Qapasity Arctic: 10 years / 8000 cycles; about 240 cycles per year makes age the limit, so wear per cycle is low."
+      },
+      "value": 0.2,
+      "min": 0,
+      "max": 5,
+      "step": 0.01,
+      "units": {
+        "en": "SEK/kWh"
+      }
+    },
+    {
+      "id": "min_gain",
+      "type": "number",
+      "label": {
+        "en": "Minimum gain for grid charging"
+      },
+      "value": 0.1,
+      "min": 0,
+      "max": 5,
+      "step": 0.01,
+      "units": {
+        "en": "SEK/kWh"
+      }
+    }
+  ]
+}

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Solis Dashboard</title>
+  <title>Battery Dashboard</title>
   <!--HOMEY_SCRIPT-->
   <style>
     :root {
@@ -52,7 +52,7 @@
 <body>
   <div class="page">
     <header>
-      <h1 id="title">Solis Smart Battery</h1>
+      <h1 id="title">Home Battery Planner</h1>
       <span id="updated" aria-live="polite"></span>
     </header>
     <div id="error" class="notice" role="alert" hidden></div>
@@ -77,19 +77,19 @@
     const WIDGETS = /*WIDGETS*/{}/*WIDGETS*/;
     const TEXT = {
       en: {
-        title: 'Solis Smart Battery', updated: (t) => `Updated ${t}`, offline: 'Cannot reach Homey: ',
+        title: 'Home Battery Planner', updated: (t) => `Updated ${t}`, offline: 'Cannot reach Homey: ',
         setupTitle: 'Connect to Homey',
         setupText: 'This page reads the values straight from Homey on your home network, with a Homey API key. Create one in the Homey web app: Settings → API Keys → New API Key, with only “Devices: read only”.',
-        noDevice: 'no Solis Smart Battery device found with this key', noData: 'no dashboard data yet – wait a few minutes',
+        noDevice: 'no Home Battery Planner device found with this key', noData: 'no dashboard data yet – wait a few minutes',
         address: "Homey's address on your network", apiKey: 'Homey API key', save: 'Connect',
         setupNote: 'The address and key are stored in this browser only and are sent to nothing but your Homey.',
         forget: 'Forget the key on this device',
       },
       sv: {
-        title: 'Solis Smart Batteri', updated: (t) => `Uppdaterad ${t}`, offline: 'Når inte Homey: ',
+        title: 'Hembatteriplanerare', updated: (t) => `Uppdaterad ${t}`, offline: 'Når inte Homey: ',
         setupTitle: 'Anslut till Homey',
         setupText: 'Sidan läser värdena direkt från Homey i ditt hemnätverk, med en API-nyckel för Homey. Skapa en i Homeys webbapp: Inställningar → API-nycklar → Ny API-nyckel, med bara ”Enheter: endast läsa”.',
-        noDevice: 'ingen Solis Smart Batteri-enhet hittades med den här nyckeln', noData: 'ingen data för panelen ännu – vänta några minuter',
+        noDevice: 'ingen Hembatteriplanerare-enhet hittades med den här nyckeln', noData: 'ingen data för panelen ännu – vänta några minuter',
         address: 'Homeys adress i nätverket', apiKey: 'API-nyckel för Homey', save: 'Anslut',
         setupNote: 'Adressen och nyckeln sparas bara i den här webbläsaren och skickas inte till något annat än din Homey.',
         forget: 'Glöm nyckeln på den här enheten',

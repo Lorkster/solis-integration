@@ -1,0 +1,36 @@
+{
+  "id": "force_charge",
+  "title": {
+    "en": "Charge from grid",
+    "sv": "Ladda från nätet"
+  },
+  "titleFormatted": {
+    "en": "Charge from grid for [[minutes]] minutes",
+    "sv": "Ladda från nätet i [[minutes]] minuter"
+  },
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=solis-inverter"
+    },
+    {
+      "type": "number",
+      "name": "minutes",
+      "min": 15,
+      "max": 1440,
+      "step": 15,
+      "placeholder": {
+        "en": "60"
+      },
+      "title": {
+        "en": "Duration (minutes)",
+        "sv": "Längd (minuter)"
+      }
+    }
+  ],
+  "hint": {
+    "en": "Overrides the plan: charges from the grid for the given time, then the plan takes over again.",
+    "sv": "Går före planen: laddar från nätet under angiven tid, sedan tar planen över igen."
+  }
+}

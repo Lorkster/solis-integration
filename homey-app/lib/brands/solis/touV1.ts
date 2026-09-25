@@ -1,4 +1,4 @@
-import type { TouSlot } from '../inverter/types.js';
+import type { TouSlot } from '../../inverter/types.js';
 
 /**
  * The older time-of-use schedule (firmware without the 6+6 slots): CID 103 holds all three slots

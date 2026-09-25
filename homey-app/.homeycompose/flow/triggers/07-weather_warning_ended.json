@@ -1,0 +1,18 @@
+{
+  "id": "weather_warning_ended",
+  "title": {
+    "en": "The weather warnings for my location ended",
+    "sv": "Vädervarningarna för min plats upphörde"
+  },
+  "hint": {
+    "en": "Fires when no warning at the chosen level covers Homey's location any more.",
+    "sv": "Körs när ingen varning på vald nivå längre gäller Homeys plats."
+  },
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=solis-inverter"
+    }
+  ]
+}

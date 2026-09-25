@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import { LoadProfile } from '../lib/forecast/LoadProfile.js';
-import { parseHistorySample } from '../lib/solis/SolisCloudTransport.js';
+import { parseHistorySample } from '../lib/brands/solis/SolisCloudTransport.js';
 import { TZ } from './helpers.js';
 
 const at = (iso: string) => new Date(iso);

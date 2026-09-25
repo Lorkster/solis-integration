@@ -1,3 +1,5 @@
+import type { WorkMode } from '../../inverter/types.js';
+
 /** Storage mode bit field (SolisCloud CID 636 / Modbus register 43110). */
 export const StorageBit = {
   selfUse: 0,
@@ -39,3 +41,10 @@ export function describeStorageMode(raw: number): string {
   const flags = (Object.keys(StorageBit) as StorageFlag[]).filter((f) => hasFlag(raw, f));
   return `${raw} [${flags.join(', ') || 'none'}]`;
 }
+
+/** Solis storage mode as the controller sees it: time-of-use on while the app controls the battery. */
+export const solisWorkMode: WorkMode = {
+  controlled: controlledStorageMode,
+  released: (raw) => withFlag(raw, 'timeOfUse', false),
+  describe: describeStorageMode,
+};

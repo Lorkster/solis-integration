@@ -1,0 +1,595 @@
+{
+  "type": "group",
+  "label": {
+    "en": "Solar forecast",
+    "sv": "Solprognos"
+  },
+  "children": [
+    {
+      "id": "pv_forecast_enabled",
+      "type": "checkbox",
+      "label": {
+        "en": "Use solar forecast in the plan",
+        "sv": "Använd solprognos i planen"
+      },
+      "value": true,
+      "hint": {
+        "en": "Calibrated against your measured production, so errors in size or orientation shrink over time.",
+        "sv": "Kalibreras mot din uppmätta produktion, så fel i storlek eller riktning minskar med tiden."
+      }
+    },
+    {
+      "id": "pv_source",
+      "type": "dropdown",
+      "label": {
+        "en": "Forecast source",
+        "sv": "Prognoskälla"
+      },
+      "value": "open_meteo",
+      "values": [
+        {
+          "id": "open_meteo",
+          "label": {
+            "en": "Open-Meteo (free, no account)",
+            "sv": "Open-Meteo (gratis, inget konto)"
+          }
+        },
+        {
+          "id": "forecast_solar",
+          "label": {
+            "en": "Forecast.Solar (free, no account)",
+            "sv": "Forecast.Solar (gratis, inget konto)"
+          }
+        },
+        {
+          "id": "solcast",
+          "label": {
+            "en": "Solcast (free hobbyist account)",
+            "sv": "Solcast (gratis hobbykonto)"
+          }
+        }
+      ],
+      "hint": {
+        "en": "Open-Meteo: 15-minute irradiance and 14 days of history for a quick calibration. Forecast.Solar: hourly production estimate. Solcast: forecast for the rooftop sites set up in your Solcast account; uses the API key and site IDs below.",
+        "sv": "Open-Meteo: solinstrålning per kvart och 14 dagars historik för snabb kalibrering. Forecast.Solar: produktionsprognos per timme. Solcast: prognos för takytorna i ditt Solcast-konto; använder API-nyckeln och yt-id:na nedan."
+      }
+    },
+    {
+      "id": "pv_weather_model",
+      "type": "dropdown",
+      "label": {
+        "en": "Weather model (Open-Meteo)",
+        "sv": "Vädermodell (Open-Meteo)"
+      },
+      "value": "blend",
+      "values": [
+        {
+          "id": "blend",
+          "label": {
+            "en": "Five models, weighted by how well each fits (learns)",
+            "sv": "Fem modeller, viktade efter hur väl var och en stämmer (lär sig)"
+          }
+        },
+        {
+          "id": "metno_seamless",
+          "label": {
+            "en": "Yr / MET Norway",
+            "sv": "Yr / MET Norge"
+          }
+        },
+        {
+          "id": "icon_seamless",
+          "label": {
+            "en": "ICON (DWD, Germany)",
+            "sv": "ICON (DWD, Tyskland)"
+          }
+        },
+        {
+          "id": "ecmwf_ifs025",
+          "label": {
+            "en": "ECMWF (Europe)",
+            "sv": "ECMWF (Europa)"
+          }
+        },
+        {
+          "id": "gfs_seamless",
+          "label": {
+            "en": "GFS (NOAA, USA)",
+            "sv": "GFS (NOAA, USA)"
+          }
+        },
+        {
+          "id": "meteofrance_seamless",
+          "label": {
+            "en": "Météo-France",
+            "sv": "Météo-France"
+          }
+        }
+      ],
+      "hint": {
+        "en": "Yr, ICON, ECMWF, GFS and Météo-France. Each is scored every quarter-hour against your measured production; the ones that fit your roof best count most. Until about two days of sun are scored, the middle value is used. A single model can be chosen instead.",
+        "sv": "Yr, ICON, ECMWF, GFS och Météo-France. Varje modell poängsätts varje kvart mot din uppmätta produktion; de som stämmer bäst för ditt tak väger tyngst. Tills ungefär två soldagar är poängsatta används mittvärdet. En enskild modell kan väljas i stället."
+      }
+    },
+    {
+      "id": "pv_model_weights",
+      "type": "label",
+      "label": {
+        "en": "Learned model weights",
+        "sv": "Inlärda modellvikter"
+      },
+      "value": "–"
+    },
+    {
+      "id": "pv_api_key",
+      "type": "password",
+      "label": {
+        "en": "API key (Solcast, or Forecast.Solar paid plan)",
+        "sv": "API-nyckel (Solcast, eller Forecast.Solar betalplan)"
+      },
+      "value": ""
+    },
+    {
+      "id": "solcast_sites",
+      "type": "text",
+      "label": {
+        "en": "Solcast site IDs",
+        "sv": "Solcast yt-id"
+      },
+      "value": "",
+      "hint": {
+        "en": "Resource IDs of your rooftop sites, separated by commas. Solcast allows 10 requests a day, so the app fetches at most every 2.5 hours per site.",
+        "sv": "Resurs-id för dina takytor, separerade med komma. Solcast tillåter 10 anrop per dag, så appen hämtar som oftast var 2,5:e timme per yta."
+      }
+    },
+    {
+      "id": "pv_array1_kwp",
+      "type": "number",
+      "label": {
+        "en": "Array 1 size",
+        "sv": "Yta 1 storlek"
+      },
+      "value": 11,
+      "min": 0,
+      "max": 100,
+      "step": 0.1,
+      "units": {
+        "en": "kWp"
+      },
+      "hint": {
+        "en": "Also used with Solcast, to judge when production is high enough to learn from.",
+        "sv": "Används även med Solcast, för att avgöra när produktionen är hög nog att lära av."
+      }
+    },
+    {
+      "id": "pv_array1_tilt",
+      "type": "number",
+      "label": {
+        "en": "Array 1 tilt",
+        "sv": "Yta 1 lutning"
+      },
+      "value": 35,
+      "min": 0,
+      "max": 90,
+      "step": 1,
+      "units": {
+        "en": "°"
+      },
+      "hint": {
+        "en": "0° = flat, 90° = vertical",
+        "sv": "0° = platt, 90° = lodrät"
+      }
+    },
+    {
+      "id": "pv_array1_azimuth",
+      "type": "dropdown",
+      "label": {
+        "en": "Array 1 facing",
+        "sv": "Yta 1 riktning"
+      },
+      "value": "0",
+      "values": [
+        {
+          "id": "0",
+          "label": {
+            "en": "South",
+            "sv": "Söder"
+          }
+        },
+        {
+          "id": "-15",
+          "label": {
+            "en": "15° east of south",
+            "sv": "15° öster om söder"
+          }
+        },
+        {
+          "id": "15",
+          "label": {
+            "en": "15° west of south",
+            "sv": "15° väster om söder"
+          }
+        },
+        {
+          "id": "-30",
+          "label": {
+            "en": "30° east of south",
+            "sv": "30° öster om söder"
+          }
+        },
+        {
+          "id": "30",
+          "label": {
+            "en": "30° west of south",
+            "sv": "30° väster om söder"
+          }
+        },
+        {
+          "id": "-45",
+          "label": {
+            "en": "South-east",
+            "sv": "Sydost"
+          }
+        },
+        {
+          "id": "45",
+          "label": {
+            "en": "South-west",
+            "sv": "Sydväst"
+          }
+        },
+        {
+          "id": "-60",
+          "label": {
+            "en": "60° east of south",
+            "sv": "60° öster om söder"
+          }
+        },
+        {
+          "id": "60",
+          "label": {
+            "en": "60° west of south",
+            "sv": "60° väster om söder"
+          }
+        },
+        {
+          "id": "-75",
+          "label": {
+            "en": "75° east of south",
+            "sv": "75° öster om söder"
+          }
+        },
+        {
+          "id": "75",
+          "label": {
+            "en": "75° west of south",
+            "sv": "75° väster om söder"
+          }
+        },
+        {
+          "id": "-90",
+          "label": {
+            "en": "East",
+            "sv": "Öster"
+          }
+        },
+        {
+          "id": "90",
+          "label": {
+            "en": "West",
+            "sv": "Väster"
+          }
+        },
+        {
+          "id": "-105",
+          "label": {
+            "en": "75° east of north",
+            "sv": "75° öster om norr"
+          }
+        },
+        {
+          "id": "105",
+          "label": {
+            "en": "75° west of north",
+            "sv": "75° väster om norr"
+          }
+        },
+        {
+          "id": "-120",
+          "label": {
+            "en": "60° east of north",
+            "sv": "60° öster om norr"
+          }
+        },
+        {
+          "id": "120",
+          "label": {
+            "en": "60° west of north",
+            "sv": "60° väster om norr"
+          }
+        },
+        {
+          "id": "-135",
+          "label": {
+            "en": "North-east",
+            "sv": "Nordost"
+          }
+        },
+        {
+          "id": "135",
+          "label": {
+            "en": "North-west",
+            "sv": "Nordväst"
+          }
+        },
+        {
+          "id": "-150",
+          "label": {
+            "en": "30° east of north",
+            "sv": "30° öster om norr"
+          }
+        },
+        {
+          "id": "150",
+          "label": {
+            "en": "30° west of north",
+            "sv": "30° väster om norr"
+          }
+        },
+        {
+          "id": "-165",
+          "label": {
+            "en": "15° east of north",
+            "sv": "15° öster om norr"
+          }
+        },
+        {
+          "id": "165",
+          "label": {
+            "en": "15° west of north",
+            "sv": "15° väster om norr"
+          }
+        },
+        {
+          "id": "180",
+          "label": {
+            "en": "North",
+            "sv": "Norr"
+          }
+        }
+      ],
+      "hint": {
+        "en": "The direction the panels face, in 15° steps.",
+        "sv": "Riktningen panelerna vetter åt, i steg om 15°."
+      }
+    },
+    {
+      "id": "pv_array2_kwp",
+      "type": "number",
+      "label": {
+        "en": "Array 2 size (0 = none)",
+        "sv": "Yta 2 storlek (0 = ingen)"
+      },
+      "value": 0,
+      "min": 0,
+      "max": 100,
+      "step": 0.1,
+      "units": {
+        "en": "kWp"
+      }
+    },
+    {
+      "id": "pv_array2_tilt",
+      "type": "number",
+      "label": {
+        "en": "Array 2 tilt",
+        "sv": "Yta 2 lutning"
+      },
+      "value": 35,
+      "min": 0,
+      "max": 90,
+      "step": 1,
+      "units": {
+        "en": "°"
+      }
+    },
+    {
+      "id": "pv_array2_azimuth",
+      "type": "dropdown",
+      "label": {
+        "en": "Array 2 facing",
+        "sv": "Yta 2 riktning"
+      },
+      "value": "-90",
+      "values": [
+        {
+          "id": "0",
+          "label": {
+            "en": "South",
+            "sv": "Söder"
+          }
+        },
+        {
+          "id": "-15",
+          "label": {
+            "en": "15° east of south",
+            "sv": "15° öster om söder"
+          }
+        },
+        {
+          "id": "15",
+          "label": {
+            "en": "15° west of south",
+            "sv": "15° väster om söder"
+          }
+        },
+        {
+          "id": "-30",
+          "label": {
+            "en": "30° east of south",
+            "sv": "30° öster om söder"
+          }
+        },
+        {
+          "id": "30",
+          "label": {
+            "en": "30° west of south",
+            "sv": "30° väster om söder"
+          }
+        },
+        {
+          "id": "-45",
+          "label": {
+            "en": "South-east",
+            "sv": "Sydost"
+          }
+        },
+        {
+          "id": "45",
+          "label": {
+            "en": "South-west",
+            "sv": "Sydväst"
+          }
+        },
+        {
+          "id": "-60",
+          "label": {
+            "en": "60° east of south",
+            "sv": "60° öster om söder"
+          }
+        },
+        {
+          "id": "60",
+          "label": {
+            "en": "60° west of south",
+            "sv": "60° väster om söder"
+          }
+        },
+        {
+          "id": "-75",
+          "label": {
+            "en": "75° east of south",
+            "sv": "75° öster om söder"
+          }
+        },
+        {
+          "id": "75",
+          "label": {
+            "en": "75° west of south",
+            "sv": "75° väster om söder"
+          }
+        },
+        {
+          "id": "-90",
+          "label": {
+            "en": "East",
+            "sv": "Öster"
+          }
+        },
+        {
+          "id": "90",
+          "label": {
+            "en": "West",
+            "sv": "Väster"
+          }
+        },
+        {
+          "id": "-105",
+          "label": {
+            "en": "75° east of north",
+            "sv": "75° öster om norr"
+          }
+        },
+        {
+          "id": "105",
+          "label": {
+            "en": "75° west of north",
+            "sv": "75° väster om norr"
+          }
+        },
+        {
+          "id": "-120",
+          "label": {
+            "en": "60° east of north",
+            "sv": "60° öster om norr"
+          }
+        },
+        {
+          "id": "120",
+          "label": {
+            "en": "60° west of north",
+            "sv": "60° väster om norr"
+          }
+        },
+        {
+          "id": "-135",
+          "label": {
+            "en": "North-east",
+            "sv": "Nordost"
+          }
+        },
+        {
+          "id": "135",
+          "label": {
+            "en": "North-west",
+            "sv": "Nordväst"
+          }
+        },
+        {
+          "id": "-150",
+          "label": {
+            "en": "30° east of north",
+            "sv": "30° öster om norr"
+          }
+        },
+        {
+          "id": "150",
+          "label": {
+            "en": "30° west of north",
+            "sv": "30° väster om norr"
+          }
+        },
+        {
+          "id": "-165",
+          "label": {
+            "en": "15° east of north",
+            "sv": "15° öster om norr"
+          }
+        },
+        {
+          "id": "165",
+          "label": {
+            "en": "15° west of north",
+            "sv": "15° väster om norr"
+          }
+        },
+        {
+          "id": "180",
+          "label": {
+            "en": "North",
+            "sv": "Norr"
+          }
+        }
+      ]
+    },
+    {
+      "id": "pv_trust",
+      "type": "number",
+      "label": {
+        "en": "Forecast trust",
+        "sv": "Tillit till prognosen"
+      },
+      "value": 80,
+      "min": 0,
+      "max": 100,
+      "step": 5,
+      "units": {
+        "en": "%"
+      },
+      "hint": {
+        "en": "Share of the forecast the plan counts on. Lower = more grid charging before uncertain days.",
+        "sv": "Andel av prognosen som planen räknar med. Lägre = mer nätladdning inför osäkra dagar."
+      }
+    }
+  ]
+}

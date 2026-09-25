@@ -1,0 +1,107 @@
+{
+  "type": "group",
+  "label": {
+    "en": "Weather warnings",
+    "sv": "Vädervarningar"
+  },
+  "children": [
+    {
+      "id": "warnings_enabled",
+      "type": "checkbox",
+      "label": {
+        "en": "Prepare for outages on weather warnings",
+        "sv": "Förbered för strömavbrott vid vädervarningar"
+      },
+      "value": true,
+      "hint": {
+        "en": "Charges to the outage level while a warning covers Homey's location.",
+        "sv": "Laddar till avbrottsnivån medan en varning gäller Homeys plats."
+      }
+    },
+    {
+      "id": "warnings_source",
+      "type": "dropdown",
+      "label": {
+        "en": "Warning service",
+        "sv": "Varningstjänst"
+      },
+      "value": "smhi",
+      "values": [
+        {
+          "id": "smhi",
+          "label": {
+            "en": "SMHI (Sweden)",
+            "sv": "SMHI (Sverige)"
+          }
+        },
+        {
+          "id": "metno",
+          "label": {
+            "en": "MET Norway (Norway)",
+            "sv": "MET Norge (Norge)"
+          }
+        }
+      ],
+      "hint": {
+        "en": "The national weather service for Homey's location.",
+        "sv": "Den nationella vädertjänsten för Homeys plats."
+      }
+    },
+    {
+      "id": "warnings_min_level",
+      "type": "dropdown",
+      "label": {
+        "en": "Lowest warning level",
+        "sv": "Lägsta varningsnivå"
+      },
+      "value": "YELLOW",
+      "values": [
+        {
+          "id": "YELLOW",
+          "label": {
+            "en": "Yellow",
+            "sv": "Gul"
+          }
+        },
+        {
+          "id": "ORANGE",
+          "label": {
+            "en": "Orange",
+            "sv": "Orange"
+          }
+        },
+        {
+          "id": "RED",
+          "label": {
+            "en": "Red",
+            "sv": "Röd"
+          }
+        }
+      ]
+    },
+    {
+      "id": "warnings_weather_only",
+      "type": "checkbox",
+      "label": {
+        "en": "Weather warnings only (not water levels, fire risk)",
+        "sv": "Endast vädervarningar (inte vattennivåer, brandrisk)"
+      },
+      "value": true
+    },
+    {
+      "id": "warnings_lead_hours",
+      "type": "number",
+      "label": {
+        "en": "Start preparing ahead of a warning",
+        "sv": "Börja förbereda före en varning"
+      },
+      "value": 12,
+      "min": 0,
+      "max": 48,
+      "step": 1,
+      "units": {
+        "en": "h"
+      }
+    }
+  ]
+}

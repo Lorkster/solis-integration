@@ -1,0 +1,36 @@
+{
+  "id": "solar_surplus_above",
+  "title": {
+    "en": "Solar surplus !{{is|is not}} above",
+    "sv": "Solöverskottet !{{är|är inte}} över"
+  },
+  "titleFormatted": {
+    "en": "Solar surplus !{{is|is not}} above [[watts]] W",
+    "sv": "Solöverskottet !{{är|är inte}} över [[watts]] W"
+  },
+  "hint": {
+    "en": "Surplus = solar production minus house consumption; it goes into the battery or to the grid.",
+    "sv": "Överskott = solproduktion minus husets förbrukning; det går till batteriet eller nätet."
+  },
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=solis-inverter"
+    },
+    {
+      "type": "number",
+      "name": "watts",
+      "min": 0,
+      "max": 30000,
+      "step": 100,
+      "placeholder": {
+        "en": "1500"
+      },
+      "title": {
+        "en": "Power (W)",
+        "sv": "Effekt (W)"
+      }
+    }
+  ]
+}

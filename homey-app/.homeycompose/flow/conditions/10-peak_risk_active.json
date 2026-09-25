@@ -1,0 +1,18 @@
+{
+  "id": "peak_risk_active",
+  "title": {
+    "en": "This hour's power !{{is|is not}} heading above the month's peak",
+    "sv": "Timmens effekt !{{är|är inte}} på väg över månadens topp"
+  },
+  "hint": {
+    "en": "Use it to hold back loads such as car charging or water heating while it is true.",
+    "sv": "Använd det för att hålla tillbaka laster som billaddning eller varmvatten medan det är sant."
+  },
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=solis-inverter"
+    }
+  ]
+}

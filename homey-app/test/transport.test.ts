@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import { DISABLED_SLOT } from '../lib/inverter/types.js';
-import { SolisCloudClient } from '../lib/solis/SolisCloudClient.js';
-import { parseLiveData, SolisCloudTransport } from '../lib/solis/SolisCloudTransport.js';
+import { SolisCloudClient } from '../lib/brands/solis/SolisCloudClient.js';
+import { parseLiveData, SolisCloudTransport } from '../lib/brands/solis/SolisCloudTransport.js';
 
 /** In-memory inverter behind a fake SolisCloud: switch CIDs share one bit-field register. */
 class FakeCloud extends SolisCloudClient {

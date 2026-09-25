@@ -4,8 +4,8 @@ import { readFileSync } from 'node:fs';
 
 import { ModelSkill, MODEL_NAMES } from '../lib/forecast/ModelSkill.js';
 import { BLEND_MODELS, looksCurtailed, median, modelPvKw, OpenMeteoProvider, SolarCalibration } from '../lib/forecast/SolarForecast.js';
-import { SolisCloudTransport } from '../lib/solis/SolisCloudTransport.js';
-import { SolisCloudClient } from '../lib/solis/SolisCloudClient.js';
+import { SolisCloudTransport } from '../lib/brands/solis/SolisCloudTransport.js';
+import { SolisCloudClient } from '../lib/brands/solis/SolisCloudClient.js';
 import { addDays, localDate } from '../lib/time.js';
 
 const TZ = 'Europe/Stockholm';

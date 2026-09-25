@@ -1,0 +1,18 @@
+{
+  "id": "replan_now",
+  "title": {
+    "en": "Update the battery plan now",
+    "sv": "Uppdatera batteriplanen nu"
+  },
+  "hint": {
+    "en": "Fetches prices and forecasts and makes a new plan right away (normally every 30 minutes).",
+    "sv": "Hämtar priser och prognoser och gör en ny plan direkt (annars var 30:e minut)."
+  },
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=solis-inverter"
+    }
+  ]
+}

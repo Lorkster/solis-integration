@@ -1,0 +1,59 @@
+{
+  "id": "weather_warning_started",
+  "title": {
+    "en": "A weather warning was issued for my location",
+    "sv": "En vädervarning utfärdades för min plats"
+  },
+  "tokens": [
+    {
+      "name": "level",
+      "type": "string",
+      "title": {
+        "en": "Level",
+        "sv": "Nivå"
+      },
+      "example": "YELLOW"
+    },
+    {
+      "name": "title",
+      "type": "string",
+      "title": {
+        "en": "Warning",
+        "sv": "Varning"
+      },
+      "example": {
+        "en": "Strong wind",
+        "sv": "Mycket hårda vindbyar"
+      }
+    },
+    {
+      "name": "area",
+      "type": "string",
+      "title": {
+        "en": "Area",
+        "sv": "Område"
+      },
+      "example": "Uppsala län"
+    },
+    {
+      "name": "until",
+      "type": "string",
+      "title": {
+        "en": "Until",
+        "sv": "Till"
+      },
+      "example": "18:00"
+    }
+  ],
+  "hint": {
+    "en": "Fires once per new warning at the chosen level that covers Homey's location.",
+    "sv": "Körs en gång per ny varning på vald nivå som gäller Homeys plats."
+  },
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=solis-inverter"
+    }
+  ]
+}

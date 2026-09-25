@@ -1,0 +1,14 @@
+{
+  "id": "power_cut_active",
+  "title": {
+    "en": "There !{{is|is not}} a power cut",
+    "sv": "Det !{{är|är inte}} strömavbrott"
+  },
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=solis-inverter"
+    }
+  ]
+}

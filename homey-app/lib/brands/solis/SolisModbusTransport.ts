@@ -1,6 +1,6 @@
-import { gridLost } from '../inverter/PowerCut.js';
-import type { InverterInfo, InverterSettings, InverterTransport, LiveData, TouSlot } from '../inverter/types.js';
-import { type ModbusConnector, ModbusError, type ModbusSession } from './ModbusTcpClient.js';
+import { gridLost } from '../../inverter/PowerCut.js';
+import type { InverterInfo, InverterSettings, InverterTransport, LiveData, TouSlot } from '../../inverter/types.js';
+import { type ModbusConnector, ModbusError, type ModbusSession } from '../../modbus/ModbusTcpClient.js';
 
 /**
  * Solis hybrid inverter over Modbus TCP (S2-WL-ST logger or an RS485 gateway). Register map as in
@@ -60,7 +60,8 @@ export function encodeSlot(slot: TouSlot, current: number[]): number[] {
 }
 
 export class SolisModbusTransport implements InverterTransport {
-  readonly kind = 'modbus' as const;
+  readonly kind = 'local' as const;
+  readonly name = 'Modbus';
   /** False when getInfo found no 6+6 slot registers: schedule writes are refused (SolisCloud handles those). */
   private touV2: boolean | null = null;
 

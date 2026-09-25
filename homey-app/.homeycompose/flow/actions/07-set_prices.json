@@ -1,0 +1,33 @@
+{
+  "id": "set_prices",
+  "title": {
+    "en": "Set electricity prices",
+    "sv": "Ange elpriser"
+  },
+  "titleFormatted": {
+    "en": "Set electricity prices to [[prices]]",
+    "sv": "Ange elpriser till [[prices]]"
+  },
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=solis-inverter"
+    },
+    {
+      "type": "text",
+      "name": "prices",
+      "placeholder": {
+        "en": "[{\"start\":\"2026-09-25T00:00:00+02:00\",\"price\":0.52}, …]"
+      },
+      "title": {
+        "en": "Prices (JSON)",
+        "sv": "Priser (JSON)"
+      }
+    }
+  ],
+  "hint": {
+    "en": "Only used when the price source is 'From a flow'. A JSON list of spot prices per kWh before fees, one entry per hour or quarter: start time and price. Also accepts 'startsAt', 'time_start' and 'total', 'value' or 'SEK_per_kWh'. Send today's and tomorrow's prices; later entries replace earlier ones.",
+    "sv": "Används bara när priskällan är 'Från ett flöde'. En JSON-lista med spotpriser per kWh före avgifter, en post per timme eller kvart: starttid och pris. Accepterar även 'startsAt', 'time_start' och 'total', 'value' eller 'SEK_per_kWh'. Skicka dagens och morgondagens priser; senare poster ersätter tidigare."
+  }
+}

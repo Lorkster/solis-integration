@@ -1,0 +1,38 @@
+{
+  "id": "power_cut_started",
+  "title": {
+    "en": "The power went out",
+    "sv": "Strömmen gick"
+  },
+  "hint": {
+    "en": "The inverter sees no grid voltage. The battery now powers what is connected to its backup output.",
+    "sv": "Växelriktaren ser ingen nätspänning. Batteriet driver nu det som är anslutet till reservutgången."
+  },
+  "tokens": [
+    {
+      "name": "battery",
+      "type": "number",
+      "title": {
+        "en": "Battery (%)",
+        "sv": "Batteri (%)"
+      },
+      "example": 78
+    },
+    {
+      "name": "backup_hours",
+      "type": "number",
+      "title": {
+        "en": "Backup time (h)",
+        "sv": "Reservtid (h)"
+      },
+      "example": 9.5
+    }
+  ],
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=solis-inverter"
+    }
+  ]
+}

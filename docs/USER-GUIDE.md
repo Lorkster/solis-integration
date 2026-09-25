@@ -1,6 +1,7 @@
-# Solis Smart Battery – user guide
+# Home Battery Planner – user guide
 
-Solis Smart Battery is a Homey Pro app for a Solis hybrid inverter with a battery. It:
+Home Battery Planner is a Homey Pro app for a hybrid inverter with a home battery. Solis inverters
+are supported today; the app is built so that more brands can be added. It:
 
 - **plans the battery around electricity prices**: charges when power is cheap, saves the charge for
   expensive hours and lets the battery run the house when that pays off;
@@ -37,6 +38,16 @@ Which inverters it works with: [Supported inverters](#supported-inverters).
 
 ## Supported inverters
 
+| Brand | Connection | Status |
+|---|---|---|
+| **Solis** | SolisCloud, or locally over Modbus TCP | Supported (details below) |
+
+Other brands are not supported yet. Adding one is a matter of teaching the app how to talk to that
+inverter; the planning, learning, widgets and flows are shared. Requests and help are welcome through
+the GitHub issues.
+
+### Solis
+
 The app needs a Solis **hybrid** inverter (one with a battery). It checks the inverter when you add
 it and shows the result under the device's settings → **Inverter → App support**:
 
@@ -66,7 +77,7 @@ from the widget code with real prices and consumption from 23–24 September 202
    The dashboard's name is shown at the top; tap the name (▾) to switch dashboards or create a new
    one, for example *Energy*.
 2. **Tap the pencil** (top right) to edit the dashboard.
-3. **Tap + Add Widget**, choose the **Apps** tab and then **Solis Smart Battery**.
+3. **Tap + Add Widget**, choose the **Apps** tab and then **Home Battery Planner**.
 4. **Pick a widget**: *Battery plan* or *Battery status*. Repeat for the other one.
 5. For **Battery plan**, choose the widget settings:
    - *Time shown*: 24, 36 or 48 hours (default 36).
@@ -157,7 +168,7 @@ Homey's web app cannot show widgets, so the app has its own dashboard page with 
 app has **no public or unauthenticated access**: every request needs your Homey login or a Homey
 API key.
 
-- **In the Homey web app**: open **Apps → Solis Smart Battery → Configure**. It uses your Homey
+- **In the Homey web app**: open **Apps → Home Battery Planner → Configure**. It uses your Homey
   login, like everything else in the Homey app.
 - **On a wall screen, tablet or computer at home**: [`docs/dashboard/solis-dashboard.html`](dashboard/solis-dashboard.html)
   is one self-contained file that reads the values straight from Homey on your home network.
@@ -260,7 +271,7 @@ The battery also appears in **Homey Energy** as a home battery, with its charged
 ## Homey Energy
 
 Homey Energy needs one device per role. The battery device covers the battery; add these two for
-production and the grid (**Devices → + → Solis Smart Battery**):
+production and the grid (**Devices → + → Home Battery Planner**):
 
 | Device | Shows in Homey Energy | Values |
 |---|---|---|

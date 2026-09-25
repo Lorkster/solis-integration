@@ -1,0 +1,38 @@
+{
+  "id": "backup_low",
+  "title": {
+    "en": "Backup is running low during a power cut",
+    "sv": "Reserven börjar ta slut under ett strömavbrott"
+  },
+  "hint": {
+    "en": "Less than 2 hours of backup left at the current use.",
+    "sv": "Mindre än 2 timmars reserv kvar vid nuvarande förbrukning."
+  },
+  "tokens": [
+    {
+      "name": "battery",
+      "type": "number",
+      "title": {
+        "en": "Battery (%)",
+        "sv": "Batteri (%)"
+      },
+      "example": 24
+    },
+    {
+      "name": "backup_hours",
+      "type": "number",
+      "title": {
+        "en": "Backup time (h)",
+        "sv": "Reservtid (h)"
+      },
+      "example": 1.6
+    }
+  ],
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=solis-inverter"
+    }
+  ]
+}

@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { SolisCloudClient } from '../lib/solis/SolisCloudClient.js';
-import { SolisCloudTransport } from '../lib/solis/SolisCloudTransport.js';
-import { formatTouV1, parseTouV1, setTouV1Slot, touV1Slots } from '../lib/solis/touV1.js';
+import { SolisCloudClient } from '../lib/brands/solis/SolisCloudClient.js';
+import { SolisCloudTransport } from '../lib/brands/solis/SolisCloudTransport.js';
+import { formatTouV1, parseTouV1, setTouV1Slot, touV1Slots } from '../lib/brands/solis/touV1.js';
 
 // The two layouts, as in github.com/mkuthan/solis-cloud-control's tests.
 const V18 = '0,0,09:00,10:00,11:00,12:00,50,0,12:30,13:30,14:30,15:30,0,100,16:00,17:00,18:00,19:00';

@@ -1,0 +1,31 @@
+{
+  "id": "off_plan",
+  "title": {
+    "en": "The inverter stopped following the plan",
+    "sv": "Växelriktaren slutade följa planen"
+  },
+  "hint": {
+    "en": "The battery has not done what the plan says for 20 minutes, the inverter settings were changed outside the app, or no data has arrived for 20 minutes.",
+    "sv": "Batteriet har inte gjort som planen säger på 20 minuter, växelriktarens inställningar ändrades utanför appen, eller ingen data har kommit på 20 minuter."
+  },
+  "tokens": [
+    {
+      "name": "reason",
+      "type": "string",
+      "title": {
+        "en": "Reason",
+        "sv": "Orsak"
+      },
+      "example": {
+        "en": "Planned grid charging, but the battery is not charging"
+      }
+    }
+  ],
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=solis-inverter"
+    }
+  ]
+}

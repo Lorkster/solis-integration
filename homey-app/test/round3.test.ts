@@ -59,7 +59,8 @@ describe('export control', () => {
     const writes: boolean[] = [];
     let allowed = true;
     const transport = {
-      kind: 'soliscloud',
+      kind: 'cloud',
+      name: 'SolisCloud',
       readSettings: async () => settings(allowed),
       writeExportAllowed: async (value: boolean) => { writes.push(value); allowed = value; },
     } as unknown as InverterTransport;

@@ -1,0 +1,53 @@
+{
+  "id": "planned_action_is",
+  "title": {
+    "en": "Planned action !{{is|is not}}",
+    "sv": "Planerad åtgärd !{{är|är inte}}"
+  },
+  "titleFormatted": {
+    "en": "Planned action !{{is|is not}} [[action]]",
+    "sv": "Planerad åtgärd !{{är|är inte}} [[action]]"
+  },
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=solis-inverter"
+    },
+    {
+      "type": "dropdown",
+      "name": "action",
+      "values": [
+        {
+          "id": "charge",
+          "title": {
+            "en": "grid charging",
+            "sv": "nätladdning"
+          }
+        },
+        {
+          "id": "hold",
+          "title": {
+            "en": "saving for later",
+            "sv": "sparar till senare"
+          }
+        },
+        {
+          "id": "self_use",
+          "title": {
+            "en": "self-use (battery powers the house when needed)",
+            "sv": "egenanvändning (batteriet driver huset vid behov)"
+          }
+        }
+      ],
+      "title": {
+        "en": "Action",
+        "sv": "Åtgärd"
+      }
+    }
+  ],
+  "hint": {
+    "en": "What the plan does in the current quarter-hour. In self-use the battery powers the house when needed, stores solar surplus, and stops at the reserve.",
+    "sv": "Vad planen gör just denna kvart. Vid egenanvändning driver batteriet huset vid behov, lagrar solöverskott och stannar vid reserven."
+  }
+}

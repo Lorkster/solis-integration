@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
+import { solisWorkMode } from '../lib/brands/solis/storageMode.js';
 import { BatteryController, type ControllerConfig } from '../lib/controller/BatteryController.js';
 import { DISABLED_SLOT, type InverterSettings, type InverterTransport, type LiveData, type TouSlot } from '../lib/inverter/types.js';
 import type { PriceProvider, SpotPrice } from '../lib/prices/PriceProvider.js';
@@ -8,7 +9,8 @@ import { DEFAULT_TARIFF } from '../lib/tariff.js';
 import { quarters, TZ } from './helpers.js';
 
 class FakeInverter implements InverterTransport {
-  readonly kind = 'soliscloud' as const;
+  readonly kind = 'cloud' as const;
+  readonly name = 'SolisCloud';
   writes: string[] = [];
   settings: InverterSettings = {
     storageModeRaw: 33,
@@ -30,6 +32,13 @@ class FakeInverter implements InverterTransport {
   async writeReserveSoc(pct: number): Promise<void> { this.writes.push(`reserve ${pct}`); this.settings.reserveSoc = pct; }
   async writeChargeSlot(i: number, slot: TouSlot): Promise<void> { this.writes.push(`charge ${i}`); this.settings.chargeSlots[i] = { ...slot }; }
   async writeDischargeSlot(i: number, slot: TouSlot): Promise<void> { this.writes.push(`discharge ${i}`); this.settings.dischargeSlots[i] = { ...slot }; }
+}
+
+/** The controller as the Solis device sets it up: Solis storage mode bits. */
+function solisController(inverter: InverterTransport): BatteryController {
+  const controller = new BatteryController(inverter, new FakePrices(), config);
+  controller.workMode = solisWorkMode;
+  return controller;
 }
 
 class FakePrices implements PriceProvider {
@@ -66,7 +75,7 @@ const live = { socPct: 20, batteryVoltageV: 420 } as LiveData;
 describe('BatteryController', () => {
   it('writes slots before the storage mode and nothing on a second run', async () => {
     const inverter = new FakeInverter();
-    const controller = new BatteryController(inverter, new FakePrices(), config);
+    const controller = solisController(inverter);
     const now = new Date('2026-09-24T00:05:00+02:00');
 
     const state = await controller.buildPlan(live, now);
@@ -84,15 +93,24 @@ describe('BatteryController', () => {
 
   it('hands control back to the inverter', async () => {
     const inverter = new FakeInverter();
-    const controller = new BatteryController(inverter, new FakePrices(), config);
+    const controller = solisController(inverter);
     await controller.apply(await controller.buildPlan(live, new Date('2026-09-24T00:05:00+02:00')));
     await controller.restoreInverter();
     assert.ok(inverter.settings.chargeSlots.every((s) => !s.enabled));
     assert.equal(inverter.settings.storageModeRaw, 49, 'TOU off, backup + grid charge kept');
   });
 
+  it('leaves the work mode alone for a brand without one', async () => {
+    const inverter = new FakeInverter();
+    const controller = new BatteryController(inverter, new FakePrices(), config);
+    await controller.apply(await controller.buildPlan(live, new Date('2026-09-24T00:05:00+02:00')));
+    await controller.restoreInverter();
+    assert.equal(inverter.settings.storageModeRaw, 33);
+    assert.ok(!inverter.writes.some((w) => w.startsWith('mode')));
+  });
+
   it('uses the PV forecast scaled by trust', async () => {
-    const controller = new BatteryController(new FakeInverter(), new FakePrices(), config);
+    const controller = solisController(new FakeInverter());
     controller.pvForecast = () => 5;
     const state = await controller.buildPlan({ ...live, socPct: 50 }, new Date('2026-09-24T00:05:00+02:00'));
     // 5 kW × 80 % trust = 4 kW PV against a 2 kW load: the surplus charges the battery.
@@ -101,7 +119,7 @@ describe('BatteryController', () => {
   });
 
   it('raises the reserve while preparing for an outage', async () => {
-    const controller = new BatteryController(new FakeInverter(), new FakePrices(), config);
+    const controller = solisController(new FakeInverter());
     const now = new Date('2026-09-24T00:05:00+02:00');
     controller.outage = { targetSoc: 100, until: new Date('2026-09-24T12:00:00+02:00') };
     const state = await controller.buildPlan(live, now);

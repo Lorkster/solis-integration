@@ -8,16 +8,20 @@
     "local"
   ],
   "name": {
-    "en": "Solis Smart Battery",
-    "sv": "Solis Smart Batteri"
+    "en": "Home Battery Planner",
+    "sv": "Hembatteriplanerare"
   },
   "description": {
-    "en": "Charge your Solis battery when electricity is cheap, keep a reserve for power outages",
-    "sv": "Ladda Solis-batteriet när elen är billig och behåll en reserv för strömavbrott"
+    "en": "Charge your home battery when power is cheap and keep a reserve for power cuts",
+    "sv": "Ladda hembatteriet när elen är billig och behåll en reserv för strömavbrott"
   },
   "category": [
     "energy"
   ],
+  "tags": {
+    "en": ["home battery", "battery", "solar", "spot price", "Nord Pool", "time of use", "power fee", "Solis", "SolisCloud", "Modbus"],
+    "sv": ["hembatteri", "batteri", "solceller", "spotpris", "Nord Pool", "effektavgift", "Solis", "SolisCloud", "Modbus"]
+  },
   "permissions": [
     "homey:manager:geolocation"
   ],

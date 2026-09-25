@@ -1,7 +1,7 @@
-import type SolisBatteryApp from '../../app.js';
+import type BatteryPlannerApp from '../../app.js';
 
 export default {
-  async getPlan({ homey }: { homey: { app: SolisBatteryApp } }): Promise<unknown> {
+  async getPlan({ homey }: { homey: { app: BatteryPlannerApp } }): Promise<unknown> {
     return homey.app.getView();
   },
 };

@@ -1,0 +1,30 @@
+{
+  "id": "action_changed",
+  "title": {
+    "en": "The planned battery action changed",
+    "sv": "Planerad batteriåtgärd ändrades"
+  },
+  "tokens": [
+    {
+      "name": "action",
+      "type": "string",
+      "title": {
+        "en": "Action"
+      },
+      "example": {
+        "en": "charge"
+      }
+    }
+  ],
+  "hint": {
+    "en": "Fires when the plan switches between grid charging, saving for later and self-use. Action is charge, hold or self_use.",
+    "sv": "Körs när planen byter mellan nätladdning, sparande och egenanvändning. Åtgärd är charge, hold eller self_use."
+  },
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=solis-inverter"
+    }
+  ]
+}

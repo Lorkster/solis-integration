@@ -1,0 +1,36 @@
+{
+  "id": "price_among_cheapest",
+  "title": {
+    "en": "Price !{{is|is not}} among the cheapest hours today",
+    "sv": "Priset !{{är|är inte}} bland dagens billigaste timmar"
+  },
+  "titleFormatted": {
+    "en": "Price !{{is|is not}} among the [[hours]] cheapest hours today",
+    "sv": "Priset !{{är|är inte}} bland dagens [[hours]] billigaste timmar"
+  },
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=solis-inverter"
+    },
+    {
+      "type": "number",
+      "name": "hours",
+      "min": 1,
+      "max": 24,
+      "step": 0.25,
+      "placeholder": {
+        "en": "4"
+      },
+      "title": {
+        "en": "Hours",
+        "sv": "Timmar"
+      }
+    }
+  ],
+  "hint": {
+    "en": "Compares the current import price with today's quarter-hour prices.",
+    "sv": "Jämför nuvarande köppris med dagens kvartspriser."
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "id": "weather_warning_active",
+  "title": {
+    "en": "A weather warning !{{is|is not}} active",
+    "sv": "En vädervarning !{{är|är inte}} aktiv"
+  },
+  "hint": {
+    "en": "True while a weather warning at the chosen level covers Homey's location.",
+    "sv": "Sant medan en vädervarning på vald nivå gäller Homeys plats."
+  },
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=solis-inverter"
+    }
+  ]
+}

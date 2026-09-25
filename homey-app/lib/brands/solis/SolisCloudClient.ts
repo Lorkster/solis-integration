@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 
-import { httpsRequest, type HttpResponse } from '../http.js';
+import { httpsRequest, type HttpResponse } from '../../http.js';
 
 export const SOLIS_BASE_URL = 'https://www.soliscloud.com:13333';
 

@@ -4,8 +4,8 @@ import { describe, it } from 'node:test';
 import { median, parseBlend, parseSolcast, pointsToQuarters } from '../lib/forecast/SolarForecast.js';
 import { type InverterInfo, supportLevel } from '../lib/inverter/types.js';
 import { currencyForArea, FlowPriceProvider, parseFlowPrices, parseNordPool, toQuarters } from '../lib/prices/PriceProvider.js';
-import { SolisCloudClient } from '../lib/solis/SolisCloudClient.js';
-import { inspectInverter } from '../lib/solis/SolisCloudTransport.js';
+import { SolisCloudClient } from '../lib/brands/solis/SolisCloudClient.js';
+import { inspectInverter } from '../lib/brands/solis/SolisCloudTransport.js';
 import { parseMetNoWarnings } from '../lib/warnings/MetNoWarnings.js';
 import { TZ } from './helpers.js';
 

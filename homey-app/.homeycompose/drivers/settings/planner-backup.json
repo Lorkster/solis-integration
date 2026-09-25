@@ -1,0 +1,55 @@
+{
+  "type": "group",
+  "label": {
+    "en": "Backup reserve",
+    "sv": "Reservkraft"
+  },
+  "children": [
+    {
+      "id": "reserve_summer",
+      "type": "number",
+      "label": {
+        "en": "Reserve April–October"
+      },
+      "value": 25,
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "units": {
+        "en": "%"
+      },
+      "hint": {
+        "en": "Kept for power outages in normal operation. Must be above the inverter's power-outage limit (Off-Grid Overdischarge SOC, set to 15 % here); only the part above that limit is usable during an outage.",
+        "sv": "Behålls för strömavbrott vid normal drift. Måste vara över växelriktarens gräns vid strömavbrott (Off-Grid Overdischarge SOC, här 15 %); bara delen över gränsen kan användas vid avbrott."
+      }
+    },
+    {
+      "id": "reserve_winter",
+      "type": "number",
+      "label": {
+        "en": "Reserve November–March"
+      },
+      "value": 30,
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "units": {
+        "en": "%"
+      }
+    },
+    {
+      "id": "outage_target",
+      "type": "number",
+      "label": {
+        "en": "Charge level when preparing for an outage"
+      },
+      "value": 100,
+      "min": 30,
+      "max": 100,
+      "step": 1,
+      "units": {
+        "en": "%"
+      }
+    }
+  ]
+}

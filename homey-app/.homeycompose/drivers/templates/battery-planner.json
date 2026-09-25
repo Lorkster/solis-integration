@@ -1,0 +1,63 @@
+{
+  "class": "battery",
+  "capabilities": [
+    "measure_battery",
+    "measure_power",
+    "solis_power_source",
+    "measure_solis_power_cost",
+    "solis_power_level",
+    "solis_control_mode",
+    "solis_plan_status",
+    "measure_solis_price",
+    "measure_solis_pv",
+    "measure_solis_load",
+    "measure_solis_grid",
+    "measure_solis_surplus",
+    "measure_solis_solar_share",
+    "measure_solis_battery_share",
+    "measure_solis_grid_share",
+    "measure_solis_pv_forecast",
+    "measure_solis_reserve",
+    "measure_solis_backup_hours",
+    "alarm_solis_power_cut",
+    "measure_solis_saved_today",
+    "measure_solis_saved_month",
+    "measure_solis_peak_month",
+    "measure_solis_peak_now",
+    "alarm_solis_battery_locked",
+    "alarm_solis_off_plan",
+    "alarm_solis_weather",
+    "solis_warning",
+    "meter_power.charged",
+    "meter_power.discharged",
+    "solis_dashboard"
+  ],
+  "capabilitiesOptions": {
+    "measure_power": {
+      "title": {
+        "en": "Battery power (+ charging, − discharging)",
+        "sv": "Batteriets effekt (+ laddar, − laddar ur)"
+      }
+    },
+    "meter_power.charged": {
+      "title": {
+        "en": "Energy charged",
+        "sv": "Laddad energi"
+      }
+    },
+    "meter_power.discharged": {
+      "title": {
+        "en": "Energy discharged",
+        "sv": "Urladdad energi"
+      }
+    }
+  },
+  "energy": {
+    "homeBattery": true,
+    "meterPowerImportedCapability": "meter_power.charged",
+    "meterPowerExportedCapability": "meter_power.discharged"
+  },
+  "platforms": [
+    "local"
+  ]
+}

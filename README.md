@@ -1,13 +1,17 @@
-# solis-integration
+# Home Battery Planner (solis-integration)
 
-Price-driven battery control for Solis hybrid inverters with 6-slot time-of-use firmware (e.g. S6-EH3P, S6-EH1P) via the SolisCloud API.
+A brand-neutral home battery planner for Homey Pro: it charges the battery when electricity is cheap,
+saves the charge for expensive hours and keeps a reserve for power outages, from day-ahead prices,
+the learned consumption of the house and a solar forecast. **Solis** hybrid inverters are the first
+supported brand (through SolisCloud or locally over Modbus TCP); more brands can be added, see
+[adding a brand](docs/ADDING-A-BRAND.md).
 
 Background: the SolisCloud "Self-use" EMS strategy only plans from the moment it is saved until midnight
 the same day and never generates plans for the following days. This project replaces it with a scheduler
 that writes charge slots directly to the inverter based on Nord Pool day-ahead prices, while keeping a
 battery reserve for power outages.
 
-**Homey app:** [user guide](docs/USER-GUIDE.md) · [install, update, uninstall](INSTALL.md) · [developer notes](homey-app/README.md) · [local Modbus plan](docs/LOCAL-MODBUS.md)
+**Homey app:** [user guide](docs/USER-GUIDE.md) · [install, update, uninstall](INSTALL.md) · [developer notes](homey-app/README.md) · [adding a brand](docs/ADDING-A-BRAND.md) · [local Modbus plan](docs/LOCAL-MODBUS.md)
 
 ## Status
 

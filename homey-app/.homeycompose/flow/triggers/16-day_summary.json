@@ -1,0 +1,47 @@
+{
+  "id": "day_summary",
+  "title": {
+    "en": "Daily summary",
+    "sv": "Daglig sammanfattning"
+  },
+  "hint": {
+    "en": "Fires just after midnight with what the battery saved the day before.",
+    "sv": "Körs strax efter midnatt med vad batteriet sparade dagen innan."
+  },
+  "tokens": [
+    {
+      "name": "saved_day",
+      "type": "number",
+      "title": {
+        "en": "Saved yesterday",
+        "sv": "Sparat i går"
+      },
+      "example": 18.4
+    },
+    {
+      "name": "saved_month",
+      "type": "number",
+      "title": {
+        "en": "Saved this month",
+        "sv": "Sparat denna månad"
+      },
+      "example": 312
+    },
+    {
+      "name": "peak_month",
+      "type": "number",
+      "title": {
+        "en": "Power peak this month (kW)",
+        "sv": "Effekttopp denna månad (kW)"
+      },
+      "example": 4.1
+    }
+  ],
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=solis-inverter"
+    }
+  ]
+}

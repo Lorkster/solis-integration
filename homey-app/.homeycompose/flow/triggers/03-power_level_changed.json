@@ -1,0 +1,68 @@
+{
+  "id": "power_level_changed",
+  "title": {
+    "en": "Extra power became cheap, normal or expensive",
+    "sv": "Extra el blev billig, normal eller dyr"
+  },
+  "hint": {
+    "en": "Fires when 'Extra power now' changes level, or when the other heating becomes cheaper or dearer than the heat pump (if set up). Also fires once when the app starts, so flows can bring devices in line.",
+    "sv": "Körs när 'Extra el nu' byter nivå, eller när annan uppvärmning blir billigare eller dyrare än värmepumpen (om inställt). Körs också en gång när appen startar, så att flöden kan ställa in enheterna."
+  },
+  "tokens": [
+    {
+      "name": "level",
+      "type": "string",
+      "title": {
+        "en": "Level",
+        "sv": "Nivå"
+      },
+      "example": {
+        "en": "Cheap",
+        "sv": "Billig"
+      }
+    },
+    {
+      "name": "cost",
+      "type": "number",
+      "title": {
+        "en": "Cost per kWh",
+        "sv": "Kostnad per kWh"
+      },
+      "example": 0.45
+    },
+    {
+      "name": "cheap_limit",
+      "type": "number",
+      "title": {
+        "en": "Cheap below",
+        "sv": "Billig under"
+      },
+      "example": 0.9
+    },
+    {
+      "name": "expensive_limit",
+      "type": "number",
+      "title": {
+        "en": "Expensive above",
+        "sv": "Dyr över"
+      },
+      "example": 2.1
+    },
+    {
+      "name": "other_heating_cheaper",
+      "type": "boolean",
+      "title": {
+        "en": "Other heating is cheaper",
+        "sv": "Annan uppvärmning är billigare"
+      },
+      "example": false
+    }
+  ],
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=solis-inverter"
+    }
+  ]
+}

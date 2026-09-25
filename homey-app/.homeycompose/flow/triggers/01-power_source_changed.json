@@ -1,0 +1,59 @@
+{
+  "id": "power_source_changed",
+  "title": {
+    "en": "What powers the house changed",
+    "sv": "Det som driver huset ändrades"
+  },
+  "tokens": [
+    {
+      "name": "source",
+      "type": "string",
+      "title": {
+        "en": "Powered by",
+        "sv": "Drivs av"
+      },
+      "example": {
+        "en": "Solar + battery",
+        "sv": "Sol + batteri"
+      }
+    },
+    {
+      "name": "solar_share",
+      "type": "number",
+      "title": {
+        "en": "From solar (%)",
+        "sv": "Från sol (%)"
+      },
+      "example": 60
+    },
+    {
+      "name": "battery_share",
+      "type": "number",
+      "title": {
+        "en": "From battery (%)",
+        "sv": "Från batteri (%)"
+      },
+      "example": 40
+    },
+    {
+      "name": "grid_share",
+      "type": "number",
+      "title": {
+        "en": "From grid (%)",
+        "sv": "Från nätet (%)"
+      },
+      "example": 0
+    }
+  ],
+  "hint": {
+    "en": "Fires when the combination of solar, battery and grid that runs the house changes.",
+    "sv": "Körs när kombinationen av sol, batteri och nät som driver huset ändras."
+  },
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=solis-inverter"
+    }
+  ]
+}

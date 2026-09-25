@@ -4,7 +4,7 @@ import { describe, it } from 'node:test';
 import { FailoverTransport } from '../lib/inverter/FailoverTransport.js';
 import type { InverterTransport, LiveData } from '../lib/inverter/types.js';
 import type { ModbusConnector, ModbusSession } from '../lib/modbus/ModbusTcpClient.js';
-import { parseModbusLive, Reg, SolisModbusTransport } from '../lib/modbus/SolisModbusTransport.js';
+import { parseModbusLive, Reg, SolisModbusTransport } from '../lib/brands/solis/SolisModbusTransport.js';
 
 /** In-memory inverter registers behind a fake logger. */
 class FakeInverter implements ModbusConnector, ModbusSession {
@@ -104,12 +104,13 @@ describe('Solis over Modbus', () => {
 });
 
 describe('failover', () => {
-  const transport = (kind: 'soliscloud' | 'modbus', fails: () => boolean): InverterTransport => ({
+  const transport = (kind: 'cloud' | 'local', fails: () => boolean): InverterTransport => ({
     kind,
+    name: kind === 'local' ? 'Modbus' : 'SolisCloud',
     getInfo: async () => { throw new Error('n/a'); },
     getLiveData: async () => {
       if (fails()) throw new Error(`${kind} down`);
-      return { socPct: kind === 'modbus' ? 1 : 2 } as LiveData;
+      return { socPct: kind === 'local' ? 1 : 2 } as LiveData;
     },
     readSettings: async () => { throw new Error('n/a'); },
     writeStorageMode: async () => undefined,
@@ -122,37 +123,37 @@ describe('failover', () => {
     let modbusDown = true;
     let clock = 0;
     const switches: string[] = [];
-    const f = new FailoverTransport(transport('modbus', () => modbusDown), transport('soliscloud', () => false), null,
+    const f = new FailoverTransport(transport('local', () => modbusDown), transport('cloud', () => false), null,
       (active) => switches.push(active.kind), 3, 30 * 60_000, () => clock);
     for (let i = 0; i < 3; i++) await assert.rejects(f.getLiveData());
-    assert.equal(f.kind, 'soliscloud');
+    assert.equal(f.kind, 'cloud');
     assert.equal((await f.getLiveData()).socPct, 2);
     modbusDown = false;
     clock += 31 * 60_000;
     assert.equal((await f.getLiveData()).socPct, 1, 'back on Modbus');
-    assert.deepEqual(switches, ['soliscloud', 'modbus']);
+    assert.deepEqual(switches, ['cloud', 'local']);
   });
 
   it('switches when commands fail although live data still arrives, and resends the failed command', async () => {
     const writes: string[] = [];
     const cloud: InverterTransport = {
-      ...transport('soliscloud', () => false),
+      ...transport('cloud', () => false),
       writeReserveSoc: async () => { throw new Error('Sending failure, the current datalogger is offline'); },
     };
-    const modbus: InverterTransport = { ...transport('modbus', () => false), writeReserveSoc: async (pct) => { writes.push(`modbus ${pct}`); } };
+    const modbus: InverterTransport = { ...transport('local', () => false), writeReserveSoc: async (pct) => { writes.push(`modbus ${pct}`); } };
     const switches: string[] = [];
     const f = new FailoverTransport(cloud, modbus, null, (active) => switches.push(active.kind));
     await assert.rejects(f.writeReserveSoc(30));
     await f.getLiveData(); // live data keeps working: does not reset the command count
     await f.writeReserveSoc(30);
     assert.deepEqual(writes, ['modbus 30'], 'sent through Modbus right after the second failure');
-    assert.deepEqual(switches, ['modbus']);
-    assert.equal(f.kind, 'modbus');
+    assert.deepEqual(switches, ['local']);
+    assert.equal(f.kind, 'local');
   });
 
   it('stays on the primary without a fallback', async () => {
-    const f = new FailoverTransport(transport('modbus', () => true), null, null);
+    const f = new FailoverTransport(transport('local', () => true), null, null);
     for (let i = 0; i < 5; i++) await assert.rejects(f.getLiveData());
-    assert.equal(f.kind, 'modbus');
+    assert.equal(f.kind, 'local');
   });
 });

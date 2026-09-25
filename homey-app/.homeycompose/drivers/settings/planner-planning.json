@@ -1,0 +1,26 @@
+{
+  "type": "group",
+  "label": {
+    "en": "Planning",
+    "sv": "Planering"
+  },
+  "children": [
+    {
+      "id": "avg_load_kw",
+      "type": "number",
+      "label": {
+        "en": "Average house load"
+      },
+      "hint": {
+        "en": "Used until a load profile is learned from history."
+      },
+      "value": 2.0,
+      "min": 0.1,
+      "max": 20,
+      "step": 0.1,
+      "units": {
+        "en": "kW"
+      }
+    }
+  ]
+}

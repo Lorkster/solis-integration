@@ -1,0 +1,36 @@
+{
+  "id": "prepare_outage",
+  "title": {
+    "en": "Prepare for a power outage",
+    "sv": "Förbered för strömavbrott"
+  },
+  "titleFormatted": {
+    "en": "Prepare for a power outage during [[hours]] hours",
+    "sv": "Förbered för strömavbrott under [[hours]] timmar"
+  },
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=solis-inverter"
+    },
+    {
+      "type": "number",
+      "name": "hours",
+      "min": 1,
+      "max": 168,
+      "step": 1,
+      "placeholder": {
+        "en": "24"
+      },
+      "title": {
+        "en": "Hours",
+        "sv": "Timmar"
+      }
+    }
+  ],
+  "hint": {
+    "en": "Raises the reserve to the outage level (setting) for the given time, so the battery is filled.",
+    "sv": "Höjer reserven till avbrottsnivån (inställning) under angiven tid, så att batteriet fylls."
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "id": "heat_pump_cheaper",
+  "title": {
+    "en": "Heat from the heat pump !{{is|is not}} cheaper than the other heating now",
+    "sv": "Värme från värmepumpen !{{är|är inte}} billigare än annan uppvärmning nu"
+  },
+  "hint": {
+    "en": "Compares the cost of extra power, divided by the heat pump's COP at today's outdoor temperature, with the other heating's cost per kWh (device settings). Always true when no other heating is set.",
+    "sv": "Jämför kostnaden för extra el, delad med värmepumpens COP vid aktuell utetemperatur, med annan uppvärmnings kostnad per kWh (enhetens inställningar). Alltid sant när ingen annan uppvärmning är inställd."
+  },
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=solis-inverter"
+    }
+  ]
+}

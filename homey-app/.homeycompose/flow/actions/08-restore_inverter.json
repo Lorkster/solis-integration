@@ -1,0 +1,18 @@
+{
+  "id": "restore_inverter",
+  "title": {
+    "en": "Hand control back to the inverter",
+    "sv": "Lämna tillbaka styrningen till växelriktaren"
+  },
+  "hint": {
+    "en": "Removes the app's schedule from the inverter and switches to Monitor only.",
+    "sv": "Tar bort appens schema från växelriktaren och byter till Endast övervaka."
+  },
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=solis-inverter"
+    }
+  ]
+}

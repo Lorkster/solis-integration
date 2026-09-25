@@ -1,15 +1,18 @@
 import Homey from 'homey';
 
-import type SolisInverterDevice from './drivers/solis-inverter/device.js';
+import type { BatteryPlannerDevice } from './lib/homey/BatteryPlannerDevice.js';
+import { inverterDevices } from './lib/homey/EnergyChildDevice.js';
+import { registerFlowCards } from './lib/homey/flowCards.js';
 
-export default class SolisBatteryApp extends Homey.App {
+export default class BatteryPlannerApp extends Homey.App {
   override async onInit(): Promise<void> {
-    this.log('Solis Smart Battery started');
+    registerFlowCards(this.homey.flow);
+    this.log('Home Battery Planner started');
   }
 
-  /** State of the first paired inverter, for the dashboard widgets and the dashboard page. */
+  /** State of the first paired inverter (any brand), for the dashboard widgets and the dashboard page. */
   getView(): unknown {
-    const [device] = this.homey.drivers.getDriver('solis-inverter').getDevices() as SolisInverterDevice[];
+    const [device] = inverterDevices<BatteryPlannerDevice>(this.homey);
     return device ? device.getView() : { ready: false, paired: false };
   }
 }

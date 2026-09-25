@@ -1,0 +1,34 @@
+{
+  "id": "power_cut_ended",
+  "title": {
+    "en": "The power came back",
+    "sv": "Strömmen kom tillbaka"
+  },
+  "tokens": [
+    {
+      "name": "minutes",
+      "type": "number",
+      "title": {
+        "en": "Power cut length (min)",
+        "sv": "Avbrottets längd (min)"
+      },
+      "example": 85
+    },
+    {
+      "name": "battery",
+      "type": "number",
+      "title": {
+        "en": "Battery (%)",
+        "sv": "Batteri (%)"
+      },
+      "example": 61
+    }
+  ],
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=solis-inverter"
+    }
+  ]
+}

@@ -12,8 +12,16 @@ const app = join(root, 'homey-app');
 const guidePath = join(root, 'docs', 'USER-GUIDE.md');
 const read = (p) => JSON.parse(readFileSync(join(app, p), 'utf8'));
 
-const driver = read('drivers/solis-inverter/driver.compose.json');
-const flow = read('drivers/solis-inverter/driver.flow.compose.json');
+// The Solis driver with the shared battery-planner template and settings groups filled in, as Homey Compose does.
+const driver = (() => {
+  const own = read('drivers/solis-inverter/driver.compose.json');
+  const base = Object.assign({}, ...(own.$extends ?? []).map((t) => read(`.homeycompose/drivers/templates/${t}.json`)));
+  const settings = own.settings.map((s) => (s.$extends ? read(`.homeycompose/drivers/settings/${s.$extends}.json`) : s));
+  return { ...base, ...own, settings };
+})();
+// App-wide flow cards, one file per card, named with a number for their order in the Flow editor.
+const flow = Object.fromEntries(['triggers', 'conditions', 'actions'].map((type) => [type,
+  readdirSync(join(app, '.homeycompose/flow', type)).sort().map((f) => read(`.homeycompose/flow/${type}/${f}`))]));
 const customCaps = Object.fromEntries(readdirSync(join(app, '.homeycompose/capabilities'))
   .map((f) => [f.replace('.json', ''), read(`.homeycompose/capabilities/${f}`)]));
 

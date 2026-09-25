@@ -1,5 +1,6 @@
-import { controlledStorageMode, describeStorageMode, withFlag } from '../inverter/storageMode.js';
-import { DISABLED_SLOT, type InverterSettings, type InverterTransport, type LiveData, type TouSlot } from '../inverter/types.js';
+import {
+  DISABLED_SLOT, type InverterSettings, type InverterTransport, type LiveData, NO_WORK_MODE, type TouSlot, type WorkMode,
+} from '../inverter/types.js';
 import { type BatteryAction, planBattery, type PlanInterval, type PlanResult } from '../planner/planner.js';
 import { planToSchedule, type Schedule } from '../planner/schedule.js';
 import { NO_POWER_TARIFF, peakWeight, type PowerTariffConfig } from '../energy/PowerTariff.js';
@@ -68,6 +69,8 @@ export class BatteryController {
   slotCount = 6;
   /** True when the last apply found settings changed outside the app since the app wrote them. */
   externalChange = false;
+  /** How the brand's work mode changes when the app takes or hands back control. */
+  workMode: WorkMode = NO_WORK_MODE;
   private lastApplied: InverterSettings | null = null;
 
   constructor(
@@ -209,7 +212,7 @@ export class BatteryController {
     }
     if (current.storageModeRaw !== desired.storageModeRaw) {
       await this.transport.writeStorageMode(desired.storageModeRaw, current.storageModeRaw);
-      changes.push(`storage mode ${describeStorageMode(current.storageModeRaw)} → ${describeStorageMode(desired.storageModeRaw)}`);
+      changes.push(`work mode ${this.workMode.describe(current.storageModeRaw)} → ${this.workMode.describe(desired.storageModeRaw)}`);
     }
     if (changes.length > 0) this.log('Applied', changes);
     this.lastApplied = desired;
@@ -239,10 +242,10 @@ export class BatteryController {
         changes.push(`discharge slot ${i + 1}: off`);
       }
     }
-    const mode = withFlag(current.storageModeRaw, 'timeOfUse', false);
+    const mode = this.workMode.released(current.storageModeRaw);
     if (mode !== current.storageModeRaw) {
       await this.transport.writeStorageMode(mode, current.storageModeRaw);
-      changes.push(`storage mode ${describeStorageMode(current.storageModeRaw)} → ${describeStorageMode(mode)}`);
+      changes.push(`work mode ${this.workMode.describe(current.storageModeRaw)} → ${this.workMode.describe(mode)}`);
     }
     this.log('Restored inverter', changes);
     return changes;
@@ -251,7 +254,7 @@ export class BatteryController {
   desiredSettings(current: InverterSettings, state: PlanState): InverterSettings {
     return {
       ...current,
-      storageModeRaw: controlledStorageMode(current.storageModeRaw, state.reserveSoc > 0),
+      storageModeRaw: this.workMode.controlled(current.storageModeRaw, state.reserveSoc > 0),
       reserveSoc: state.reserveSoc,
       // The 3-slot format has no target level per slot: the plan's slot times end the charging.
       chargeSlots: current.touV2

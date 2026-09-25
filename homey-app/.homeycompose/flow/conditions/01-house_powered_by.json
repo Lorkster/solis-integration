@@ -1,0 +1,53 @@
+{
+  "id": "house_powered_by",
+  "title": {
+    "en": "The house !{{is|is not}} using power from",
+    "sv": "Huset !{{använder|använder inte}} el från"
+  },
+  "titleFormatted": {
+    "en": "The house !{{is|is not}} using power from [[source]]",
+    "sv": "Huset !{{använder|använder inte}} el från [[source]]"
+  },
+  "hint": {
+    "en": "True when the source delivers at least 100 W and 5 % of the house consumption.",
+    "sv": "Sant när källan levererar minst 100 W och 5 % av husets förbrukning."
+  },
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=solis-inverter"
+    },
+    {
+      "type": "dropdown",
+      "name": "source",
+      "values": [
+        {
+          "id": "solar",
+          "title": {
+            "en": "solar",
+            "sv": "sol"
+          }
+        },
+        {
+          "id": "battery",
+          "title": {
+            "en": "battery",
+            "sv": "batteri"
+          }
+        },
+        {
+          "id": "grid",
+          "title": {
+            "en": "grid",
+            "sv": "nät"
+          }
+        }
+      ],
+      "title": {
+        "en": "Source",
+        "sv": "Källa"
+      }
+    }
+  ]
+}

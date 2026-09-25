@@ -1,10 +1,30 @@
-# Solis Smart Battery (Homey Pro app)
+# Home Battery Planner (Homey Pro app)
 
 > **Using the app?** See the [user guide](../docs/USER-GUIDE.md) and [INSTALL.md](../INSTALL.md).
 > This file is for development.
 
-Plans battery charging for a Solis hybrid inverter from Nord Pool prices and writes the plan into the
-inverter's own time-of-use slots, while keeping a backup reserve for power outages.
+Plans home battery charging from day-ahead prices and writes the plan into the inverter's own
+time-of-use slots, while keeping a backup reserve for power outages. Brand-neutral: the planner,
+learning, widgets and flows are shared, and each inverter brand plugs in behind one interface.
+Solis is the first brand; see [docs/ADDING-A-BRAND.md](../docs/ADDING-A-BRAND.md) for adding another.
+
+## Code layout
+
+| Where | What | Brand-specific? |
+|---|---|---|
+| `lib/planner/`, `lib/controller/` | Planner, schedule builder, controller that writes only what changed | No |
+| `lib/forecast/`, `lib/energy/`, `lib/prices/`, `lib/warnings/`, `lib/tariff.ts` | Solar and load forecasts, savings, power fee, prices, weather warnings | No |
+| `lib/inverter/` | The inverter model (`types.ts`: `InverterTransport`, `WorkMode`), failover, power-cut and plan checks | No |
+| `lib/homey/BatteryPlannerDevice.ts` | The home battery device: everything the app does with Homey | No |
+| `lib/homey/flowCards.ts`, `.homeycompose/flow/` | App-wide flow cards; the device argument lists each brand's driver | No |
+| `lib/homey/EnergyChildDevice.ts`, `drivers/solis-solar`, `drivers/solis-grid` | Solar panels and Grid meter for Homey Energy, fed by any brand's inverter device (the driver ids are historical) | No |
+| `lib/brands/solis/` | SolisCloud API, Solis Modbus registers, storage mode bits, 3-slot schedule | Yes |
+| `drivers/solis-inverter/` | Solis pairing and the Solis device (connections, texts) | Yes |
+| `lib/modbus/ModbusTcpClient.ts` | Plain Modbus TCP client, usable by any brand | No |
+
+Ids of capabilities, settings and flow cards contain `solis` from before the app was brand-neutral.
+They are internal (users never see them) and are kept so existing devices, insights and flows keep
+working.
 
 ## How it works
 
@@ -31,8 +51,9 @@ inverter's own time-of-use slots, while keeping a backup reserve for power outag
 6. **SMHI warnings** (`lib/warnings/SmhiWarnings.ts`) – impact-based warnings whose area contains
    Homey's location raise the reserve to the outage level until the warning ends.
 
-The inverter connection is behind `InverterTransport` (`lib/inverter/types.ts`). `SolisCloudTransport`
-is the only implementation today; a local Modbus TCP transport can be added without touching the rest.
+The inverter connection is behind `InverterTransport` (`lib/inverter/types.ts`). Solis has two:
+`SolisCloudTransport` and `SolisModbusTransport` (`lib/brands/solis/`), used one at a time through
+`FailoverTransport`.
 
 ## Documentation
 
@@ -63,12 +84,9 @@ Widget previews are rendered from the real widget HTML with `tools/widget-previe
 
 ## Flow cards
 
-Triggers: plan updated, planned action changed.
-Conditions: planned action is …, price is among the N cheapest hours today.
-Actions: set control mode, charge from grid for N minutes, save battery charge for N minutes,
-prepare for a power outage (raise reserve to the configured level for N hours), cancel overrides,
-update plan now, hand control back to the inverter.
-SMHI: a warning was issued / ended, a warning is active.
+App-wide, one file per card in `.homeycompose/flow/` (the number keeps their order in the Flow
+editor); handlers in `lib/homey/flowCards.ts`. The full list with explanations is generated into
+the user guide ("All flow cards").
 
 ## Development
 
@@ -92,4 +110,4 @@ npx homey app install    # install permanently
 - [x] SMHI weather warnings → automatic outage preparation
 - [x] Warn when a leftover SolisCloud remote command locks the battery at 0 A (`lib/inverter/LockDetector.ts`)
 - [ ] Enter the real panel orientation (the calibration suggests east-facing or afternoon shade)
-- [ ] Local Modbus TCP transport
+- [x] Local Modbus TCP transport

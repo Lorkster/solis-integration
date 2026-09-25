@@ -1,0 +1,18 @@
+{
+  "id": "battery_unlocked",
+  "title": {
+    "en": "The battery was released",
+    "sv": "Batteriet frigjordes"
+  },
+  "hint": {
+    "en": "Fires when the SolisCloud limit is back to normal and the battery works again.",
+    "sv": "Körs när SolisCloud-gränsen är normal igen och batteriet fungerar."
+  },
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=solis-inverter"
+    }
+  ]
+}

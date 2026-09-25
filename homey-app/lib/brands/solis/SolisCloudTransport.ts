@@ -1,8 +1,8 @@
 import type {
   HistorySample, InverterInfo, InverterSettings, InverterSummary, InverterTransport, LiveData, TouSlot,
-} from '../inverter/types.js';
-import { gridLost } from '../inverter/PowerCut.js';
-import { utcOffsetHours } from '../time.js';
+} from '../../inverter/types.js';
+import { gridLost } from '../../inverter/PowerCut.js';
+import { utcOffsetHours } from '../../time.js';
 import { CHARGE_SLOT_CIDS, Cid, DISCHARGE_SLOT_CIDS, EXPORT_REGISTER, SETTINGS_CIDS, type SlotCids, TOU_V2_MARKER } from './cids.js';
 import { formatTouV1, parseTouV1, setTouV1Slot, touV1Slots } from './touV1.js';
 import { SolisApiError, SolisCloudClient, type SolisCredentials } from './SolisCloudClient.js';
@@ -53,7 +53,8 @@ export async function inspectInverter(client: SolisCloudClient, serialNumber: st
 }
 
 export class SolisCloudTransport implements InverterTransport {
-  readonly kind = 'soliscloud' as const;
+  readonly kind = 'cloud' as const;
+  readonly name = 'SolisCloud';
   private readonly client: SolisCloudClient;
 
   constructor(credentials: SolisCredentials, private readonly serialNumber: string, client?: SolisCloudClient) {

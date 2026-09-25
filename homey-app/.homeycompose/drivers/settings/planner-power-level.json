@@ -1,0 +1,138 @@
+{
+  "type": "group",
+  "label": {
+    "en": "Cheap and expensive power",
+    "sv": "Billig och dyr el"
+  },
+  "children": [
+    {
+      "id": "level_mode",
+      "type": "dropdown",
+      "label": {
+        "en": "Limits",
+        "sv": "Gränser"
+      },
+      "value": "auto",
+      "values": [
+        {
+          "id": "auto",
+          "label": {
+            "en": "Automatic, from the next 24 hours' prices",
+            "sv": "Automatiskt, från kommande 24 timmars priser"
+          }
+        },
+        {
+          "id": "manual",
+          "label": {
+            "en": "Manual",
+            "sv": "Manuella"
+          }
+        }
+      ],
+      "hint": {
+        "en": "What 'Extra power is cheap / normal / expensive' compares with. The cost is what one more kWh costs now: lost export income when there is solar surplus, what the battery's energy is worth later, or the import price.",
+        "sv": "Vad 'Extra el är billig / normal / dyr' jämförs med. Kostnaden är vad en kWh till kostar nu: förlorad försäljning vid solöverskott, vad batteriets energi är värd senare, eller köppriset."
+      }
+    },
+    {
+      "id": "level_share",
+      "type": "number",
+      "label": {
+        "en": "Automatic: cheapest and priciest share",
+        "sv": "Automatiskt: billigaste och dyraste andelen"
+      },
+      "value": 25,
+      "min": 5,
+      "max": 50,
+      "step": 1,
+      "units": {
+        "en": "%",
+        "sv": "%"
+      },
+      "hint": {
+        "en": "25 %: cheap is as cheap as the cheapest quarter of the next 24 hours, expensive as dear as the priciest quarter.",
+        "sv": "25 %: billig är lika billig som den billigaste fjärdedelen av kommande 24 timmar, dyr lika dyr som den dyraste fjärdedelen."
+      }
+    },
+    {
+      "id": "level_cheap",
+      "type": "number",
+      "label": {
+        "en": "Manual: cheap below",
+        "sv": "Manuellt: billig under"
+      },
+      "value": 1,
+      "min": -5,
+      "max": 20,
+      "step": 0.01,
+      "units": {
+        "en": "per kWh",
+        "sv": "per kWh"
+      }
+    },
+    {
+      "id": "level_expensive",
+      "type": "number",
+      "label": {
+        "en": "Manual: expensive above",
+        "sv": "Manuellt: dyr över"
+      },
+      "value": 2.5,
+      "min": -5,
+      "max": 20,
+      "step": 0.01,
+      "units": {
+        "en": "per kWh",
+        "sv": "per kWh"
+      }
+    },
+    {
+      "id": "alt_heat_cost",
+      "type": "number",
+      "label": {
+        "en": "Other heating: cost per kWh of heat",
+        "sv": "Annan uppvärmning: kostnad per kWh värme"
+      },
+      "value": 0,
+      "min": 0,
+      "max": 20,
+      "step": 0.01,
+      "units": {
+        "en": "per kWh",
+        "sv": "per kWh"
+      },
+      "hint": {
+        "en": "For the 'Heat from the heat pump is cheaper than the other heating' card; 0 = none. Firewood: price per m³ ÷ (kWh per m³ × stove efficiency). Dry birch holds about 1,050 kWh per loosely tipped m³, so 1,000 kr per m³ in a stove with 75 % efficiency is about 1.30 per kWh of heat.",
+        "sv": "För kortet 'Värme från värmepumpen är billigare än annan uppvärmning'; 0 = ingen. Ved: pris per m³ ÷ (kWh per m³ × kaminens verkningsgrad). Torr björk ger cirka 1 050 kWh per stjälpt m³, så 1 000 kr per m³ i en kamin med 75 % verkningsgrad blir cirka 1,30 per kWh värme."
+      }
+    },
+    {
+      "id": "hp_cop_7",
+      "type": "number",
+      "label": {
+        "en": "Heat pump COP at +7 °C",
+        "sv": "Värmepumpens COP vid +7 °C"
+      },
+      "value": 4,
+      "min": 1,
+      "max": 8,
+      "step": 0.1,
+      "hint": {
+        "en": "Heat out per kWh of electricity, from the heat pump's data sheet. The outdoor temperature comes from Open-Meteo.",
+        "sv": "Värme ut per kWh el, från värmepumpens datablad. Utetemperaturen hämtas från Open-Meteo."
+      }
+    },
+    {
+      "id": "hp_cop_minus7",
+      "type": "number",
+      "label": {
+        "en": "Heat pump COP at −7 °C",
+        "sv": "Värmepumpens COP vid −7 °C"
+      },
+      "value": 2.6,
+      "min": 1,
+      "max": 8,
+      "step": 0.1
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "type": "group",
+  "label": {
+    "en": "Notifications",
+    "sv": "Aviseringar"
+  },
+  "children": [
+    {
+      "id": "notify_power_cut",
+      "type": "checkbox",
+      "label": {
+        "en": "Power cuts",
+        "sv": "Strömavbrott"
+      },
+      "value": true,
+      "hint": {
+        "en": "A timeline notification when the power goes, when backup runs low (under 2 h) and when the power is back.",
+        "sv": "En avisering i tidslinjen när strömmen går, när reserven börjar ta slut (under 2 h) och när strömmen är tillbaka."
+      }
+    },
+    {
+      "id": "notify_off_plan",
+      "type": "checkbox",
+      "label": {
+        "en": "Inverter not following the plan",
+        "sv": "Växelriktaren följer inte planen"
+      },
+      "value": true
+    },
+    {
+      "id": "notify_daily",
+      "type": "checkbox",
+      "label": {
+        "en": "Daily summary",
+        "sv": "Daglig sammanfattning"
+      },
+      "value": false,
+      "hint": {
+        "en": "After midnight: what the battery saved yesterday and so far this month.",
+        "sv": "Efter midnatt: vad batteriet sparade i går och hittills denna månad."
+      }
+    }
+  ]
+}

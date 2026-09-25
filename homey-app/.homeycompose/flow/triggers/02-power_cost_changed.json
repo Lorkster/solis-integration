@@ -1,0 +1,29 @@
+{
+  "id": "power_cost_changed",
+  "title": {
+    "en": "The cost of extra power changed",
+    "sv": "Kostnaden för extra el ändrades"
+  },
+  "hint": {
+    "en": "Fires when the cost of using one more kWh changes by at least 0.10 (in your currency).",
+    "sv": "Körs när kostnaden för en kWh till ändras med minst 0,10 (i din valuta)."
+  },
+  "tokens": [
+    {
+      "name": "cost",
+      "type": "number",
+      "title": {
+        "en": "Cost per kWh",
+        "sv": "Kostnad per kWh"
+      },
+      "example": 2.72
+    }
+  ],
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=solis-inverter"
+    }
+  ]
+}

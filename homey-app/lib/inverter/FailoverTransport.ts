@@ -2,11 +2,12 @@ import type { HistorySample, InverterInfo, InverterSettings, InverterTransport, 
 
 /**
  * Talks to the inverter through one connection at a time: the primary, or the fallback after the
- * primary failed several times in a row. SolisCloud commands and local Modbus both go through the
- * same data logger and disturb each other, so they are never used side by side. The primary is
+ * primary failed several times in a row. A cloud and a local connection often go through the same
+ * data logger (Solis: SolisCloud commands and Modbus) and disturb each other, so they are never used
+ * side by side. The primary is
  * tried again after a while.
  *
- * Live data and commands (reading and writing settings) are counted apart: SolisCloud can keep
+ * Live data and commands (reading and writing settings) are counted apart: a cloud can keep
  * delivering live data while its commands to the logger fail ("datalogger offline"). A failed
  * command is then tried once more through the fallback right away.
  *
@@ -34,6 +35,10 @@ export class FailoverTransport implements InverterTransport {
 
   get kind(): InverterTransport['kind'] {
     return this.active.kind;
+  }
+
+  get name(): string {
+    return this.active.name;
   }
 
   get active(): InverterTransport {
@@ -99,7 +104,7 @@ export class FailoverTransport implements InverterTransport {
       this.liveFailures = 0;
       this.commandFailures = 0;
       const what = kind === 'live' ? 'live data' : 'commands';
-      this.onSwitch(this.fallback, `${this.primary.kind} ${what} failed ${failures} times: ${(err as Error).message}`);
+      this.onSwitch(this.fallback, `${this.primary.name} ${what} failed ${failures} times: ${(err as Error).message}`);
       // The command did not get through: send it the other way now rather than at the next plan.
       if (kind === 'command') return fn(this.fallback);
       throw err;
@@ -111,7 +116,7 @@ export class FailoverTransport implements InverterTransport {
       this.usingFallback = false;
       this.liveFailures = 0;
       this.commandFailures = 0;
-      this.onSwitch(this.primary, `trying ${this.primary.kind} again`);
+      this.onSwitch(this.primary, `trying ${this.primary.name} again`);
     }
   }
 }

@@ -1,0 +1,38 @@
+{
+  "id": "plan_updated",
+  "title": {
+    "en": "The battery plan was updated",
+    "sv": "Batteriplanen uppdaterades"
+  },
+  "tokens": [
+    {
+      "name": "summary",
+      "type": "string",
+      "title": {
+        "en": "Summary"
+      },
+      "example": {
+        "en": "Charge 02:00–04:30"
+      }
+    },
+    {
+      "name": "savings",
+      "type": "number",
+      "title": {
+        "en": "Expected savings"
+      },
+      "example": 12.5
+    }
+  ],
+  "hint": {
+    "en": "Fires every time a new plan is made (about every 30 minutes).",
+    "sv": "Körs varje gång en ny plan görs (ungefär var 30:e minut)."
+  },
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=solis-inverter"
+    }
+  ]
+}

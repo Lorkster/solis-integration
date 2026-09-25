@@ -30,6 +30,7 @@
       "basic": "Supported with the older 3-slot schedule (no target level per slot; not yet tested on such an inverter; SolisCloud only)"
     },
     "monitorOnly": "This inverter's older 3-slot schedule can only be written through SolisCloud. Switch the connection to SolisCloud to let the app control the battery.",
+    "cannotControl": "The app cannot write this inverter's schedule over the current connection, so it only shows the plan.",
     "fallback": "fallback",
     "weightsLearning": "learning – about two days of sun needed"
   },
@@ -46,7 +47,7 @@
     "unplanned_grid_charging": "The battery is charging from the grid without a plan",
     "no_data": "No new data from the inverter since {{time}}",
     "settings_changed": "The inverter settings were changed outside the app; the app has written its schedule again",
-    "notification": "Solis battery: {{reason}}.",
+    "notification": "Home battery: {{reason}}.",
     "export_blocked": "Export to the grid is switched off in the inverter, so surplus solar is thrown away",
     "export_limited": "Export is limited to {{limit}} W in the inverter, so surplus solar is thrown away",
     "solar_throttled": "Solar seems throttled: production follows the house load although the forecast expects more"
@@ -57,7 +58,7 @@
   },
   "child": {
     "waiting": "Waiting for values from the inverter device",
-    "noInverter": "Add the Solis inverter (Home battery) first",
+    "noInverter": "Add your inverter (Home battery) first",
     "solarName": "Solar panels",
     "gridName": "Grid meter"
   },
