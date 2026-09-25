@@ -108,6 +108,10 @@ export default class SolisInverterDevice extends Homey.Device {
     });
     await this.migrateCapabilities();
     await this.migrateSettings();
+    // New alarms start as "off" rather than unknown until their first change.
+    for (const cap of ['alarm_solis_power_cut', 'alarm_solis_off_plan']) {
+      if (this.hasCapability(cap) && this.getCapabilityValue(cap) === null) await this.setCapabilityValue(cap, false).catch(this.error);
+    }
     this.createController();
 
     if (!this.getCapabilityValue('solis_control_mode')) {
