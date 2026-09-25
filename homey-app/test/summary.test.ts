@@ -64,9 +64,9 @@ describe('planSummary', () => {
 
   it('says what happens now and the next planned actions', () => {
     assert.equal(planSummary(evening, new Date('2026-09-24T18:16:00+02:00'), RESERVE, MAX, TZ),
-      'Battery powers house until 21:00 · Grid charging 12:00–13:45');
+      'Battery powers house until 21:00 · Grid charging tomorrow 12:00–13:45');
     assert.equal(planSummary(evening, new Date('2026-09-24T18:16:00+02:00'), RESERVE, MAX, TZ, 'sv'),
-      'Batteriet driver huset till 21:00 · Nätladdning 12:00–13:45');
+      'Batteriet driver huset till 21:00 · Nätladdning i morgon 12:00–13:45');
   });
 
   it('hides saves too close to the reserve', () => {

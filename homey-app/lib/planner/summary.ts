@@ -1,4 +1,4 @@
-import { localHHMM } from '../time.js';
+import { localDate, localHHMM } from '../time.js';
 import type { BatteryAction, PlannedInterval } from './planner.js';
 
 export type Language = 'en' | 'sv';
@@ -35,6 +35,7 @@ export const PERIOD_NAMES: Record<Language, Record<PeriodState, string>> = {
 
 const UNTIL: Record<Language, string> = { en: 'until', sv: 'till' };
 const NOW: Record<Language, string> = { en: 'now', sv: 'nu' };
+const TOMORROW: Record<Language, string> = { en: 'tomorrow', sv: 'i morgon' };
 
 /** States where the inverter runs plain self-use, so what happens follows the sun and the house. */
 const SELF_USE: ReadonlySet<PeriodState> = new Set(['battery', 'solar_charge', 'solar_house', 'at_reserve', 'full']);
@@ -177,6 +178,9 @@ export function planSummary(
   const next = rest
     .filter((p) => PLANNED.has(p.state))
     .slice(0, 2)
-    .map((p) => `${names[p.state]} ${localHHMM(p.start, timeZone)}–${localHHMM(p.end, timeZone)}`);
+    .map((p) => {
+      const day = localDate(p.start, timeZone) === localDate(now, timeZone) ? '' : `${TOMORROW[language]} `;
+      return `${names[p.state]} ${day}${localHHMM(p.start, timeZone)}–${localHHMM(p.end, timeZone)}`;
+    });
   return [head, ...next].join(' · ');
 }

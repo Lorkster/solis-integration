@@ -69,6 +69,7 @@
     .schedule h3 { margin: var(--homey-su-2, 8px) 0 2px; font-size: 11px; font-weight: 600; color: var(--c-muted); text-transform: uppercase; letter-spacing: 0.04em; }
     .row { display: flex; align-items: center; gap: 10px; padding: 6px 0; font-size: 13px; }
     .row + .row { border-top: 1px solid var(--c-grid); }
+    .day { margin-top: 8px; padding: 4px 0 2px; font-size: 11px; font-weight: 600; color: var(--c-muted); border-top: 1px solid var(--c-grid); }
     .row .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
     .row .what { flex: 1; }
     .row .when { font-variant-numeric: tabular-nums; }
@@ -470,13 +471,24 @@
       section.appendChild(h);
       const horizon = nowMs() + 24 * 3600e3;
       const upcoming = periods(intervals).filter((p) => new Date(p.start).getTime() < horizon).slice(0, 8);
+      const today = fmtDay(new Date(nowMs()).toISOString());
+      let dayShown = today;
       for (const p of upcoming) {
+        const from = new Date(Math.max(new Date(p.start).getTime(), nowMs())).toISOString();
+        if (fmtDay(from) !== dayShown) {
+          // One heading where tomorrow starts, instead of repeating the day on every row.
+          dayShown = fmtDay(from);
+          const day = document.createElement('div');
+          day.className = 'day';
+          day.textContent = T.tomorrow;
+          section.appendChild(day);
+        }
         const row = document.createElement('div');
         row.className = 'row';
         row.innerHTML = '<span class="dot"></span><span class="what"></span><span class="when"></span><span class="target"></span>';
         row.querySelector('.dot').style.background = STATE_COLOR[p.state];
         row.querySelector('.what').textContent = T.names[p.state];
-        row.querySelector('.when').textContent = `${fmtTime(new Date(Math.max(new Date(p.start).getTime(), nowMs())).toISOString())}–${fmtTime(p.end)}`;
+        row.querySelector('.when').textContent = `${fmtTime(from)}–${fmtTime(p.end)}`;
         row.querySelector('.target').textContent = `${p.socEnd} %`;
         section.appendChild(row);
       }
