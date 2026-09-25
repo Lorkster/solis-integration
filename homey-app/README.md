@@ -88,6 +88,13 @@ App-wide, one file per card in `.homeycompose/flow/` (the number keeps their ord
 editor); handlers in `lib/homey/flowCards.ts`. The full list with explanations is generated into
 the user guide ("All flow cards").
 
+## Before the first App Store publish
+
+- [ ] Change the app id to `com.lorkster.batteryplanner` (`.homeycompose/app.json`, `package.json`,
+      `APP_ID` in `tools/dashboard/host.html`). An id can never change after publishing. Homey treats
+      the new id as a new app: remove the old app first (two apps must never control the inverter),
+      then pair again and re-enter the settings.
+
 ## Development
 
 ```bash
