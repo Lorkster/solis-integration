@@ -9,6 +9,7 @@
       --c-hold: #e87ba4;
       --c-solar: #eda100;
       --c-use: #008300;
+      --c-price: #6f4bd8;
       --c-quiet: var(--homey-text-color-light, #8a8a8e);
       --c-ink: var(--homey-text-color, #1a1a1a);
       --c-muted: var(--homey-text-color-light, #8a8a8e);
@@ -19,6 +20,7 @@
       --c-charge: #3987e5;
       --c-hold: #d55181;
       --c-solar: #c98500;
+      --c-price: #9d86f5;
       --c-grid: rgba(255, 255, 255, 0.10);
     }
     * { box-sizing: border-box; }
@@ -334,7 +336,7 @@
         if (p.key === 'price') {
           let d = '';
           intervals.forEach((iv, i) => { d += `${i ? 'L' : 'M'}${x(i)},${p.y(iv.price)}H${x(i + 1)}`; });
-          svg.appendChild(el('path', { d, fill: 'none', stroke: 'var(--c-ink)', 'stroke-width': 2, 'stroke-linejoin': 'round' }));
+          svg.appendChild(el('path', { d, fill: 'none', stroke: 'var(--c-price)', 'stroke-width': 2, 'stroke-linejoin': 'round' }));
         } else if (p.key === 'energy') {
           let area = `M${x(0)},${p.y(0)}`;
           intervals.forEach((iv, i) => { area += `L${x(i + 0.5)},${p.y(iv.pvKw)}`; });
@@ -416,7 +418,7 @@
           const l = document.createElement('span'); l.className = 'l'; l.textContent = label; r.appendChild(l);
           tip.appendChild(r);
         };
-        row('var(--c-ink)', `${fmtNum(iv.price, 2)} ${cur()}`, '/kWh');
+        row('var(--c-price)', `${fmtNum(iv.price, 2)} ${cur()}`, '/kWh');
         row(STATE_COLOR[iv.state], T.names[iv.state], '');
         if (showEnergy) {
           row('var(--c-solar)', `${fmtNum(iv.pvKw, 1)} kW`, T.solar);

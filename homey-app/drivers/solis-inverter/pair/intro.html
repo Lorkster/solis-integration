@@ -12,9 +12,12 @@
 <p class="note" data-i18n="pair.intro.safe">The app starts in <b>Monitor only</b>: it shows prices and plans but does not change anything on the inverter until you switch to <b>Automatic</b>.</p>
 
 <button class="homey-button-primary-full" onclick="Homey.nextView()" data-i18n="pair.intro.next">I have my API key</button>
+<p class="or" data-i18n="pair.intro.or">No API key? The app can also talk to the inverter on your own network.</p>
+<button class="homey-button-secondary-full" onclick="Homey.showView('modbus')" data-i18n="pair.intro.modbus">Connect locally (Modbus)</button>
 
 <style>
   .steps { padding-left: 20px; margin: 16px 0; line-height: 1.5; }
   .steps li { margin-bottom: 10px; }
+  .or { margin: 18px 0 8px; color: var(--homey-text-color-light, #8a8a8e); line-height: 1.45; }
   .note { padding: 12px; border-radius: 10px; background: rgba(0, 146, 255, 0.08); line-height: 1.45; margin-bottom: 20px; }
 </style>

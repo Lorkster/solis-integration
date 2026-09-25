@@ -7,7 +7,18 @@
       "step2": "Open <b>Account → Basic Settings → API Management</b> and activate the API. Copy the <b>Key ID</b> and <b>Key Secret</b>.",
       "step3": "To let the app change the battery schedule, ask Solis support (a ticket at solis-service.solisinverters.com) to enable <b>control access</b> for your inverter.",
       "safe": "The app starts in <b>Monitor only</b>: it shows prices and plans but does not change anything on the inverter until you switch to <b>Automatic</b>.",
-      "next": "I have my API key"
+      "next": "I have my API key",
+      "or": "No API key? The app can also talk to the inverter on your own network.",
+      "modbus": "Connect locally (Modbus)"
+    },
+    "modbus": {
+      "title": "Connect locally (Modbus)",
+      "subtitle": "The inverter's data logger (S2-WL-ST) or an RS485 gateway answers Modbus TCP on your network.",
+      "host": "Address",
+      "port": "Port",
+      "unit": "Unit id",
+      "hint": "Find the address in your router's list of devices: the logger is named D_ followed by its serial number. Reserve the address in the router so it does not change.",
+      "connect": "Connect"
     }
   },
   "device": {
@@ -18,7 +29,8 @@
       "monitor": "Monitor only: this firmware uses the older 3-slot schedule, which the app cannot write yet",
       "unsupported": "Not supported: no battery control on this inverter"
     },
-    "monitorOnly": "This inverter's firmware uses the older 3-slot schedule. The app can show the plan but not control the battery yet."
+    "monitorOnly": "This inverter's firmware uses the older 3-slot schedule. The app can show the plan but not control the battery yet.",
+    "fallback": "fallback"
   },
   "powerCut": {
     "started": "Power cut at {{time}}. Battery {{battery}} % – about {{hours}} h of backup at the current use.",

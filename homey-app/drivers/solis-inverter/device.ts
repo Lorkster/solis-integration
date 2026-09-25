@@ -19,6 +19,9 @@ import { displayAction, intervalState, liveState, planPeriods, planSummary } fro
 import {
   createPriceProvider, currencyForArea, FlowPriceProvider, parseFlowPrices, type PriceArea, type PriceSource,
 } from '../../lib/prices/PriceProvider.js';
+import { FailoverTransport } from '../../lib/inverter/FailoverTransport.js';
+import { ModbusTcpClient } from '../../lib/modbus/ModbusTcpClient.js';
+import { SolisModbusTransport } from '../../lib/modbus/SolisModbusTransport.js';
 import { SolisCloudTransport } from '../../lib/solis/SolisCloudTransport.js';
 import { addDays, addMinutes, localDate, localHHMM } from '../../lib/time.js';
 import { fetchMetNoWarnings } from '../../lib/warnings/MetNoWarnings.js';
@@ -61,7 +64,9 @@ class QuarterAverager {
 }
 
 export default class SolisInverterDevice extends Homey.Device {
-  private transport!: InverterTransport;
+  private transport!: FailoverTransport;
+  private liveTimer: NodeJS.Timeout | null = null;
+  private lastPersist = 0;
   private controller!: BatteryController;
   private loadProfile!: LoadProfile;
   private solar: SolarForecaster | null = null;
@@ -125,7 +130,7 @@ export default class SolisInverterDevice extends Homey.Device {
       this.homey.setTimeout(() => this.replan().catch(this.error), 1_000);
     });
 
-    this.homey.setInterval(() => this.refreshLive().catch(this.error), LIVE_INTERVAL_MS);
+    this.scheduleLive();
     this.homey.setInterval(() => this.replan().catch(this.error), PLAN_INTERVAL_MS);
     await this.refreshInfo().catch(this.error);
     await this.refreshLive().catch(this.error);
@@ -152,9 +157,28 @@ export default class SolisInverterDevice extends Homey.Device {
     };
   }
 
+  /** Reads live data again after the active connection's interval (Modbus: every minute by default). */
+  private scheduleLive(): void {
+    if (this.liveTimer) this.homey.clearTimeout(this.liveTimer);
+    this.liveTimer = this.homey.setTimeout(async () => {
+      await this.refreshLive().catch(this.error);
+      this.scheduleLive();
+    }, this.liveIntervalMs());
+  }
+
+  private liveIntervalMs(): number {
+    if (this.transport?.kind !== 'modbus') return LIVE_INTERVAL_MS;
+    return Math.max(15, num(this.getSetting('modbus_interval'), 60)) * 1000;
+  }
+
   /** Model, firmware and what the app can do with this inverter; shown in the device settings. */
   private async refreshInfo(): Promise<void> {
     const info = await this.transport.getInfo();
+    const known = this.info;
+    if (known && info.dataLogger === 'Modbus TCP' && known.modelCode.toUpperCase() === info.modelCode) {
+      info.model = known.model;
+      info.ratedPowerKw = known.ratedPowerKw;
+    }
     this.info = info;
     await this.setStoreValue('inverterInfo', info);
     await this.setSettings({
@@ -162,6 +186,7 @@ export default class SolisInverterDevice extends Homey.Device {
       inverter_power: info.ratedPowerKw ? `${info.ratedPowerKw} kW` : '–',
       inverter_firmware: info.firmware || '–',
       inverter_support: this.homey.__(`device.support.${supportLevel(info)}`),
+      inverter_connection: this.connectionText(),
     });
     if (!this.canControl() && this.controlMode === 'auto') await this.setCapabilityValue('solis_control_mode', 'monitor');
     this.createController();
@@ -194,6 +219,7 @@ export default class SolisInverterDevice extends Homey.Device {
     this.log('Settings changed:', changedKeys);
     const solarChanged = changedKeys.some((k) => k.startsWith('pv_array') || k === 'pv_source' || k === 'solcast_sites');
     const tariffChanged = changedKeys.some((k) => k.startsWith('power_tariff'));
+    const connectionChanged = changedKeys.some((k) => k.startsWith('modbus_') || k.startsWith('connection_') || k.startsWith('key_'));
     this.homey.setTimeout(async () => {
       if (tariffChanged) {
         // Peaks are measured differently now: start over from the history of this month.
@@ -209,10 +235,18 @@ export default class SolisInverterDevice extends Homey.Device {
         await this.unsetStoreValue('historyLearned').catch(this.error);
       }
       this.createController();
+      if (connectionChanged) {
+        await this.refreshInfo().catch(this.error);
+        this.scheduleLive();
+      }
       await this.replan().catch(this.error);
       if (solarChanged) this.learnFromHistory().catch(this.error);
       if (tariffChanged) this.learnPeaksFromHistory().catch(this.error);
     }, 500);
+  }
+
+  override async onUninit(): Promise<void> {
+    await this.persistLearning(true).catch(this.error);
   }
 
   override async onDeleted(): Promise<void> {
@@ -469,7 +503,7 @@ export default class SolisInverterDevice extends Homey.Device {
     const s = this.getSettings() as Settings;
     const { id } = this.getData() as { id: string };
     const tz = this.homey.clock.getTimezone();
-    this.transport = new SolisCloudTransport({ keyId: String(s.key_id), keySecret: String(s.key_secret) }, id);
+    this.transport = this.createTransport(s, id);
     this.applyCurrencyUnits().catch(this.error);
     const config: ControllerConfig = {
       timeZone: tz,
@@ -539,6 +573,50 @@ export default class SolisInverterDevice extends Homey.Device {
     }
   }
 
+  /**
+   * The chosen connection, with the other one as fallback when it is set up and wanted. Only one is
+   * used at a time; SolisCloud's history database is used for learning whenever a key exists.
+   */
+  private createTransport(s: Settings, serialNumber: string): FailoverTransport {
+    const cloud = s.key_id && s.key_secret
+      ? new SolisCloudTransport({ keyId: String(s.key_id), keySecret: String(s.key_secret) }, serialNumber)
+      : null;
+    const modbus = s.modbus_host
+      ? new SolisModbusTransport(new ModbusTcpClient({
+        host: String(s.modbus_host).trim(), port: num(s.modbus_port, 502), unit: num(s.modbus_unit, 1),
+      }))
+      : null;
+    const wantModbus = s.connection_primary === 'modbus';
+    const primary = (wantModbus ? modbus ?? cloud : cloud ?? modbus);
+    if (!primary) throw new Error('Set up SolisCloud or Modbus in the device settings');
+    const other = primary === cloud ? modbus : cloud;
+    const fallback = s.connection_fallback !== false ? other : null;
+    return new FailoverTransport(primary, fallback, cloud, (active, reason) => {
+      this.log(`Connection → ${active.kind}: ${reason}`);
+      this.setSettings({ inverter_connection: this.connectionText() }).catch(this.error);
+      this.scheduleLive();
+    });
+  }
+
+  private connectionText(): string {
+    const t = this.transport;
+    if (!t) return '–';
+    const name = t.kind === 'modbus' ? `Modbus (${String(this.getSetting('modbus_host') ?? '').trim()})` : 'SolisCloud';
+    return t.onFallback ? `${name} – ${this.homey.__('device.fallback')}` : name;
+  }
+
+  /** Saves what the app learns at most every 5 minutes, however often values are read. */
+  private async persistLearning(force = false): Promise<void> {
+    if (!force && Date.now() - this.lastPersist < 5 * 60_000) return;
+    this.lastPersist = Date.now();
+    await this.setStoreValue('loadProfile', this.loadProfile.toJSON());
+    await this.setStoreValue('savings', this.savings.toJSON());
+    if (this.powerTariff().enabled) {
+      await this.setStoreValue('peaks', this.peaks.toJSON());
+      await this.setStoreValue('peaksWithoutBattery', this.peaksWithoutBattery.toJSON());
+    }
+  }
+
   /** Price capabilities show the price area's currency. */
   private async applyCurrencyUnits(): Promise<void> {
     const units = `${this.currency}/kWh`;
@@ -595,7 +673,7 @@ export default class SolisInverterDevice extends Homey.Device {
         // Throttling the app asked for (negative export price) is not a problem.
         const expected = this.controller.exportBlockedByApp ? null : this.solar?.forecastAt(live.timestamp) ?? null;
         this.throttle.update(live.timestamp, curtailed, expected, live.pvPowerW / 1000);
-        await this.setStoreValue('loadProfile', this.loadProfile.toJSON());
+        await this.persistLearning();
       }
       await this.setAvailable();
       await this.updateExport().catch((err) => this.error('Export control failed:', err));
@@ -640,11 +718,8 @@ export default class SolisInverterDevice extends Homey.Device {
       this.peaksWithoutBattery.addSample(t, live.loadPowerW - live.pvPowerW);
       const month = localDate(t, this.homey.clock.getTimezone()).slice(0, 7);
       this.savings.setPowerFeeSaving(month, this.peaksWithoutBattery.feeSoFar() - this.peaks.feeSoFar());
-      await this.setStoreValue('peaks', this.peaks.toJSON());
-      await this.setStoreValue('peaksWithoutBattery', this.peaksWithoutBattery.toJSON());
       await this.updatePeakRisk(live);
     }
-    await this.setStoreValue('savings', this.savings.toJSON());
     await this.dailySummary();
     const set = (cap: string, value: number | null) => (this.hasCapability(cap) && value !== null && Number.isFinite(value)
       ? this.setCapabilityValue(cap, value) : undefined);

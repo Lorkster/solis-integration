@@ -1,0 +1,45 @@
+<header class="homey-header">
+  <h1 class="homey-title" data-i18n="pair.modbus.title">Connect locally (Modbus)</h1>
+  <p class="homey-subtitle" data-i18n="pair.modbus.subtitle">The inverter's data logger (S2-WL-ST) or an RS485 gateway answers Modbus TCP on your network.</p>
+</header>
+
+<form class="homey-form" onsubmit="return connect(event)">
+  <div class="homey-form-group">
+    <label class="homey-form-label" for="host" data-i18n="pair.modbus.host">Address</label>
+    <input class="homey-form-input" id="host" type="text" placeholder="192.168.1.97" required>
+  </div>
+  <div class="homey-form-group">
+    <label class="homey-form-label" for="port" data-i18n="pair.modbus.port">Port</label>
+    <input class="homey-form-input" id="port" type="number" value="502" min="1" max="65535">
+  </div>
+  <div class="homey-form-group">
+    <label class="homey-form-label" for="unit" data-i18n="pair.modbus.unit">Unit id</label>
+    <input class="homey-form-input" id="unit" type="number" value="1" min="0" max="247">
+  </div>
+  <p class="hint" data-i18n="pair.modbus.hint">Find the address in your router's list of devices: the logger is named D_ followed by its serial number. Reserve the address in the router so it does not change.</p>
+  <p class="error" id="error"></p>
+  <button class="homey-button-primary-full" id="connect" type="submit" data-i18n="pair.modbus.connect">Connect</button>
+</form>
+
+<style>
+  .hint { color: var(--homey-text-color-light, #8a8a8e); line-height: 1.45; margin: 12px 0; }
+  .error { color: var(--homey-color-danger, #f44336); min-height: 1.2em; }
+</style>
+
+<script>
+  function connect(event) {
+    event.preventDefault();
+    const button = document.getElementById('connect');
+    const error = document.getElementById('error');
+    button.classList.add('is-loading');
+    error.textContent = '';
+    Homey.emit('modbus', {
+      host: document.getElementById('host').value.trim(),
+      port: Number(document.getElementById('port').value) || 502,
+      unit: Number(document.getElementById('unit').value) || 1,
+    }).then(() => Homey.showView('list_devices')).catch((err) => {
+      error.textContent = err.message || String(err);
+    }).finally(() => button.classList.remove('is-loading'));
+    return false;
+  }
+</script>

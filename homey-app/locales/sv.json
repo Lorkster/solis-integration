@@ -7,7 +7,18 @@
       "step2": "Öppna <b>Konto → Grundinställningar → API-hantering</b> och aktivera API:et. Kopiera <b>Key ID</b> och <b>Key Secret</b>.",
       "step3": "För att appen ska kunna ändra batteriets schema: be Solis support (ett ärende på solis-service.solisinverters.com) att aktivera <b>styrbehörighet</b> för din växelriktare.",
       "safe": "Appen startar i läget <b>Endast övervaka</b>: den visar priser och planer men ändrar ingenting i växelriktaren förrän du byter till <b>Automatisk</b>.",
-      "next": "Jag har min API-nyckel"
+      "next": "Jag har min API-nyckel",
+      "or": "Ingen API-nyckel? Appen kan också prata med växelriktaren i ditt eget nätverk.",
+      "modbus": "Anslut lokalt (Modbus)"
+    },
+    "modbus": {
+      "title": "Anslut lokalt (Modbus)",
+      "subtitle": "Växelriktarens datalogger (S2-WL-ST) eller en RS485-gateway svarar på Modbus TCP i ditt nätverk.",
+      "host": "Adress",
+      "port": "Port",
+      "unit": "Enhets-id",
+      "hint": "Hitta adressen i routerns lista över enheter: loggern heter D_ följt av sitt serienummer. Reservera adressen i routern så att den inte ändras.",
+      "connect": "Anslut"
     }
   },
   "device": {
@@ -18,7 +29,8 @@
       "monitor": "Endast övervakning: den här firmwaren använder det äldre schemat med 3 luckor, som appen inte kan skriva ännu",
       "unsupported": "Stöds inte: växelriktaren saknar batteristyrning"
     },
-    "monitorOnly": "Växelriktarens firmware använder det äldre schemat med 3 luckor. Appen kan visa planen men inte styra batteriet ännu."
+    "monitorOnly": "Växelriktarens firmware använder det äldre schemat med 3 luckor. Appen kan visa planen men inte styra batteriet ännu.",
+    "fallback": "reserv"
   },
   "powerCut": {
     "started": "Strömavbrott kl. {{time}}. Batteri {{battery}} % – cirka {{hours}} h reserv vid nuvarande förbrukning.",
