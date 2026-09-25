@@ -29,8 +29,27 @@ The logger was found by its `D_<serial>` name and **already answered on port 502
 on without any change. A read-only read of the key registers took under a second and matched
 SolisCloud (SOC, battery, solar, house, grid, grid voltage). The meter power register (33263) is
 negative while importing, like SolisCloud's `psum`. SolisCloud kept receiving its 5-minute
-uploads afterwards, so the logger serves both at once. The logger's address is now reserved in the
+uploads afterwards; the longer daytime test below shows the limits. The logger's address is now reserved in the
 router. Next: a longer read-only run (`--watch 30`) during a day, then the local transport.
+
+## Daytime test (25 Sep 2026, 08:00–13:28, one read a minute)
+
+- 328 reads, 1 failure. Normal reads took ~0.9 s, but every 5 minutes – while the logger uploads
+  to SolisCloud – they took 3–5 s: both share the logger's single RS485 link to the inverter.
+- The logger restarted once (09:30). It had also restarted the night before, without Modbus.
+- From 13:26, **SolisCloud commands to the inverter timed out** (B0173) repeatedly, and one cloud
+  upload came late. A minute after the Modbus reads stopped, commands worked again.
+- Conclusion: on this logger and Wi-Fi, local reads and cloud commands **cannot run side by side**
+  reliably. The app writes its schedule through cloud commands, so the test was stopped.
+
+Options:
+1. **All local**: read *and* write over Modbus, so no cloud commands go through the logger; keep
+   SolisCloud only as a passive log. Removes the conflict, but writes must be built and tested with
+   care (register map from solis_modbus).
+2. **Light local reads**: poll far less often (every 5 minutes, away from the upload moment) –
+   little gain over the cloud.
+3. **Better link first**: the weak Wi-Fi (−80 dBm) may make the logger slower than it needs to be;
+   a stronger signal or a cable to the logger's LAN port could reduce the contention. Re-test after.
 
 ## Steps
 
