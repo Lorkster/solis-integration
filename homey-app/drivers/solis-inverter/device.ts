@@ -354,7 +354,7 @@ export default class SolisInverterDevice extends Homey.Device {
     const now = new Date();
     const [current] = planPeriods(state.plan.intervals.filter((iv) => iv.end > now), state.reserveSoc, this.controller.config.maxSocPct);
     if (!current) return null;
-    const actual = liveState(current.state, { socPct: this.live.socPct, batteryW: this.live.batteryPowerW },
+    const actual = liveState(current.state, { socPct: this.live.socPct, batteryW: this.live.batteryPowerW, gridW: this.live.gridPowerW },
       state.reserveSoc, this.controller.config.maxSocPct);
     return actual && actual !== current.state ? actual : null;
   }
@@ -1086,7 +1086,7 @@ export default class SolisInverterDevice extends Homey.Device {
 
   private summarise(state: PlanState): string {
     const language = this.homey.i18n.getLanguage() === 'sv' ? 'sv' : 'en';
-    const live = this.live && { socPct: this.live.socPct, batteryW: this.live.batteryPowerW };
+    const live = this.live && { socPct: this.live.socPct, batteryW: this.live.batteryPowerW, gridW: this.live.gridPowerW };
     return planSummary(state.plan.intervals, new Date(), state.reserveSoc, this.controller.config.maxSocPct,
       this.homey.clock.getTimezone(), language, live ?? undefined);
   }

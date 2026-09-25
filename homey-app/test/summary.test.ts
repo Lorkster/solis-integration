@@ -46,6 +46,13 @@ describe('planPeriods', () => {
     assert.deepEqual(planPeriods(day, RESERVE, MAX).map((p) => p.state), ['solar_charge', 'grid_charge']);
   });
 
+  it('names a resting battery above the reserve by what powers the house (25 Sep noon)', () => {
+    // 68 %, forecast solar just covers the house: the battery rests; it is not at the reserve.
+    const noon = plan('2026-09-25T12:30:00+02:00', [['self_use', 4, 68, 0]]);
+    assert.equal(planPeriods(noon, RESERVE, MAX)[0].state, 'solar_house');
+    assert.equal(liveState('at_reserve', { socPct: 68, batteryW: 0, gridW: 20 }, RESERVE, MAX), 'solar_house');
+  });
+
   it('recognises a full battery with solar covering the house', () => {
     const day = plan('2026-07-01T11:00:00+02:00', [['self_use', 8, 100, 0]]);
     assert.equal(planPeriods(day, RESERVE, MAX)[0].state, 'full');

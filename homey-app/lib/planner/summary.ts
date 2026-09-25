@@ -7,9 +7,9 @@ export type Language = 'en' | 'sv';
  * What the battery and house are doing in a period, named by what powers what. Every quarter-hour
  * gets exactly one state, so nothing in the plan is left unexplained.
  */
-export type PeriodState = 'grid_charge' | 'save' | 'battery' | 'solar_charge' | 'at_reserve' | 'full';
+export type PeriodState = 'grid_charge' | 'save' | 'battery' | 'solar_charge' | 'solar_house' | 'at_reserve' | 'full';
 
-export const PERIOD_STATES: readonly PeriodState[] = ['grid_charge', 'save', 'battery', 'solar_charge', 'at_reserve', 'full'];
+export const PERIOD_STATES: readonly PeriodState[] = ['grid_charge', 'save', 'battery', 'solar_charge', 'solar_house', 'at_reserve', 'full'];
 
 /** Names used in lists, legends and on the device tile. */
 export const PERIOD_NAMES: Record<Language, Record<PeriodState, string>> = {
@@ -18,6 +18,7 @@ export const PERIOD_NAMES: Record<Language, Record<PeriodState, string>> = {
     save: 'Saving for later',
     battery: 'Battery powers house',
     solar_charge: 'Solar charging',
+    solar_house: 'Solar powers house',
     at_reserve: 'At reserve · grid powers house',
     full: 'Full · solar powers house',
   },
@@ -26,6 +27,7 @@ export const PERIOD_NAMES: Record<Language, Record<PeriodState, string>> = {
     save: 'Sparar till senare',
     battery: 'Batteriet driver huset',
     solar_charge: 'Solladdning',
+    solar_house: 'Solen driver huset',
     at_reserve: 'Vid reserv · nätet driver huset',
     full: 'Fullt · solen driver huset',
   },
@@ -35,13 +37,14 @@ const UNTIL: Record<Language, string> = { en: 'until', sv: 'till' };
 const NOW: Record<Language, string> = { en: 'now', sv: 'nu' };
 
 /** States where the inverter runs plain self-use, so what happens follows the sun and the house. */
-const SELF_USE: ReadonlySet<PeriodState> = new Set(['battery', 'solar_charge', 'at_reserve', 'full']);
+const SELF_USE: ReadonlySet<PeriodState> = new Set(['battery', 'solar_charge', 'solar_house', 'at_reserve', 'full']);
 /** Battery power (W) that counts as charging or discharging in live data. */
 const LIVE_MOVING_W = 300;
 
 export interface LiveSample {
   socPct: number;
   batteryW: number; // positive = charging
+  gridW?: number; // positive = import
 }
 
 /**
@@ -56,6 +59,7 @@ export function liveState(planned: PeriodState, live: LiveSample, reserveSoc: nu
   if (live.batteryW < -LIVE_MOVING_W) return 'battery';
   if (live.socPct >= maxSoc - 2) return 'full';
   if (live.socPct <= reserveSoc + 2) return 'at_reserve';
+  if (live.gridW !== undefined && Math.abs(live.gridW) < LIVE_MOVING_W) return 'solar_house';
   return null;
 }
 
@@ -85,7 +89,10 @@ export function intervalState(iv: PlannedInterval, reserveSoc: number, maxSoc: n
   if (action === 'hold') return 'save';
   if (iv.batteryKwh <= -MOVING_KWH_PER_QUARTER) return 'battery';
   if (iv.batteryKwh >= MOVING_KWH_PER_QUARTER) return 'solar_charge';
-  return iv.socStartPct >= maxSoc - 2 ? 'full' : 'at_reserve';
+  // The battery rests: full, at the reserve, or in between because solar just covers the house.
+  if (iv.socStartPct >= maxSoc - 2) return 'full';
+  if (iv.socStartPct <= reserveSoc + 2) return 'at_reserve';
+  return 'solar_house';
 }
 
 export interface Period {

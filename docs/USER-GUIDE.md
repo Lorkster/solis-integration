@@ -102,6 +102,7 @@ list and on the device tile:
 | **Saving for later** (pink) | The battery keeps its charge for more expensive hours; the grid powers the house. |
 | **Battery powers house** (green) | The battery covers the house instead of the grid. |
 | **Solar charging** (yellow) | Solar surplus charges the battery. |
+| **Solar powers house** (grey) | Solar just covers the house; the battery rests above the reserve. |
 | **At reserve · grid powers house** (grey) | The battery is down to the reserve, kept for power outages; the grid powers the house. |
 | **Full · solar powers house** (grey) | The battery is full; solar powers the house and the rest is sold. |
 
