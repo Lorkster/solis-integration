@@ -192,9 +192,12 @@ The app reaches the inverter in one of two ways, chosen under **Connection** in 
 Only **one connection is used at a time**. SolisCloud's commands and local Modbus both pass through
 the inverter's data logger, and running both disturbs the logger (tested 25 Sep 2026: SolisCloud
 commands timed out while Modbus was read every minute). With **Switch to the other connection if
-this one fails** on, the app moves to the other connection after three failures in a row and tries
-the chosen one again after 30 minutes. **Connection in use** under *Inverter* shows which one is
-active.
+this one fails** on, the app moves to the other connection and tries the chosen one again after 30
+minutes. It moves after three failed readings in a row, or after two failed commands (reading or
+changing the inverter's settings). SolisCloud can keep showing live values while its commands to
+the logger fail ("datalogger offline"), so commands are counted on their own. The command that
+failed is sent again through the other connection straight away. **Connection in use** under
+*Inverter* shows which one is active.
 
 A device can also be added with Modbus only: choose **Connect locally (Modbus)** on the first
 pairing screen. How to find the logger and switch Modbus on: [LOCAL-MODBUS.md](LOCAL-MODBUS.md).

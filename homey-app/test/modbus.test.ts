@@ -133,6 +133,23 @@ describe('failover', () => {
     assert.deepEqual(switches, ['soliscloud', 'modbus']);
   });
 
+  it('switches when commands fail although live data still arrives, and resends the failed command', async () => {
+    const writes: string[] = [];
+    const cloud: InverterTransport = {
+      ...transport('soliscloud', () => false),
+      writeReserveSoc: async () => { throw new Error('Sending failure, the current datalogger is offline'); },
+    };
+    const modbus: InverterTransport = { ...transport('modbus', () => false), writeReserveSoc: async (pct) => { writes.push(`modbus ${pct}`); } };
+    const switches: string[] = [];
+    const f = new FailoverTransport(cloud, modbus, null, (active) => switches.push(active.kind));
+    await assert.rejects(f.writeReserveSoc(30));
+    await f.getLiveData(); // live data keeps working: does not reset the command count
+    await f.writeReserveSoc(30);
+    assert.deepEqual(writes, ['modbus 30'], 'sent through Modbus right after the second failure');
+    assert.deepEqual(switches, ['modbus']);
+    assert.equal(f.kind, 'modbus');
+  });
+
   it('stays on the primary without a fallback', async () => {
     const f = new FailoverTransport(transport('modbus', () => true), null, null);
     for (let i = 0; i < 5; i++) await assert.rejects(f.getLiveData());
