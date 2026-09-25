@@ -14,6 +14,8 @@ export const Cid = {
   maxDischargeCurrent: 7226,
   clock: 56,
   touV2Marker: 6798,
+  /** The older 3-slot schedule as one text (firmware without the 6+6 slots). */
+  touV1: 103,
   /** Export to the grid: "0" = allowed, "1" = blocked (a bit of a shared register). */
   exportBlocked: 6962,
   /** Export power limit in units of 100 W. */

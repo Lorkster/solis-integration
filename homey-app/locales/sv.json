@@ -26,10 +26,10 @@
     "noHybrid": "Ingen Solis hybridväxelriktare hittades på SolisCloud-kontot. Appen behöver en växelriktare med batteri; strängväxelriktare utan batteri stöds inte.",
     "support": {
       "full": "Stöds: planerar och styr batteriet (6 tidsluckor)",
-      "monitor": "Endast övervakning: den här firmwaren använder det äldre schemat med 3 luckor, som appen inte kan skriva ännu",
-      "unsupported": "Stöds inte: växelriktaren saknar batteristyrning"
+      "unsupported": "Stöds inte: växelriktaren saknar batteristyrning",
+      "basic": "Stöds med det äldre schemat med 3 luckor (ingen målnivå per lucka; ännu inte testat på en sådan växelriktare; bara via SolisCloud)"
     },
-    "monitorOnly": "Växelriktarens firmware använder det äldre schemat med 3 luckor. Appen kan visa planen men inte styra batteriet ännu.",
+    "monitorOnly": "Växelriktarens äldre schema med 3 luckor kan bara skrivas via SolisCloud. Byt anslutning till SolisCloud för att låta appen styra batteriet.",
     "fallback": "reserv",
     "weightsLearning": "lär sig – ungefär två soldagar behövs"
   },

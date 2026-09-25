@@ -46,7 +46,8 @@ export interface PlanState {
   negativeExport: Array<{ start: Date; end: Date }>;
 }
 
-const SLOT_COUNT = 6;
+/** Charge slots of the schedule format: 6 (TOU v2 firmware) or 3 (older firmware). */
+const slotsFor = (settings: InverterSettings) => settings.chargeSlots.length;
 
 export class BatteryController {
   overrides: Override[] = [];
@@ -63,6 +64,8 @@ export class BatteryController {
   exportBlockedByApp = false;
   /** Settings as last read from the inverter. */
   lastRead: InverterSettings | null = null;
+  /** Charge slots the inverter has (6, or 3 on older firmware); follows the settings last read. */
+  slotCount = 6;
   /** True when the last apply found settings changed outside the app since the app wrote them. */
   externalChange = false;
   private lastApplied: InverterSettings | null = null;
@@ -141,7 +144,7 @@ export class BatteryController {
       batteryVoltageV: live.batteryVoltageV || 420,
       maxChargeKw: this.config.maxChargeKw,
       maxSocPct: this.config.maxSocPct,
-      slotCount: SLOT_COUNT,
+      slotCount: this.slotCount,
       reserveSocPct: reserveSoc,
     });
     return { generatedAt: now, reserveSoc, plan, schedule, pricesUntil: upcoming[upcoming.length - 1].end, negativeExport };
@@ -149,6 +152,7 @@ export class BatteryController {
 
   async readSettings(): Promise<InverterSettings> {
     this.lastRead = await this.transport.readSettings();
+    this.slotCount = slotsFor(this.lastRead);
     return this.lastRead;
   }
 
@@ -183,16 +187,13 @@ export class BatteryController {
   /** Writes the schedule to the inverter. Only changed values are written. Returns what changed. */
   async apply(state: PlanState): Promise<string[]> {
     const current = await this.readSettings();
-    if (!current.touV2) {
-      throw new Error('Inverter firmware does not use the 6-slot schedule; not supported yet');
-    }
     const changes: string[] = [];
     const desired = this.desiredSettings(current, state);
     this.externalChange = this.lastApplied !== null && !settingsEqual(current, this.lastApplied);
     if (this.externalChange) this.log('Inverter settings were changed outside the app since the last update');
 
     // Slots first, so enabling time-of-use never activates stale slots.
-    for (let i = 0; i < SLOT_COUNT; i++) {
+    for (let i = 0; i < slotsFor(current); i++) {
       if (!slotsEqual(current.chargeSlots[i], desired.chargeSlots[i])) {
         await this.transport.writeChargeSlot(i, desired.chargeSlots[i], current.chargeSlots[i]);
         changes.push(`charge slot ${i + 1}: ${describeSlot(desired.chargeSlots[i])}`);
@@ -228,7 +229,7 @@ export class BatteryController {
       this.exportBlockedByApp = false;
       changes.push('export on again');
     }
-    for (let i = 0; i < SLOT_COUNT; i++) {
+    for (let i = 0; i < slotsFor(current); i++) {
       if (current.chargeSlots[i].enabled) {
         await this.transport.writeChargeSlot(i, { ...current.chargeSlots[i], enabled: false }, current.chargeSlots[i]);
         changes.push(`charge slot ${i + 1}: off`);
@@ -252,7 +253,10 @@ export class BatteryController {
       ...current,
       storageModeRaw: controlledStorageMode(current.storageModeRaw, state.reserveSoc > 0),
       reserveSoc: state.reserveSoc,
-      chargeSlots: state.schedule.chargeSlots,
+      // The 3-slot format has no target level per slot: the plan's slot times end the charging.
+      chargeSlots: current.touV2
+        ? state.schedule.chargeSlots
+        : state.schedule.chargeSlots.slice(0, slotsFor(current)).map((s) => ({ ...s, soc: 100 })),
       // Discharge is handled by self-use outside the charge slots.
       dischargeSlots: current.dischargeSlots.map(() => ({ ...DISABLED_SLOT })),
     };

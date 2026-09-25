@@ -196,11 +196,15 @@ export default class SolisInverterDevice extends Homey.Device {
     });
     if (!this.canControl() && this.controlMode === 'auto') await this.setCapabilityValue('solis_control_mode', 'monitor');
     this.createController();
+    this.controller.slotCount = info.touV2 ? 6 : 3;
   }
 
   /** False when the inverter's schedule format is not supported (plans are shown, nothing is written). */
   private canControl(): boolean {
-    return !this.info || supportLevel(this.info) === 'full';
+    if (!this.info) return true;
+    const level = supportLevel(this.info);
+    // The 3-slot schedule is written through SolisCloud only.
+    return level === 'full' || (level === 'basic' && this.transport?.kind === 'soliscloud');
   }
 
   get currency(): string {

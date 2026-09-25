@@ -26,10 +26,10 @@
     "noHybrid": "No Solis hybrid inverter found on this SolisCloud account. The app needs an inverter with a battery; string inverters without a battery are not supported.",
     "support": {
       "full": "Supported: plans and controls the battery (6 time slots)",
-      "monitor": "Monitor only: this firmware uses the older 3-slot schedule, which the app cannot write yet",
-      "unsupported": "Not supported: no battery control on this inverter"
+      "unsupported": "Not supported: no battery control on this inverter",
+      "basic": "Supported with the older 3-slot schedule (no target level per slot; not yet tested on such an inverter; SolisCloud only)"
     },
-    "monitorOnly": "This inverter's firmware uses the older 3-slot schedule. The app can show the plan but not control the battery yet.",
+    "monitorOnly": "This inverter's older 3-slot schedule can only be written through SolisCloud. Switch the connection to SolisCloud to let the app control the battery.",
     "fallback": "fallback",
     "weightsLearning": "learning – about two days of sun needed"
   },

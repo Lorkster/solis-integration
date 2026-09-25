@@ -37,19 +37,17 @@ Which inverters it works with: [Supported inverters](#supported-inverters).
 
 ## Supported inverters
 
-The app talks to the inverter through SolisCloud and needs a Solis **hybrid** inverter (one with a
-battery) whose firmware uses the **6-slot time-of-use schedule**. The app checks this when you add
-the inverter and shows the result under the device's settings → **Inverter → App support**:
+The app needs a Solis **hybrid** inverter (one with a battery). It checks the inverter when you add
+it and shows the result under the device's settings → **Inverter → App support**:
 
 | App support | Meaning |
 |---|---|
-| **Supported** | The app plans and controls the battery. |
-| **Monitor only** | A hybrid inverter whose firmware uses the older 3-slot schedule. The app shows prices, plans and live values, but cannot control the battery yet. Ask Solis support whether a firmware update is available. |
+| **Supported** (6 time slots) | Firmware with the 6+6 slot schedule: the app plans and controls the battery, through SolisCloud or Modbus. Tested on an S6-EH3P20K-H. |
+| **Supported with the older 3-slot schedule** | Older firmware: the app writes three charge periods through SolisCloud. That format has no target level per period, so the plan's period times decide how far the battery charges. Not yet tested on such an inverter. |
 | **Not supported** | A string inverter without a battery. It is not offered when adding a device. |
 
-Current S6 hybrids (S6-EH3P, S6-EH1P) have the 6-slot schedule. Whether older hybrids (RHI-5G,
-S5-EH1P) have it depends on their firmware, which the check above shows. The app has been tested on
-an **S6-EH3P20K-H**; other models use the same SolisCloud commands but are untested.
+Current S6 hybrids (S6-EH3P, S6-EH1P) have the 6-slot schedule; older hybrids (RHI-5G, S5-EH1P)
+may have either, depending on their firmware.
 
 The data logger must allow control through SolisCloud: the **S2-WL-ST** (Wi-Fi stick) and
 S3/S5-WiFi-ST work; DLS-W and DLS-L loggers do not.

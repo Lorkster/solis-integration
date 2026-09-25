@@ -61,6 +61,8 @@ export function encodeSlot(slot: TouSlot, current: number[]): number[] {
 
 export class SolisModbusTransport implements InverterTransport {
   readonly kind = 'modbus' as const;
+  /** False when getInfo found no 6+6 slot registers: schedule writes are refused (SolisCloud handles those). */
+  private touV2: boolean | null = null;
 
   constructor(private readonly modbus: ModbusConnector) {}
 
@@ -70,6 +72,7 @@ export class SolisModbusTransport implements InverterTransport {
       const soc = await m.readInput(Reg.battery + 6, 1).then(() => true).catch(() => false);
       // The 6-slot schedule registers only exist on TOU v2 firmware.
       const touV2 = await m.readHolding(Reg.slotSwitches, 8).then(() => true).catch(() => false);
+      this.touV2 = touV2;
       const hex = (v: number) => v.toString(16).toUpperCase().padStart(4, '0');
       return {
         model: `Solis ${hex(model)}`,
@@ -161,6 +164,7 @@ export class SolisModbusTransport implements InverterTransport {
    * registers in one go, then sets the switch bit. Every write is read back.
    */
   private writeSlot(base: number, bit: number, slot: TouSlot): Promise<void> {
+    if (this.touV2 === false) return Promise.reject(new ModbusError('The 3-slot schedule is only supported through SolisCloud'));
     return this.modbus.session(async (m) => {
       const [switches] = await m.readHolding(Reg.slotSwitches, 1);
       const current = await m.readHolding(base, SLOT_REGS);

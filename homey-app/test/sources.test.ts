@@ -147,9 +147,9 @@ describe('inverter support', () => {
     assert.equal(supportLevel(info), 'full');
   });
 
-  it('treats older schedule firmware as monitor only and string inverters as unsupported', () => {
+  it('supports older schedule firmware in the basic way and string inverters not at all', () => {
     const base: InverterInfo = { model: 'X', modelCode: '', ratedPowerKw: 5, firmware: '', dataLogger: '', hybrid: true, touV2: false };
-    assert.equal(supportLevel(base), 'monitor');
+    assert.equal(supportLevel(base), 'basic');
     assert.equal(supportLevel({ ...base, hybrid: false }), 'unsupported');
   });
 });

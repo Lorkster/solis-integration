@@ -4,6 +4,7 @@ import type {
 import { gridLost } from '../inverter/PowerCut.js';
 import { utcOffsetHours } from '../time.js';
 import { CHARGE_SLOT_CIDS, Cid, DISCHARGE_SLOT_CIDS, EXPORT_REGISTER, SETTINGS_CIDS, type SlotCids, TOU_V2_MARKER } from './cids.js';
+import { formatTouV1, parseTouV1, setTouV1Slot, touV1Slots } from './touV1.js';
 import { SolisApiError, SolisCloudClient, type SolisCredentials } from './SolisCloudClient.js';
 
 const BATCH_SIZE = 20;
@@ -73,13 +74,22 @@ export class SolisCloudTransport implements InverterTransport {
     return records.map(parseHistorySample).filter((s): s is HistorySample => s !== null);
   }
 
+  /** Set once the settings have been read: the firmware has the older 3-slot schedule. */
+  private touV1 = false;
+
   async readSettings(): Promise<InverterSettings> {
+    const marker = await this.client.read(this.serialNumber, Cid.touV2Marker);
+    this.touV1 = marker !== TOU_V2_MARKER;
+    // Older firmware has no 6+6 slot CIDs: read the one-text schedule instead.
+    const slotCids = new Set([...CHARGE_SLOT_CIDS, ...DISCHARGE_SLOT_CIDS].flatMap((s) => [s.switch, s.time, s.current, s.soc]));
+    const cids = this.touV1 ? [...SETTINGS_CIDS.filter((c) => !slotCids.has(c)), Cid.touV1] : SETTINGS_CIDS;
     const values = new Map<number, string>();
-    for (let i = 0; i < SETTINGS_CIDS.length; i += BATCH_SIZE) {
-      const batch = await this.client.readBatch(this.serialNumber, SETTINGS_CIDS.slice(i, i + BATCH_SIZE));
+    for (let i = 0; i < cids.length; i += BATCH_SIZE) {
+      const batch = await this.client.readBatch(this.serialNumber, cids.slice(i, i + BATCH_SIZE));
       batch.forEach((value, cid) => values.set(cid, value));
     }
-    const marker = await this.client.read(this.serialNumber, Cid.touV2Marker);
+    const v1 = this.touV1 ? parseTouV1(values.get(Cid.touV1)) : null;
+    if (this.touV1 && !v1) throw new SolisApiError(`CID ${Cid.touV1} (3-slot schedule) unreadable: ${values.get(Cid.touV1)}`);
     const exportValues = await this.client.readBatch(this.serialNumber, [Cid.exportBlocked, Cid.exportLimit]).catch(() => new Map<number, string>());
     const exportFlag = exportValues.get(Cid.exportBlocked);
     const exportLimit = Number(exportValues.get(Cid.exportLimit));
@@ -110,8 +120,8 @@ export class SolisCloudTransport implements InverterTransport {
       touV2: marker === TOU_V2_MARKER,
       exportAllowed: exportFlag === '0' ? true : exportFlag === '1' ? false : null,
       exportLimitW: Number.isFinite(exportLimit) ? exportLimit * 100 : null,
-      chargeSlots: CHARGE_SLOT_CIDS.map(slot),
-      dischargeSlots: DISCHARGE_SLOT_CIDS.map(slot),
+      chargeSlots: v1 ? touV1Slots(v1).charge : CHARGE_SLOT_CIDS.map(slot),
+      dischargeSlots: v1 ? touV1Slots(v1).discharge : DISCHARGE_SLOT_CIDS.map(slot),
     };
   }
 
@@ -124,11 +134,23 @@ export class SolisCloudTransport implements InverterTransport {
   }
 
   writeChargeSlot(index: number, slot: TouSlot, previous?: TouSlot): Promise<void> {
+    if (this.touV1) return this.writeTouV1('charge', index, slot);
     return this.writeSlot(CHARGE_SLOT_CIDS[index], slot, previous);
   }
 
   writeDischargeSlot(index: number, slot: TouSlot, previous?: TouSlot): Promise<void> {
+    if (this.touV1) return this.writeTouV1('discharge', index, slot);
     return this.writeSlot(DISCHARGE_SLOT_CIDS[index], slot, previous);
+  }
+
+  /** The 3-slot schedule is one text: read it, change one slot, write it back whole. */
+  private async writeTouV1(kind: 'charge' | 'discharge', index: number, slot: TouSlot): Promise<void> {
+    const current = await this.client.read(this.serialNumber, Cid.touV1);
+    const schedule = parseTouV1(current);
+    if (!schedule) throw new SolisApiError(`CID ${Cid.touV1} (3-slot schedule) unreadable: ${current}`);
+    setTouV1Slot(schedule, kind, index, slot);
+    const value = formatTouV1(schedule);
+    if (value !== current) await this.client.control(this.serialNumber, Cid.touV1, value);
   }
 
   /**

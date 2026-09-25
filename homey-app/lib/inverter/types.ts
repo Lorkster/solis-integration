@@ -72,14 +72,14 @@ export interface InverterInfo {
 
 /**
  * - full: the app can plan and control the battery.
- * - monitor: hybrid inverter whose schedule format the app cannot write yet; it plans and reports only.
+ * - basic: hybrid inverter with the older 3-slot schedule (no target level per slot); SolisCloud only.
  * - unsupported: no battery control at all (string inverter).
  */
-export type SupportLevel = 'full' | 'monitor' | 'unsupported';
+export type SupportLevel = 'full' | 'basic' | 'unsupported';
 
 export function supportLevel(info: InverterInfo): SupportLevel {
   if (!info.hybrid) return 'unsupported';
-  return info.touV2 ? 'full' : 'monitor';
+  return info.touV2 ? 'full' : 'basic';
 }
 
 export interface HistorySample {
