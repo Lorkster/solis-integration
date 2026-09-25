@@ -1,5 +1,6 @@
 import Homey from 'homey';
 
+import type { PowerLevel } from '../../lib/energy/PowerLevel.js';
 import { type InverterInfo, supportLevel } from '../../lib/inverter/types.js';
 import { ModbusTcpClient } from '../../lib/modbus/ModbusTcpClient.js';
 import { SolisModbusTransport } from '../../lib/modbus/SolisModbusTransport.js';
@@ -23,6 +24,10 @@ export default class SolisInverterDriver extends Homey.Driver {
         const cost = device.extraPowerCost();
         return cost !== null && cost < price;
       });
+    flow.getConditionCard('power_level_is')
+      .registerRunListener(async ({ device, level }: DeviceArgs<{ level: PowerLevel }>) => device.powerLevel() === level);
+    flow.getConditionCard('heat_pump_cheaper')
+      .registerRunListener(async ({ device }: DeviceArgs) => device.otherHeatingCheaper() === false);
     flow.getConditionCard('planned_action_is')
       .registerRunListener(async ({ device, action }: DeviceArgs<{ action: string }>) => device.currentAction() === action);
     flow.getConditionCard('price_among_cheapest')

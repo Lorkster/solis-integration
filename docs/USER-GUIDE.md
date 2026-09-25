@@ -221,6 +221,7 @@ chosen as the device's tile indicator, and all numbers and alarms are kept in Ho
 | **Battery power (+ charging, − discharging)** | Batteriets effekt (+ laddar, − laddar ur) | W | Battery power. Positive while charging, negative while discharging. Used by Homey Energy. |
 | **Power source** | Elkälla |  | Which sources power the house right now: solar, battery and/or grid. A source counts when it delivers at least 100 W and 5 % of the consumption.<br>Values: Solar, Solar + battery, Battery, Grid, Solar + grid, Battery + grid, Solar + battery + grid, Nothing (no load) |
 | **Cost of extra power now** | Kostnad för extra el nu | kr/kWh | What one more kWh costs right now: the import price while buying from the grid, the export income you give up while selling solar, otherwise what the battery's energy is worth later (from the plan). The best value to base "run it now?" automations on. |
+| **Extra power now** | Extra el nu |  | Whether extra power is cheap, normal or expensive right now: the cost of extra power compared with the limits in the settings (automatically: the cheapest and priciest quarter of the next 24 hours). Made for shifting a heat pump's temperature.<br>Values: Cheap, Normal, Expensive |
 | **Control mode** | Styrläge |  | *Monitor only*: the app plans and shows, but never changes the inverter. *Automatic*: the app writes the charging schedule to the inverter.<br>Values: Monitor only, Automatic |
 | **Plan** | Plan |  | What happens now and the next battery periods, e.g. "Battery powers house until 21:00 · Grid charging 13:45–15:30". |
 | **Electricity price now (buying)** | Elpris just nu (köp) | kr/kWh | What you pay per kWh bought right now, including fees, taxes and VAT. |
@@ -525,6 +526,38 @@ day is used. Windows only reach as far as the known prices (tomorrow's arrive ar
 > **When** It is the best time to run *150* min at *1.5* kW, done by *07:00*
 > **Then** turn on the dishwasher's smart plug
 
+### Heat pumps: shift the temperature, don't switch off
+
+An air-to-air heat pump works best when it keeps running, so move its target temperature instead of
+switching it on and off: warmer when power is cheap (the house stores the heat), cooler when it is
+expensive. **Extra power now** (cheap / normal / expensive) is made for this:
+
+- **Cheap** and **expensive** follow the cost of extra power, so solar that would otherwise be sold
+  counts as cheap, and the battery counts as what its energy is worth later – not as free.
+- With **Limits: Automatic** (default), *cheap* is as cheap as the cheapest quarter of the next 24
+  hours and *expensive* as dear as the priciest quarter. On a flat day everything is *normal*. You
+  can also set the limits yourself.
+- A level only changes back when the cost has moved a little past the limit, so the heat pump is not
+  nudged back and forth.
+
+**Other heating (firewood, pellets, oil).** Set its cost per kWh of heat under *Cheap and expensive
+power*. The app compares it with electricity divided by the heat pump's efficiency (COP) at the
+current outdoor temperature. The COP is a straight line through the data sheet's values at +7 °C and
+−7 °C. The heat pump is nearly always the cheaper heat. For example, dry birch at 1,000 kr per
+loosely tipped m³ (about 1,050 kWh) in a stove with 75 % efficiency costs about 1.30 kr per kWh of
+heat. With a COP of 2.6 at −7 °C, electricity must cost more than about 3.40 kr/kWh before the stove
+is cheaper, and at +7 °C (COP 4) more than 5.20.
+
+> **When** Extra power became cheap, normal or expensive
+> **And** Extra power is *cheap* now → set the heat pump to *23 °C*
+> **Else and** Heat from the heat pump is not cheaper than the other heating now → set it to *20 °C*
+> (light the stove)
+> **Else and** Extra power is *expensive* now → set it to *21 °C*
+> **Else** → set it to *21.5 °C*
+
+The trigger also fires once when the app starts, so the heat pump is set right after an update or a
+restart.
+
 ### Prices from another service
 
 If your prices come from elsewhere (for example your electricity company's Homey app), set
@@ -550,6 +583,7 @@ everything. Send today's and tomorrow's prices; the plan updates right away.
 |---|---|
 | What powers the house changed | Fires when the combination of solar, battery and grid that runs the house changes. Tokens: Powered by, From solar (%), From battery (%), From grid (%) |
 | The cost of extra power changed | Fires when the cost of using one more kWh changes by at least 0.10 (in your currency). Tokens: Cost per kWh |
+| Extra power became cheap, normal or expensive | Fires when 'Extra power now' changes level, or when the other heating becomes cheaper or dearer than the heat pump (if set up). Also fires once when the app starts, so flows can bring devices in line. Tokens: Level, Cost per kWh, Cheap below, Expensive above, Other heating is cheaper |
 | The battery plan was updated | Fires every time a new plan is made (about every 30 minutes). Tokens: Summary, Expected savings |
 | The planned battery action changed | Fires when the plan switches between grid charging, saving for later and self-use. Action is charge, hold or self_use. Tokens: Action |
 | A weather warning was issued for my location | Fires once per new warning at the chosen level that covers Homey's location. Tokens: Level, Warning, Area, Until |
@@ -572,6 +606,8 @@ everything. Send today's and tomorrow's prices; the plan updates right away.
 | The house is / is not using power from *[source]* | True when the source delivers at least 100 W and 5 % of the house consumption. |
 | Solar surplus is / is not above *[watts]* W | Surplus = solar production minus house consumption; it goes into the battery or to the grid. |
 | Extra power costs / does not cost less than *[price]* per kWh now | What one more kWh costs right now: the import price when buying, the lost export income when selling solar, otherwise what the battery's energy is worth later. |
+| Extra power is / is not *[level]* now | Compares what one more kWh costs now with the limits in the settings (automatic: the cheapest and priciest share of the next 24 hours). |
+| Heat from the heat pump is / is not cheaper than the other heating now | Compares the cost of extra power, divided by the heat pump's COP at today's outdoor temperature, with the other heating's cost per kWh (device settings). Always true when no other heating is set. |
 | Planned action is / is not *[action]* | What the plan does in the current quarter-hour. In self-use the battery powers the house when needed, stores solar surplus, and stops at the reserve. |
 | Price is / is not among the *[hours]* cheapest hours today | Compares the current import price with today's quarter-hour prices. |
 | A weather warning is / is not active | True while a weather warning at the chosen level covers Homey's location. |
@@ -684,6 +720,18 @@ Open the device and tap the gear icon.
 | Public holidays count as other time | on | New Year's Day, Epiphany, Good Friday, Easter Monday, Christmas Eve, Christmas Day, Boxing Day and New Year's Eve. |
 | Export compensation on top of spot | 0.104 per kWh |  |
 | Stop exporting when the export price is negative | on | In Automatic mode the app switches off export to the grid while selling would cost money, and switches it back on afterwards. Surplus solar is then used in the house and battery, or the panels are throttled. |
+
+**Cheap and expensive power**
+
+| Setting | Default | What it does |
+|---|---|---|
+| Limits | Automatic, from the next 24 hours' prices | What 'Extra power is cheap / normal / expensive' compares with. The cost is what one more kWh costs now: lost export income when there is solar surplus, what the battery's energy is worth later, or the import price. |
+| Automatic: cheapest and priciest share | 25 % | 25 %: cheap is as cheap as the cheapest quarter of the next 24 hours, expensive as dear as the priciest quarter. |
+| Manual: cheap below | 1 per kWh |  |
+| Manual: expensive above | 2.5 per kWh |  |
+| Other heating: cost per kWh of heat | 0 per kWh | For the 'Heat from the heat pump is cheaper than the other heating' card; 0 = none. Firewood: price per m³ ÷ (kWh per m³ × stove efficiency). Dry birch holds about 1,050 kWh per loosely tipped m³, so 1,000 kr per m³ in a stove with 75 % efficiency is about 1.30 per kWh of heat. |
+| Heat pump COP at +7 °C | 4 | Heat out per kWh of electricity, from the heat pump's data sheet. The outdoor temperature comes from Open-Meteo. |
+| Heat pump COP at −7 °C | 2.6 |  |
 
 **Power fee (effektavgift)**
 

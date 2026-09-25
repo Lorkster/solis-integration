@@ -8,6 +8,10 @@ import {
 } from '../../lib/forecast/SolarForecast.js';
 import { extraPowerCost, houseSupply, type HouseSupply, usesSource } from '../../lib/energy/EnergyFlow.js';
 import { ActualHistory, type ActualHistoryData } from '../../lib/energy/ActualHistory.js';
+import {
+  alternativeCheaper, type AlternativeHeat, breakEvenCost, fetchOutdoorTemperature, type LevelLimits, levelLimits, type PowerLevel,
+  powerLevel,
+} from '../../lib/energy/PowerLevel.js';
 import { type PeakData, PeakTracker, type PowerTariffConfig } from '../../lib/energy/PowerTariff.js';
 import { type SavingsData, SavingsTracker } from '../../lib/energy/Savings.js';
 import { LockDetector } from '../../lib/inverter/LockDetector.js';
@@ -85,6 +89,12 @@ export default class SolisInverterDevice extends Homey.Device {
   private readonly lock = new LockDetector();
   private supply: HouseSupply | null = null;
   private lastCostReported: number | null = null;
+  private level: PowerLevel | null = null;
+  private levelLimits: LevelLimits | null = null;
+  private otherHeating: boolean | null = null;
+  private breakEven: number | null = null;
+  private outdoorC: number | null = null;
+  private outdoorAt = 0;
   private flowPrices!: FlowPriceProvider;
   private info: InverterInfo | null = null;
   private powerCut!: PowerCutTracker;
@@ -329,6 +339,16 @@ export default class SolisInverterDevice extends Homey.Device {
     return extraPowerCost(this.live.gridPowerW, iv.buy, iv.sell, iv.storedEnergyValue);
   }
 
+  /** Cheap, normal or expensive now (null before the first plan). */
+  powerLevel(): PowerLevel | null {
+    return this.level;
+  }
+
+  /** True when the other heating (e.g. firewood) gives cheaper heat than the heat pump now; null before the first plan. */
+  otherHeatingCheaper(): boolean | null {
+    return this.otherHeating;
+  }
+
   currentAction(): BatteryAction | null {
     return currentAction(this.planState, new Date());
   }
@@ -470,6 +490,14 @@ export default class SolisInverterDevice extends Homey.Device {
         surplusW: Math.round(this.supply.surplusW),
       },
       extraPowerCost: round(this.extraPowerCost() ?? NaN, 2),
+      powerLevel: this.level && {
+        level: this.level,
+        cheapBelow: round(this.levelLimits?.cheapBelow ?? NaN, 2),
+        expensiveAbove: round(this.levelLimits?.expensiveAbove ?? NaN, 2),
+        otherHeatingCheaper: this.otherHeating,
+        breakEven: round(this.breakEven ?? NaN, 2),
+        outdoorC: round(this.outdoorC ?? NaN, 1),
+      },
       powerCut: this.powerCut.since && { since: this.powerCut.since.toISOString() },
       exportPaused: this.controller.exportBlockedByApp,
       offPlan: this.offPlan && this.deviationText(this.offPlan),
@@ -1031,6 +1059,57 @@ export default class SolisInverterDevice extends Homey.Device {
       await this.homey.flow.getDeviceTriggerCard('power_cost_changed').trigger(this, { cost: rounded }).catch(this.error);
     }
     if (this.lastCostReported === null || Math.abs(rounded - this.lastCostReported) >= 0.1) this.lastCostReported = rounded;
+    await this.updatePowerLevel(cost);
+  }
+
+  private alternativeHeat(): AlternativeHeat {
+    const s = this.getSettings() as Settings;
+    return { costPerKwh: num(s.alt_heat_cost, 0), copAt7: num(s.hp_cop_7, 4), copAtMinus7: num(s.hp_cop_minus7, 2.6) };
+  }
+
+  /** The heat pump's efficiency depends on the outdoor temperature; only fetched when other heating is set up. */
+  private async refreshOutdoorTemperature(): Promise<void> {
+    if (!(this.alternativeHeat().costPerKwh > 0) || Date.now() - this.outdoorAt < 25 * 60_000) return;
+    const latitude = this.homey.geolocation.getLatitude();
+    const longitude = this.homey.geolocation.getLongitude();
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return;
+    this.outdoorC = await fetchOutdoorTemperature(latitude, longitude);
+    this.outdoorAt = Date.now();
+  }
+
+  /** Cheap, normal or expensive now, and heat pump versus other heating; fires the flow trigger on a change. */
+  private async updatePowerLevel(cost: number): Promise<void> {
+    const s = this.getSettings() as Settings;
+    const now = Date.now();
+    const prices = (this.planState?.plan.intervals ?? [])
+      .filter((iv) => iv.end.getTime() > now && iv.start.getTime() < now + 86_400_000)
+      .map((iv) => iv.buy);
+    const limits = levelLimits(prices, {
+      mode: s.level_mode === 'manual' ? 'manual' : 'auto',
+      sharePct: num(s.level_share, 25),
+      cheapBelow: num(s.level_cheap, 1),
+      expensiveAbove: num(s.level_expensive, 2.5),
+    });
+    if (!limits) return;
+    const level = powerLevel(cost, limits, this.level);
+    this.breakEven = breakEvenCost(this.outdoorC, this.alternativeHeat());
+    const other = alternativeCheaper(cost, this.breakEven, this.otherHeating);
+    this.levelLimits = limits;
+    const changed = level !== this.level || other !== this.otherHeating;
+    this.level = level;
+    this.otherHeating = other;
+    if (this.hasCapability('solis_power_level')) await this.setCapabilityValue('solis_power_level', level).catch(this.error);
+    if (!changed) return;
+    const round2 = (v: number) => (Number.isFinite(v) ? Math.round(v * 100) / 100 : 0);
+    this.log(`Extra power ${level} at ${round2(cost)} (cheap ≤ ${round2(limits.cheapBelow)}, expensive ≥ ${round2(limits.expensiveAbove)})`
+      + (this.breakEven === null ? '' : `, other heating cheaper above ${round2(this.breakEven)}: ${other}`));
+    await this.homey.flow.getDeviceTriggerCard('power_level_changed').trigger(this, {
+      level: this.homey.__(`powerLevel.${level}`),
+      cost: round2(cost),
+      cheap_limit: round2(limits.cheapBelow),
+      expensive_limit: round2(limits.expensiveAbove),
+      other_heating_cheaper: other,
+    }).catch(this.error);
   }
 
   private sourceTitle(source: string): string {
@@ -1171,6 +1250,7 @@ export default class SolisInverterDevice extends Homey.Device {
       const now = new Date();
       await this.updateWarnings(now).catch((err) => this.error('Weather warnings failed:', err));
       await this.solar?.refresh().catch((err) => this.error('Solar forecast failed:', err));
+      await this.refreshOutdoorTemperature().catch((err) => this.error('Outdoor temperature failed:', err));
       await this.updateSolarCapability(now);
 
       this.controller.exportControl = this.controlMode === 'auto' && this.canControl() && !this.powerCut.active

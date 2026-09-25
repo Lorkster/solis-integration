@@ -60,5 +60,10 @@
     "noInverter": "Add the Solis inverter (Home battery) first",
     "solarName": "Solar panels",
     "gridName": "Grid meter"
+  },
+  "powerLevel": {
+    "cheap": "Cheap",
+    "normal": "Normal",
+    "expensive": "Expensive"
   }
 }

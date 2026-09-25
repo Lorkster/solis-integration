@@ -75,6 +75,67 @@
       ]
     },
     {
+      "id": "power_level_changed",
+      "title": {
+        "en": "Extra power became cheap, normal or expensive",
+        "sv": "Extra el blev billig, normal eller dyr"
+      },
+      "hint": {
+        "en": "Fires when 'Extra power now' changes level, or when the other heating becomes cheaper or dearer than the heat pump (if set up). Also fires once when the app starts, so flows can bring devices in line.",
+        "sv": "Körs när 'Extra el nu' byter nivå, eller när annan uppvärmning blir billigare eller dyrare än värmepumpen (om inställt). Körs också en gång när appen startar, så att flöden kan ställa in enheterna."
+      },
+      "tokens": [
+        {
+          "name": "level",
+          "type": "string",
+          "title": {
+            "en": "Level",
+            "sv": "Nivå"
+          },
+          "example": {
+            "en": "Cheap",
+            "sv": "Billig"
+          }
+        },
+        {
+          "name": "cost",
+          "type": "number",
+          "title": {
+            "en": "Cost per kWh",
+            "sv": "Kostnad per kWh"
+          },
+          "example": 0.45
+        },
+        {
+          "name": "cheap_limit",
+          "type": "number",
+          "title": {
+            "en": "Cheap below",
+            "sv": "Billig under"
+          },
+          "example": 0.9
+        },
+        {
+          "name": "expensive_limit",
+          "type": "number",
+          "title": {
+            "en": "Expensive above",
+            "sv": "Dyr över"
+          },
+          "example": 2.1
+        },
+        {
+          "name": "other_heating_cheaper",
+          "type": "boolean",
+          "title": {
+            "en": "Other heating is cheaper",
+            "sv": "Annan uppvärmning är billigare"
+          },
+          "example": false
+        }
+      ]
+    },
+    {
       "id": "plan_updated",
       "title": {
         "en": "The battery plan was updated",
@@ -572,6 +633,61 @@
           }
         }
       ]
+    },
+    {
+      "id": "power_level_is",
+      "title": {
+        "en": "Extra power !{{is|is not}}",
+        "sv": "Extra el !{{är|är inte}}"
+      },
+      "titleFormatted": {
+        "en": "Extra power !{{is|is not}} [[level]] now",
+        "sv": "Extra el !{{är|är inte}} [[level]] nu"
+      },
+      "hint": {
+        "en": "Compares what one more kWh costs now with the limits in the settings (automatic: the cheapest and priciest share of the next 24 hours).",
+        "sv": "Jämför vad en kWh till kostar nu med gränserna i inställningarna (automatiskt: billigaste och dyraste andelen av kommande 24 timmar)."
+      },
+      "args": [
+        {
+          "type": "dropdown",
+          "name": "level",
+          "values": [
+            {
+              "id": "cheap",
+              "title": {
+                "en": "cheap",
+                "sv": "billig"
+              }
+            },
+            {
+              "id": "normal",
+              "title": {
+                "en": "normal",
+                "sv": "normal"
+              }
+            },
+            {
+              "id": "expensive",
+              "title": {
+                "en": "expensive",
+                "sv": "dyr"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "heat_pump_cheaper",
+      "title": {
+        "en": "Heat from the heat pump !{{is|is not}} cheaper than the other heating now",
+        "sv": "Värme från värmepumpen !{{är|är inte}} billigare än annan uppvärmning nu"
+      },
+      "hint": {
+        "en": "Compares the cost of extra power, divided by the heat pump's COP at today's outdoor temperature, with the other heating's cost per kWh (device settings). Always true when no other heating is set.",
+        "sv": "Jämför kostnaden för extra el, delad med värmepumpens COP vid aktuell utetemperatur, med annan uppvärmnings kostnad per kWh (enhetens inställningar). Alltid sant när ingen annan uppvärmning är inställd."
+      }
     },
     {
       "id": "planned_action_is",

@@ -1,0 +1,34 @@
+{
+  "type": "enum",
+  "title": {
+    "en": "Extra power now",
+    "sv": "Extra el nu"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "icon": "/assets/icons/extra.svg",
+  "values": [
+    {
+      "id": "cheap",
+      "title": {
+        "en": "Cheap",
+        "sv": "Billig"
+      }
+    },
+    {
+      "id": "normal",
+      "title": {
+        "en": "Normal",
+        "sv": "Normal"
+      }
+    },
+    {
+      "id": "expensive",
+      "title": {
+        "en": "Expensive",
+        "sv": "Dyr"
+      }
+    }
+  ]
+}

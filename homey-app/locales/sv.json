@@ -60,5 +60,10 @@
     "noInverter": "Lägg till Solis-växelriktaren (Hembatteri) först",
     "solarName": "Solpaneler",
     "gridName": "Elnätsmätare"
+  },
+  "powerLevel": {
+    "cheap": "Billig",
+    "normal": "Normal",
+    "expensive": "Dyr"
   }
 }
