@@ -18,6 +18,8 @@ Which inverters it works with: [Supported inverters](#supported-inverters).
 **Contents:**
 [Supported inverters](#supported-inverters) ·
 [Dashboard widgets](#dashboard-widgets) ·
+[Dashboard in a browser](#dashboard-in-a-browser) ·
+[Connection](#connection-soliscloud-or-modbus) ·
 [The device](#the-device) ·
 [Control modes](#control-modes) ·
 [How the plan is made](#how-the-plan-is-made) ·
@@ -143,6 +145,42 @@ Widget settings: *Time shown* (24, 36 or 48 hours) and *Show solar and load fore
   battery locked by SolisCloud, or an inverter that is not following the plan.
 
 <img src="images/battery-status-power-cut.png" width="340" alt="Battery status during a power cut, with the power fee switched on">
+
+### Dashboard in a browser
+
+Homey's web app cannot show widgets, so the app has its own dashboard with both widgets:
+
+- **In the Homey web app** ([my.homey.app](https://my.homey.app), any browser, also away from home):
+  open **Apps → Solis Smart Battery → Configure**. It uses your Homey login.
+- **On a wall screen or tablet at home**, without logging in: on that same page, switch on
+  **Allow the dashboard link** and copy the link. It opens a full-screen page that reads the values
+  straight from Homey on your home network (through Homey's local address, so it only works at
+  home). The link is read-only: anyone on your network who has it can see the values, nobody can
+  change anything. **New link** makes the old one stop working. Add `&theme=dark` or `&theme=light`
+  to the end of the link to fix the colours; otherwise it follows the device.
+
+---
+
+## Connection: SolisCloud or Modbus
+
+The app reaches the inverter in one of two ways, chosen under **Connection** in the device settings:
+
+| | SolisCloud | Modbus TCP |
+|---|---|---|
+| Needs | API key | the data logger's (or an RS485 gateway's) address on your network |
+| Values | every 5 minutes | every minute (adjustable) |
+| Works without internet | no | yes (the plan still needs prices) |
+| History for learning | yes | from SolisCloud, if a key is also set |
+
+Only **one connection is used at a time**. SolisCloud's commands and local Modbus both pass through
+the inverter's data logger, and running both disturbs the logger (tested 25 Sep 2026: SolisCloud
+commands timed out while Modbus was read every minute). With **Switch to the other connection if
+this one fails** on, the app moves to the other connection after three failures in a row and tries
+the chosen one again after 30 minutes. **Connection in use** under *Inverter* shows which one is
+active.
+
+A device can also be added with Modbus only: choose **Connect locally (Modbus)** on the first
+pairing screen. How to find the logger and switch Modbus on: [LOCAL-MODBUS.md](LOCAL-MODBUS.md).
 
 ---
 

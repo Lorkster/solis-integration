@@ -30,5 +30,24 @@
     "small": "/assets/images/small.png",
     "large": "/assets/images/large.png",
     "xlarge": "/assets/images/xlarge.png"
+  },
+  "api": {
+    "getView": {
+      "method": "GET",
+      "path": "/view"
+    },
+    "getDashboard": {
+      "method": "GET",
+      "path": "/dashboard",
+      "public": true
+    },
+    "getDashboardLink": {
+      "method": "GET",
+      "path": "/dashboard-link"
+    },
+    "setDashboardLink": {
+      "method": "PUT",
+      "path": "/dashboard-link"
+    }
   }
 }

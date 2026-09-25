@@ -27,4 +27,5 @@ jobs:
         working-directory: .
         run: |
           node tools/gen-docs.mjs --no-images
-          git diff --exit-code docs/USER-GUIDE.md
+          node tools/build-dashboard.mjs
+          git diff --exit-code docs/USER-GUIDE.md docs/dashboard homey-app/settings
