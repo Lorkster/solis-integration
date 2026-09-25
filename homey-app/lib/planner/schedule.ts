@@ -41,10 +41,13 @@ interface Block {
  */
 export function planToSchedule(plan: PlannedInterval[], opts: ScheduleOptions): Schedule {
   const warnings: string[] = [];
-  const horizonEnd = addDays(opts.now, 1);
+  // Slots repeat daily: a block tomorrow that runs past this time of day would also start today,
+  // in the remaining hours. So blocks end at the latest where today's clock time is now (rounded
+  // down to a quarter); replans every 30 minutes extend them as the day goes on.
+  const horizonEnd = new Date(Math.floor(addDays(opts.now, 1).getTime() / 900_000) * 900_000);
   const pointlessHold = (b: Block) => opts.reserveSocPct !== undefined && isPointlessSave(b.action, b.socStartPct, opts.reserveSocPct);
   let blocks = splitAtMidnight(
-    toBlocks(plan.filter((iv) => iv.end > opts.now && iv.start < horizonEnd)).filter((b) => !pointlessHold(b)),
+    toBlocks(plan.filter((iv) => iv.end > opts.now && iv.end <= horizonEnd)).filter((b) => !pointlessHold(b)),
     opts.timeZone,
   );
 

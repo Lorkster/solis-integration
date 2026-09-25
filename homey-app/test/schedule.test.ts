@@ -50,6 +50,16 @@ describe('planToSchedule', () => {
     assert.ok(chargeSlots.slice(2).every((s) => !s.enabled));
   });
 
+  it("never lets tomorrow's slot fire in the rest of today (25 Sep bug)", () => {
+    // At 13:52, tomorrow's charge 12:15–14:30 would also run today 13:52–14:30: cut it at 13:45.
+    const actions: BatteryAction[] = [...Array(9).fill('charge'), ...Array(4).fill('self_use')];
+    const { chargeSlots } = planToSchedule(plan('2026-09-26T12:15:00+02:00', actions), opts('2026-09-25T13:52:00+02:00'));
+    const on = chargeSlots.filter((s) => s.enabled);
+    assert.equal(on.length, 1);
+    assert.equal(on[0].start, '12:15');
+    assert.equal(on[0].end, '13:45');
+  });
+
   it('skips holds that start at the reserve', () => {
     const actions: BatteryAction[] = [...Array(4).fill('hold'), ...Array(4).fill('self_use')];
     const intervals = plan('2026-09-24T21:00:00+02:00', actions); // SOC 20 %
