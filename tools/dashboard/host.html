@@ -79,7 +79,8 @@
       en: {
         title: 'Solis Smart Battery', updated: (t) => `Updated ${t}`, offline: 'Cannot reach Homey: ',
         setupTitle: 'Connect to Homey',
-        setupText: 'This page reads the values straight from Homey on your home network, with a Homey API key. Create one in the Homey web app: Settings → API Keys → New API Key, with only “Apps: control”.',
+        setupText: 'This page reads the values straight from Homey on your home network, with a Homey API key. Create one in the Homey web app: Settings → API Keys → New API Key, with only “Devices: read only”.',
+        noDevice: 'no Solis Smart Battery device found with this key', noData: 'no dashboard data yet – wait a few minutes',
         address: "Homey's address on your network", apiKey: 'Homey API key', save: 'Connect',
         setupNote: 'The address and key are stored in this browser only and are sent to nothing but your Homey.',
         forget: 'Forget the key on this device',
@@ -87,7 +88,8 @@
       sv: {
         title: 'Solis Smart Batteri', updated: (t) => `Uppdaterad ${t}`, offline: 'Når inte Homey: ',
         setupTitle: 'Anslut till Homey',
-        setupText: 'Sidan läser värdena direkt från Homey i ditt hemnätverk, med en API-nyckel för Homey. Skapa en i Homeys webbapp: Inställningar → API-nycklar → Ny API-nyckel, med bara ”Appar: kontroll”.',
+        setupText: 'Sidan läser värdena direkt från Homey i ditt hemnätverk, med en API-nyckel för Homey. Skapa en i Homeys webbapp: Inställningar → API-nycklar → Ny API-nyckel, med bara ”Enheter: endast läsa”.',
+        noDevice: 'ingen Solis Smart Batteri-enhet hittades med den här nyckeln', noData: 'ingen data för panelen ännu – vänta några minuter',
         address: 'Homeys adress i nätverket', apiKey: 'API-nyckel för Homey', save: 'Anslut',
         setupNote: 'Adressen och nyckeln sparas bara i den här webbläsaren och skickas inte till något annat än din Homey.',
         forget: 'Glöm nyckeln på den här enheten',
@@ -218,13 +220,30 @@
       if (/^https?:\/\//.test(a)) return a;
       return /^\d+\.\d+\.\d+\.\d+$/.test(a) ? `https://${a.replace(/\./g, '-')}.homey.homeylocal.com` : `http://${a}`;
     };
+    /**
+     * The app publishes the dashboard's data as a hidden value on its device, so a key that may only
+     * read devices ("Devices: read only") is enough: no access to apps, settings or control.
+     */
     function connect(config) {
-      source = () => fetch(`${homeyBase(config.address)}/api/app/${APP_ID}/view`, {
+      const get = (path) => fetch(`${homeyBase(config.address)}/api/manager/devices/${path}`, {
         cache: 'no-store', headers: { Authorization: `Bearer ${config.key}` },
       }).then((r) => r.json().catch(() => ({})).then((body) => {
         if (!r.ok) throw new Error(body && body.error ? body.error : `HTTP ${r.status}`);
         return body;
       }));
+      const findDevice = () => get('device/').then((devices) => {
+        const found = Object.values(devices).find((d) => d.capabilitiesObj && d.capabilitiesObj.solis_dashboard);
+        if (!found) throw new Error(t().noDevice);
+        config.device = found.id;
+        try { localStorage.setItem(STORE, JSON.stringify(config)); } catch { /* storage blocked */ }
+        return found;
+      });
+      const device = () => (config.device ? get(`device/${config.device}`).catch(findDevice) : findDevice());
+      source = () => device().then((d) => {
+        const value = d.capabilitiesObj.solis_dashboard && d.capabilitiesObj.solis_dashboard.value;
+        if (!value) throw new Error(t().noData);
+        return JSON.parse(value);
+      });
       document.getElementById('forget-row').hidden = false;
       start();
     }

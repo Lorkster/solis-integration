@@ -1276,7 +1276,8 @@
         "alarm_solis_weather",
         "solis_warning",
         "meter_power.charged",
-        "meter_power.discharged"
+        "meter_power.discharged",
+        "solis_dashboard"
       ],
       "capabilitiesOptions": {
         "measure_power": {
@@ -1603,6 +1604,63 @@
               "hint": {
                 "en": "Open-Meteo: 15-minute irradiance and 14 days of history for a quick calibration. Forecast.Solar: hourly production estimate. Solcast: forecast for the rooftop sites set up in your Solcast account; uses the API key and site IDs below.",
                 "sv": "Open-Meteo: solinstrålning per kvart och 14 dagars historik för snabb kalibrering. Forecast.Solar: produktionsprognos per timme. Solcast: prognos för takytorna i ditt Solcast-konto; använder API-nyckeln och yt-id:na nedan."
+              }
+            },
+            {
+              "id": "pv_weather_model",
+              "type": "dropdown",
+              "label": {
+                "en": "Weather model (Open-Meteo)",
+                "sv": "Vädermodell (Open-Meteo)"
+              },
+              "value": "blend",
+              "values": [
+                {
+                  "id": "blend",
+                  "label": {
+                    "en": "Blend of five models (median)",
+                    "sv": "Mix av fem modeller (median)"
+                  }
+                },
+                {
+                  "id": "metno_seamless",
+                  "label": {
+                    "en": "Yr / MET Norway",
+                    "sv": "Yr / MET Norge"
+                  }
+                },
+                {
+                  "id": "icon_seamless",
+                  "label": {
+                    "en": "ICON (DWD, Germany)",
+                    "sv": "ICON (DWD, Tyskland)"
+                  }
+                },
+                {
+                  "id": "ecmwf_ifs025",
+                  "label": {
+                    "en": "ECMWF (Europe)",
+                    "sv": "ECMWF (Europa)"
+                  }
+                },
+                {
+                  "id": "gfs_seamless",
+                  "label": {
+                    "en": "GFS (NOAA, USA)",
+                    "sv": "GFS (NOAA, USA)"
+                  }
+                },
+                {
+                  "id": "meteofrance_seamless",
+                  "label": {
+                    "en": "Météo-France",
+                    "sv": "Météo-France"
+                  }
+                }
+              ],
+              "hint": {
+                "en": "The blend takes the middle value of Yr, ICON, ECMWF, GFS and Météo-France, so one model's miss does not mislead the plan (on 25 Sep 2026 Yr forecast 68 W/m² at noon on a clear day; the others 380–640).",
+                "sv": "Mixen tar mittvärdet av Yr, ICON, ECMWF, GFS och Météo-France, så att en modells miss inte vilseleder planen (25 sep 2026 gav Yr 68 W/m² mitt på dagen en klar dag; de andra 380–640)."
               }
             },
             {
@@ -3943,6 +4001,17 @@
         }
       ],
       "icon": "/assets/icons/mode.svg"
+    },
+    "solis_dashboard": {
+      "type": "string",
+      "title": {
+        "en": "Dashboard data",
+        "sv": "Data för instrumentpanelen"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": null,
+      "insights": false
     },
     "solis_plan_status": {
       "type": "string",

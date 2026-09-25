@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { parseSolcast, pointsToQuarters } from '../lib/forecast/SolarForecast.js';
+import { median, parseBlend, parseSolcast, pointsToQuarters } from '../lib/forecast/SolarForecast.js';
 import { type InverterInfo, supportLevel } from '../lib/inverter/types.js';
 import { currencyForArea, FlowPriceProvider, parseFlowPrices, parseNordPool, toQuarters } from '../lib/prices/PriceProvider.js';
 import { SolisCloudClient } from '../lib/solis/SolisCloudClient.js';
@@ -71,6 +71,22 @@ describe('solar sources', () => {
     assert.ok(Math.abs(q.get(t('05:00'))! - 0.125) < 1e-9, 'middle of 05:00–05:15 is 1/8 of the way to 1 kW');
     assert.ok(Math.abs(q.get(t('06:15'))! - 1.75) < 1e-9);
     assert.equal(q.has(t('07:00')), false, 'nothing after the last point');
+  });
+
+  it("blends weather models by the median, so one model's miss does not count (25 Sep noon)", () => {
+    const models = ['icon_seamless', 'ecmwf_ifs025', 'gfs_seamless', 'metno_seamless', 'meteofrance_seamless'];
+    const q = parseBlend({ hourly: {
+      time: ['2026-09-25T10:00'],
+      global_tilted_irradiance_icon_seamless: [579], global_tilted_irradiance_ecmwf_ifs025: [379],
+      global_tilted_irradiance_gfs_seamless: [642], global_tilted_irradiance_metno_seamless: [68],
+      global_tilted_irradiance_meteofrance_seamless: [null],
+      temperature_2m_icon_seamless: [14], temperature_2m_gfs_seamless: [16],
+    } }, models);
+    assert.equal(q.length, 4, 'the hour before 10:00 UTC as four quarters');
+    assert.equal(q[0].start.toISOString(), '2026-09-25T09:00:00.000Z');
+    assert.equal(q[0].gti, (379 + 579) / 2, 'median of the four models with data');
+    assert.equal(q[0].tempC, 15);
+    assert.equal(median([]), null);
   });
 
   it('reads Solcast half-hour periods', () => {

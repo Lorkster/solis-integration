@@ -1,0 +1,11 @@
+{
+  "type": "string",
+  "title": {
+    "en": "Dashboard data",
+    "sv": "Data för instrumentpanelen"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": null,
+  "insights": false
+}

@@ -18,30 +18,67 @@ export interface IrradianceProvider {
   get(lat: number, lon: number, array: SolarArray, pastDays: number): Promise<Irradiance[]>;
 }
 
-/** Open-Meteo 15-minute forecast (free, no key). Includes past days for calibration. */
+/**
+ * Weather models blended for the solar forecast. On 25 Sep 2026 Open-Meteo's default for Sweden
+ * (MET Norway) forecast 68 W/m² at noon on a clear day while ICON, GFS and Météo-France had 580–640;
+ * the median of several models is not misled by one model's miss.
+ */
+export const BLEND_MODELS = ['icon_seamless', 'ecmwf_ifs025', 'gfs_seamless', 'metno_seamless', 'meteofrance_seamless'] as const;
+
+export function median(values: number[]): number | null {
+  if (values.length === 0) return null;
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+
+/**
+ * Hourly multi-model response → quarter-hours. Open-Meteo's hourly radiation is the mean of the
+ * preceding hour, so the value at 12:00 covers the quarters 11:00–11:45.
+ */
+export function parseBlend(json: { hourly: Record<string, Array<string | number | null>> }, models: readonly string[]): Irradiance[] {
+  const h = json.hourly;
+  const out: Irradiance[] = [];
+  (h.time as string[]).forEach((t, i) => {
+    const pick = (variable: string) => models
+      .map((m) => h[`${variable}_${m}`]?.[i])
+      .filter((v): v is number => typeof v === 'number' && Number.isFinite(v));
+    const gti = median(pick('global_tilted_irradiance'));
+    if (gti === null) return;
+    const tempC = median(pick('temperature_2m')) ?? 10;
+    const end = new Date(`${t}Z`).getTime();
+    for (let q = 4; q >= 1; q--) out.push({ start: new Date(end - q * 900_000), gti, tempC });
+  });
+  return out;
+}
+
+/** Open-Meteo forecast (free, no key): the median of several weather models. Includes past days for calibration. */
 export class OpenMeteoProvider implements IrradianceProvider {
   private readonly cache = new Map<string, { at: number; data: Irradiance[] }>();
 
+  /** `models`: the weather models to blend; one model means that model alone (e.g. Yr). */
+  constructor(private readonly models: readonly string[] = BLEND_MODELS) {}
+
   async get(lat: number, lon: number, array: SolarArray, pastDays: number): Promise<Irradiance[]> {
-    const key = `${lat.toFixed(3)},${lon.toFixed(3)},${array.tilt},${array.azimuth},${pastDays}`;
+    const key = `${lat.toFixed(3)},${lon.toFixed(3)},${array.tilt},${array.azimuth},${pastDays},${this.models.join('+')}`;
     const cached = this.cache.get(key);
     if (cached && Date.now() - cached.at < 3_600_000) return cached.data;
 
     const url = 'https://api.open-meteo.com/v1/forecast'
       + `?latitude=${lat}&longitude=${lon}&tilt=${array.tilt}&azimuth=${array.azimuth}`
-      + '&minutely_15=global_tilted_irradiance,temperature_2m'
+      + '&hourly=global_tilted_irradiance,temperature_2m'
+      + `&models=${this.models.join(',')}`
       + `&forecast_days=3&past_days=${pastDays}&timezone=UTC`;
     const response = await httpsRequest(url, { timeoutMs: 20_000 });
     if (response.status !== 200) throw new Error(`Open-Meteo HTTP ${response.status}`);
-    const json = JSON.parse(response.body) as {
-      minutely_15: { time: string[]; global_tilted_irradiance: (number | null)[]; temperature_2m: (number | null)[] };
-    };
-    const m = json.minutely_15;
-    const data = m.time.map((t, i) => ({
-      start: new Date(`${t}Z`),
-      gti: m.global_tilted_irradiance[i] ?? 0,
-      tempC: m.temperature_2m[i] ?? 10,
-    }));
+    const json = JSON.parse(response.body) as { hourly: Record<string, Array<string | number | null>> };
+    // With a single model Open-Meteo leaves the variable names without the model suffix.
+    if (this.models.length === 1) {
+      for (const name of Object.keys(json.hourly)) {
+        if (name !== 'time' && !name.endsWith(`_${this.models[0]}`)) json.hourly[`${name}_${this.models[0]}`] = json.hourly[name];
+      }
+    }
+    const data = parseBlend(json, this.models);
     this.cache.set(key, { at: Date.now(), data });
     return data;
   }
@@ -262,12 +299,13 @@ export function parseSolcast(json: unknown): Map<number, number> {
   return out;
 }
 
-export function createPvPowerProvider(source: SolarSource, apiKey: string, solcastSites: string): PvPowerProvider {
+export function createPvPowerProvider(source: SolarSource, apiKey: string, solcastSites: string, weatherModel = 'blend'): PvPowerProvider {
   if (source === 'forecast_solar') return new ForecastSolarProvider(apiKey);
   if (source === 'solcast') {
     return new SolcastProvider(apiKey, solcastSites.split(/[\s,;]+/).map((id) => id.trim()).filter(Boolean));
   }
-  return new IrradiancePowerProvider();
+  const models = weatherModel && weatherModel !== 'blend' ? [weatherModel] : BLEND_MODELS;
+  return new IrradiancePowerProvider(new OpenMeteoProvider(models));
 }
 
 /** Combines the forecast service's power estimate with the learned calibration, per quarter hour. */
@@ -329,7 +367,7 @@ export class SolarForecaster {
       this.nowcast = null; // too little light to judge
       return;
     }
-    this.nowcast = { at: time.getTime(), ratio: Math.min(3, Math.max(0.2, actualKw / Math.max(expected, 0.05))) };
+    this.nowcast = { at: time.getTime(), ratio: Math.min(6, Math.max(0.2, actualKw / Math.max(expected, 0.05))) };
   }
 
   private nowcastFactor(time: Date): number {

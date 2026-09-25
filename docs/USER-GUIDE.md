@@ -121,8 +121,10 @@ list and on the device tile:
   - **Battery %** – the expected battery level, the dot is the level now, the dashed line the reserve.
 - **Touch and drag** across the charts (or use the arrow keys) to see price, period, solar, load and
   battery level for any quarter-hour.
-- **Next 24 hours** lists the periods with the battery level each one ends at. Periods shorter than
-  30 minutes where the battery just follows the house are merged into their neighbours.
+- **Next 24 hours** lists the periods, with the battery level each one ends at (*Battery at end*).
+  When the weather turns out differently from the forecast, the first row shows what really happens
+  now. Periods shorter than 30 minutes where the battery just follows the house are merged into
+  their neighbours; a *Tomorrow* heading marks where the next day starts.
 - **Bottom line**: how much the plan saves compared with plain self-use, and when it was updated.
 
 Widget settings: *Time shown* (24, 36 or 48 hours) and *Show solar and load forecast*.
@@ -158,9 +160,9 @@ API key.
   is one self-contained file that reads the values straight from Homey on your home network.
   Nothing goes through the internet, and no web server is needed.
   1. In the Homey web app, create an API key: **Settings → API Keys → New API Key** with only
-     **Apps: control** (tested 25 Sep 2026: *Apps: read only* is not enough – Homey answers
-     *Missing Scopes*). Such a key can also read and change other apps' settings, so keep it on
-     devices you trust and remove it in Homey if a device is lost.
+     **Devices: read only**. The app publishes the dashboard's data as a hidden value on its device,
+     so the key needs no access to apps, settings or control – it can only read device values.
+     Remove the key in Homey if the device is lost.
   2. Copy `solis-dashboard.html` to the device and open it in the browser (or put it on a local web
      server, e.g. a Raspberry Pi, if the device cannot open files).
   3. Enter Homey's address (e.g. `192.168.1.142`) and the key. They are stored in that browser only;
@@ -239,6 +241,7 @@ chosen as the device's tile indicator, and all numbers and alarms are kept in Ho
 | **Weather warning** | Vädervarning |  | Text of the active weather warning(s). |
 | **Energy charged** | Laddad energi | kWh | Total energy charged into the battery. Used by Homey Energy. |
 | **Energy discharged** | Urladdad energi | kWh | Total energy discharged from the battery. Used by Homey Energy. |
+| **Dashboard data** | Data för instrumentpanelen |  | Hidden: the data for the dashboard page (see Dashboard in a browser). Not shown in Homey. |
 
 <!-- /generated:capabilities -->
 
@@ -589,6 +592,7 @@ Open the device and tap the gear icon.
 |---|---|---|
 | Use solar forecast in the plan | on | Calibrated against your measured production, so errors in size or orientation shrink over time. |
 | Forecast source | Open-Meteo (free, no account) | Open-Meteo: 15-minute irradiance and 14 days of history for a quick calibration. Forecast.Solar: hourly production estimate. Solcast: forecast for the rooftop sites set up in your Solcast account; uses the API key and site IDs below. |
+| Weather model (Open-Meteo) | Blend of five models (median) | The blend takes the middle value of Yr, ICON, ECMWF, GFS and Météo-France, so one model's miss does not mislead the plan (on 25 Sep 2026 Yr forecast 68 W/m² at noon on a clear day; the others 380–640). |
 | API key (Solcast, or Forecast.Solar paid plan) | (from pairing) |  |
 | Solcast site IDs | (from pairing) | Resource IDs of your rooftop sites, separated by commas. Solcast allows 10 requests a day, so the app fetches at most every 2.5 hours per site. |
 | Array 1 size | 11 kWp | Also used with Solcast, to judge when production is high enough to learn from. |

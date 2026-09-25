@@ -67,6 +67,7 @@ export default class SolisInverterDevice extends Homey.Device {
   private transport!: FailoverTransport;
   private liveTimer: NodeJS.Timeout | null = null;
   private lastPersist = 0;
+  private lastDashboard = '';
   private controller!: BatteryController;
   private loadProfile!: LoadProfile;
   private solar: SolarForecaster | null = null;
@@ -217,7 +218,7 @@ export default class SolisInverterDevice extends Homey.Device {
 
   override async onSettings({ changedKeys }: { changedKeys: string[] }): Promise<void> {
     this.log('Settings changed:', changedKeys);
-    const solarChanged = changedKeys.some((k) => k.startsWith('pv_array') || k === 'pv_source' || k === 'solcast_sites');
+    const solarChanged = changedKeys.some((k) => k.startsWith('pv_array') || k === 'pv_source' || k === 'solcast_sites' || k === 'pv_weather_model');
     const tariffChanged = changedKeys.some((k) => k.startsWith('power_tariff'));
     const connectionChanged = changedKeys.some((k) => k.startsWith('modbus_') || k.startsWith('connection_') || k.startsWith('key_'));
     this.homey.setTimeout(async () => {
@@ -397,6 +398,18 @@ export default class SolisInverterDevice extends Homey.Device {
     return actual && actual !== current.state ? actual : null;
   }
 
+  /**
+   * The dashboard's data as a hidden device value, so the dashboard page can read it with a Homey
+   * API key that may only read devices ("Devices: read only") – no access to apps or settings.
+   */
+  private async publishDashboard(): Promise<void> {
+    if (!this.hasCapability('solis_dashboard')) return;
+    const json = JSON.stringify(this.getView());
+    if (json === this.lastDashboard) return;
+    this.lastDashboard = json;
+    await this.setCapabilityValue('solis_dashboard', json).catch(this.error);
+  }
+
   /** Data for the dashboard widgets. */
   getView(): unknown {
     const state = this.planState;
@@ -549,7 +562,8 @@ export default class SolisInverterDevice extends Homey.Device {
         const calibration = new SolarCalibration(tz, this.getStoreValue('solarCalibration') as CalibrationData | undefined);
         const maxAcKw = this.info?.ratedPowerKw ?? 20;
         try {
-          const provider = createPvPowerProvider(s.pv_source as SolarSource, String(s.pv_api_key ?? ''), String(s.solcast_sites ?? ''));
+          const provider = createPvPowerProvider(s.pv_source as SolarSource, String(s.pv_api_key ?? ''), String(s.solcast_sites ?? ''),
+            String(s.pv_weather_model ?? 'blend'));
           this.solar = new SolarForecaster({ latitude, longitude, arrays, performanceRatio: 0.85, maxAcKw }, calibration, provider);
         } catch (err) {
           this.error('Solar forecast disabled:', err);
@@ -694,6 +708,7 @@ export default class SolisInverterDevice extends Homey.Device {
         set('measure_solis_backup_hours', this.backupHours(live)),
       ]);
       this.homey.api.realtime('live', null);
+      await this.publishDashboard();
     } catch (err) {
       this.error('Live data failed:', err);
       if (!this.live) await this.setUnavailable(`SolisCloud: ${(err as Error).message}`);
@@ -1126,6 +1141,7 @@ export default class SolisInverterDevice extends Homey.Device {
         .trigger(this, { summary: this.summarise(state), savings: Math.round(state.plan.savingsSek * 100) / 100 })
         .catch(this.error);
       this.homey.api.realtime('plan', null);
+      await this.publishDashboard();
     } catch (err) {
       this.error('Planning failed:', err);
       this.planError = (err as Error).message;

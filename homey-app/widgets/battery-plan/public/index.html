@@ -68,7 +68,8 @@
 
     /* Schedule list (also the table view of the chart) */
     .schedule { margin-top: var(--homey-su-3, 12px); border-top: 1px solid var(--c-grid); }
-    .schedule h3 { margin: var(--homey-su-2, 8px) 0 2px; font-size: 11px; font-weight: 600; color: var(--c-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    .schedule h3 { display: flex; justify-content: space-between; margin: var(--homey-su-2, 8px) 0 2px; font-size: 11px; font-weight: 600; color: var(--c-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    .schedule h3 .col { text-transform: none; letter-spacing: 0; font-weight: 400; }
     .row { display: flex; align-items: center; gap: 10px; padding: 6px 0; font-size: 13px; }
     .row + .row { border-top: 1px solid var(--c-grid); }
     .day { margin-top: 8px; padding: 4px 0 2px; font-size: 11px; font-weight: 600; color: var(--c-muted); border-top: 1px solid var(--c-grid); }
@@ -112,7 +113,7 @@
         outage: (until) => `Preparing for a power outage until ${until}`,
         price: () => `Price ${cur()}/kWh`, energy: 'Solar & load kW', battery: 'Battery %',
         solar: 'Solar', load: 'Load', reserve: 'Reserve', now: 'Now',
-        next24: 'Next 24 hours',
+        next24: 'Next 24 hours', socEnd: 'Battery at end', nowRow: 'now',
         saves: (amount) => `≈ <b>${amount} ${cur()}</b> cheaper than plain self-use`,
         updated: (t) => `Updated ${t}`,
         waiting: 'Waiting for the first plan…', notPaired: 'Add your Solis inverter in Homey to see the plan.',
@@ -141,7 +142,7 @@
         outage: (until) => `Förbereder för strömavbrott till ${until}`,
         price: () => `Pris ${cur()}/kWh`, energy: 'Sol & förbrukning kW', battery: 'Batteri %',
         solar: 'Sol', load: 'Förbrukning', reserve: 'Reserv', now: 'Nu',
-        next24: 'Kommande 24 timmar',
+        next24: 'Kommande 24 timmar', socEnd: 'Batteri vid slutet', nowRow: 'nu',
         saves: (amount) => `≈ <b>${amount} ${cur()}</b> billigare än vanlig egenanvändning`,
         updated: (t) => `Uppdaterad ${t}`,
         waiting: 'Väntar på den första planen…', notPaired: 'Lägg till din Solis-växelriktare i Homey för att se planen.',
@@ -469,8 +470,22 @@
       const section = document.createElement('div');
       section.className = 'schedule';
       const h = document.createElement('h3');
-      h.textContent = T.next24;
+      h.innerHTML = '<span></span><span class="col"></span>';
+      h.firstChild.textContent = T.next24;
+      h.lastChild.textContent = T.socEnd;
       section.appendChild(h);
+      const addRow = (state, when, soc) => {
+        const row = document.createElement('div');
+        row.className = 'row';
+        row.innerHTML = '<span class="dot"></span><span class="what"></span><span class="when"></span><span class="target"></span>';
+        row.querySelector('.dot').style.background = STATE_COLOR[state];
+        row.querySelector('.what').textContent = T.names[state];
+        row.querySelector('.when').textContent = when;
+        row.querySelector('.target').textContent = `${soc} %`;
+        section.appendChild(row);
+      };
+      // What really happens now comes first when it differs from the plan (e.g. more sun than forecast).
+      if (view.plan.nowState && view.live) addRow(view.plan.nowState, T.nowRow, Math.round(view.live.socPct));
       const horizon = nowMs() + 24 * 3600e3;
       const upcoming = periods(intervals).filter((p) => new Date(p.start).getTime() < horizon).slice(0, 8);
       const today = fmtDay(new Date(nowMs()).toISOString());
@@ -485,14 +500,7 @@
           day.textContent = T.tomorrow;
           section.appendChild(day);
         }
-        const row = document.createElement('div');
-        row.className = 'row';
-        row.innerHTML = '<span class="dot"></span><span class="what"></span><span class="when"></span><span class="target"></span>';
-        row.querySelector('.dot').style.background = STATE_COLOR[p.state];
-        row.querySelector('.what').textContent = T.names[p.state];
-        row.querySelector('.when').textContent = `${fmtTime(from)}–${fmtTime(p.end)}`;
-        row.querySelector('.target').textContent = `${p.socEnd} %`;
-        section.appendChild(row);
+        addRow(p.state, `${fmtTime(from)}–${fmtTime(p.end)}`, p.socEnd);
       }
       root.appendChild(section);
     }

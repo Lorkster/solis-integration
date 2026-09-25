@@ -37,6 +37,7 @@ const MEANING = {
   measure_solis_reserve: 'Battery level kept for power outages right now (seasonal, raised during weather warnings).',
   measure_solis_backup_hours: 'How long the battery would last in a power outage at the current consumption, down to the inverter\'s outage limit.',
   alarm_solis_battery_locked: 'On when a leftover SolisCloud command keeps the battery at 0 A. See the troubleshooting section.',
+  solis_dashboard: 'Hidden: the data for the dashboard page (see Dashboard in a browser). Not shown in Homey.',
   alarm_solis_power_cut: 'On while the inverter sees no grid voltage: the battery powers the backup output.',
   alarm_solis_off_plan: 'On when the battery has not done what the plan says for 20 minutes, or no data has arrived for 20 minutes. The device’s warning line says what is wrong.',
   measure_solis_saved_today: 'What the battery saved today: the actual electricity cost compared with the same consumption and solar without a battery. Unit follows the price area’s currency.',

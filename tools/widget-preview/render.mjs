@@ -9,7 +9,12 @@ import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const [widget = 'battery-plan', theme = 'light', width = '400', height = '600', out, hover] = process.argv.slice(2);
-const view = { ...JSON.parse(readFileSync(join(here, 'mock-view.json'), 'utf8')), ...JSON.parse(process.env.MOCK_OVERRIDE || '{}') };
+// MOCK_OVERRIDE: JSON, or the path of a .json file (large overrides do not fit in an environment variable).
+const override = process.env.MOCK_OVERRIDE || '{}';
+const view = {
+  ...JSON.parse(readFileSync(join(here, 'mock-view.json'), 'utf8')),
+  ...JSON.parse(override.trim().endsWith('.json') ? readFileSync(override.trim(), 'utf8') : override),
+};
 const html = readFileSync(resolve(here, '../../homey-app/widgets', widget, 'public/index.html'), 'utf8');
 
 // Approximation of Homey's widget stylesheet (only the variables the widgets use).
