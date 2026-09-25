@@ -120,6 +120,9 @@ list and on the device tile:
   - **Price per kWh** – what you pay per kWh, in the price area's currency (kr, €, zł).
   - **Solar & load kW** – expected solar production (yellow line) and house consumption (grey line).
   - **Battery %** – the expected battery level, the dot is the level now, the dashed line the reserve.
+- **Plan versus actual** (left of *Now*, on a grey background marked *Actual*): what really happened
+  in the last hours – price, solar, house use and the measured battery level – with a dashed line
+  for what the day's first plan (made just after midnight) expected the battery to be.
 - **Touch and drag** across the charts (or use the arrow keys) to see price, period, solar, load and
   battery level for any quarter-hour.
 - **Next 24 hours** lists the periods, with the battery level each one ends at (*Battery at end*).
@@ -128,7 +131,8 @@ list and on the device tile:
   their neighbours; a *Tomorrow* heading marks where the next day starts.
 - **Bottom line**: how much the plan saves compared with plain self-use, and when it was updated.
 
-Widget settings: *Time shown* (24, 36 or 48 hours) and *Show solar and load forecast*.
+Widget settings: *Time shown* (24, 36 or 48 hours), *Show solar and load forecast* and *Show the past*
+(off, 6 or 12 hours).
 
 ### Battery status
 

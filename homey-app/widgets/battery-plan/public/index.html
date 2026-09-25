@@ -61,6 +61,7 @@
     .tt-row b { font-weight: 600; }
     .tt-row span.l { color: var(--c-muted); }
     .key { width: 10px; height: 3px; border-radius: 2px; flex: none; }
+    .key.dashed { background: none; border-top: 2px dashed var(--c-ink); height: 0; border-radius: 0; opacity: 0.6; }
 
     .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: var(--homey-su-2, 8px); font-size: 11px; color: var(--c-muted); }
     .legend span { display: inline-flex; align-items: center; gap: 5px; }
@@ -114,6 +115,7 @@
         price: () => `Price ${cur()}/kWh`, energy: 'Solar & load kW', battery: 'Battery %',
         solar: 'Solar', load: 'Load', reserve: 'Reserve', now: 'Now',
         next24: 'Next 24 hours', socEnd: 'Battery at end', nowRow: 'now',
+        actual: 'Actual', planned: 'planned this morning', plannedLegend: 'Battery as planned this morning',
         saves: (amount) => `≈ <b>${amount} ${cur()}</b> cheaper than plain self-use`,
         updated: (t) => `Updated ${t}`,
         waiting: 'Waiting for the first plan…', notPaired: 'Add your Solis inverter in Homey to see the plan.',
@@ -143,6 +145,7 @@
         price: () => `Pris ${cur()}/kWh`, energy: 'Sol & förbrukning kW', battery: 'Batteri %',
         solar: 'Sol', load: 'Förbrukning', reserve: 'Reserv', now: 'Nu',
         next24: 'Kommande 24 timmar', socEnd: 'Batteri vid slutet', nowRow: 'nu',
+        actual: 'Utfall', planned: 'planerat i morse', plannedLegend: 'Batteriet enligt morgonens plan',
         saves: (amount) => `≈ <b>${amount} ${cur()}</b> billigare än vanlig egenanvändning`,
         updated: (t) => `Uppdaterad ${t}`,
         waiting: 'Väntar på den första planen…', notPaired: 'Lägg till din Solis-växelriktare i Homey för att se planen.',
@@ -176,6 +179,7 @@
     const cur = () => ({ SEK: 'kr', NOK: 'kr', DKK: 'kr', EUR: '€', PLN: 'zł' })[view && view.currency] || (view && view.currency) || 'kr';
     let hoursShown = 36;
     let showEnergy = true;
+    let pastHours = 6;
     let cursor = null; // index of interval under the crosshair
 
     function t() { return TEXT[view && view.language === 'sv' ? 'sv' : 'en']; }
@@ -201,6 +205,16 @@
     function visibleIntervals() {
       const end = nowMs() + hoursShown * 3600e3;
       return view.plan.intervals.filter((iv) => new Date(iv.t).getTime() < end);
+    }
+
+    /** Measured quarters before the plan starts, as chart intervals marked `past`. */
+    function pastIntervals(future) {
+      if (!pastHours || !view.plan.past || future.length === 0) return [];
+      const from = nowMs() - pastHours * 3600e3;
+      const first = new Date(future[0].t).getTime();
+      return view.plan.past
+        .filter((q) => { const t = new Date(q.t).getTime(); return t >= from && t < first; })
+        .map((q) => ({ t: q.t, price: q.price === null ? NaN : q.price, pvKw: q.pvKw, loadKw: q.loadKw, soc: q.soc, plannedSoc: q.plannedSoc, past: true }));
     }
 
     /** The app's periods within the visible intervals, with interval indexes for drawing. */
@@ -270,7 +284,7 @@
       return { lo: Math.floor(min / step) * step, hi: Math.ceil(max / step) * step, step };
     }
 
-    function renderChart(root, intervals) {
+    function renderChart(root, intervals, pastCount = 0) {
       const T = t();
       const wrap = document.createElement('div');
       wrap.className = 'chart';
@@ -297,6 +311,12 @@
 
       // Action washes across all panels, a solid strip on top of the price panel, and direct labels.
       const top = panels[0].top, bottom = panels[panels.length - 1].bottom;
+      if (pastCount > 0) {
+        // What already happened: a neutral wash, labelled, left of the plan.
+        svg.appendChild(el('rect', { x: x(0), y: top, width: x(pastCount) - x(0), height: bottom - top, fill: 'var(--c-muted)', opacity: 0.08 }));
+        svg.appendChild(el('rect', { x: x(0), y: top, width: Math.max(x(pastCount) - x(0) - 2, 1), height: 3, rx: 1.5, fill: 'var(--c-muted)', opacity: 0.5 }));
+        if (x(pastCount) - x(0) > T.actual.length * 5.6 + 6) svg.appendChild(el('text', { x: x(0) + 4, y: top + 14, class: 'band-label quiet' }, T.actual));
+      }
       for (const b of periods(intervals)) {
         const x0 = x(b.from), x1 = x(b.to + 1);
         const quiet = QUIET.has(b.state);
@@ -306,7 +326,7 @@
         }
         svg.appendChild(el('rect', { x: x0, y: top, width: Math.max(x1 - x0 - 2, 1), height: 3, rx: 1.5, fill: STATE_COLOR[b.state], opacity: quiet ? 0.6 : 1 }));
         const label = T.bands[b.state];
-        if (x1 - x0 > label.length * 6 + 8) {
+        if (x1 - x0 > label.length * 5.6 + 6) { // ~5.6 px per character at 10 px
           svg.appendChild(el('text', { x: x0 + 4, y: top + 14, class: quiet ? 'band-label quiet' : 'band-label' }, label));
         }
       }
@@ -314,7 +334,7 @@
       for (const p of panels) {
         let values, series;
         if (p.key === 'price') {
-          values = intervals.map((iv) => iv.price);
+          values = intervals.map((iv) => iv.price).filter(Number.isFinite);
           p.dom = niceDomain(Math.min(...values), Math.max(...values), 2);
           p.title = T.price();
         } else if (p.key === 'energy') {
@@ -336,7 +356,12 @@
 
         if (p.key === 'price') {
           let d = '';
-          intervals.forEach((iv, i) => { d += `${i ? 'L' : 'M'}${x(i)},${p.y(iv.price)}H${x(i + 1)}`; });
+          let drawing = false;
+          intervals.forEach((iv, i) => {
+            if (!Number.isFinite(iv.price)) { drawing = false; return; } // no recorded price
+            d += `${drawing ? 'L' : 'M'}${x(i)},${p.y(iv.price)}H${x(i + 1)}`;
+            drawing = true;
+          });
           svg.appendChild(el('path', { d, fill: 'none', stroke: 'var(--c-price)', 'stroke-width': 2, 'stroke-linejoin': 'round' }));
         } else if (p.key === 'energy') {
           let area = `M${x(0)},${p.y(0)}`;
@@ -356,9 +381,19 @@
           area += `L${x(n)},${p.y(0)}Z`;
           svg.appendChild(el('path', { d: area, fill: 'var(--c-ink)', opacity: 0.06 }));
           svg.appendChild(el('path', { d: line, fill: 'none', stroke: 'var(--c-ink)', 'stroke-width': 2, 'stroke-linejoin': 'round' }));
+          // Plan vs actual: what the day's first plan expected, dashed, over the measured line.
+          let planned = '';
+          let open = false;
+          for (let i = 0; i < pastCount; i++) {
+            const v = intervals[i].plannedSoc;
+            if (v === null || v === undefined) { open = false; continue; }
+            planned += `${open ? 'L' : 'M'}${x(i + 1)},${p.y(v)}`;
+            open = true;
+          }
+          if (planned) svg.appendChild(el('path', { d: planned, fill: 'none', stroke: 'var(--c-ink)', 'stroke-width': 1.5, 'stroke-dasharray': '4 3', opacity: 0.6 }));
           if (view.live) {
             // Current state of charge as an end-dot at the start of the forecast.
-            svg.appendChild(el('circle', { cx: x(0), cy: p.y(view.live.socPct), r: 4, fill: 'var(--c-ink)', stroke: 'var(--c-surface)', 'stroke-width': 2 }));
+            svg.appendChild(el('circle', { cx: x(pastCount), cy: p.y(view.live.socPct), r: 4, fill: 'var(--c-ink)', stroke: 'var(--c-surface)', 'stroke-width': 2 }));
           }
         }
       }
@@ -402,7 +437,7 @@
         hair.setAttribute('x1', cx); hair.setAttribute('x2', cx); hair.setAttribute('visibility', 'visible');
         for (const { p, c } of dots) {
           c.setAttribute('cx', p.key === 'battery' ? x(cursor + 1) : cx);
-          c.setAttribute('cy', p.key === 'price' ? p.y(iv.price) : p.y(iv.soc));
+          c.setAttribute('cy', p.key === 'price' ? p.y(Number.isFinite(iv.price) ? iv.price : p.dom.lo) : p.y(iv.soc));
           c.setAttribute('visibility', 'visible');
         }
         tip.replaceChildren();
@@ -419,13 +454,15 @@
           const l = document.createElement('span'); l.className = 'l'; l.textContent = label; r.appendChild(l);
           tip.appendChild(r);
         };
-        row('var(--c-price)', `${fmtNum(iv.price, 2)} ${cur()}`, '/kWh');
-        row(STATE_COLOR[iv.state], T.names[iv.state], '');
+        if (Number.isFinite(iv.price)) row('var(--c-price)', `${fmtNum(iv.price, 2)} ${cur()}`, '/kWh');
+        if (iv.past) row('var(--c-muted)', T.actual, '');
+        else row(STATE_COLOR[iv.state], T.names[iv.state], '');
         if (showEnergy) {
           row('var(--c-solar)', `${fmtNum(iv.pvKw, 1)} kW`, T.solar);
           row('var(--c-muted)', `${fmtNum(iv.loadKw, 1)} kW`, T.load);
         }
         row('var(--c-ink)', `${Math.round(iv.soc)} %`, T.battery.replace(' %', ''));
+        if (iv.past && iv.plannedSoc !== null && iv.plannedSoc !== undefined) row('transparent', `${Math.round(iv.plannedSoc)} %`, T.planned);
         tip.classList.add('visible');
         const tw = tip.offsetWidth;
         tip.style.left = `${cx + 12 + tw > W ? cx - tw - 12 : cx + 12}px`;
@@ -462,6 +499,7 @@
         item(`<i class="key" style="background:var(--c-solar)"></i>${T.solar}`);
         item(`<i class="key" style="background:var(--c-muted)"></i>${T.load}`);
       }
+      if (pastCount > 0) item(`<i class="key dashed"></i>${T.plannedLegend}`);
       root.appendChild(legend);
     }
 
@@ -518,8 +556,9 @@
         return;
       }
       const intervals = visibleIntervals();
+      const past = pastIntervals(intervals);
       renderHeader(root, intervals);
-      renderChart(root, intervals);
+      renderChart(root, [...past, ...intervals], past.length);
       renderSchedule(root, intervals);
       const footer = document.createElement('div');
       footer.className = 'footer';
@@ -535,6 +574,7 @@
       const settings = Homey.getSettings() || {};
       hoursShown = Number(settings.hours) || 36;
       showEnergy = settings.showEnergy !== false;
+      pastHours = settings.past === undefined ? 6 : Number(settings.past) || 0;
       const load = () => {
         document.getElementById('root').classList.add('refreshing');
         return Homey.api('GET', '/', {}).then((v) => { view = v; render(); }).catch((err) => {

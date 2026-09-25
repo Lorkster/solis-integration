@@ -151,3 +151,19 @@ describe('plan monitor', () => {
     assert.equal(monitor.deviation, 'no_data');
   });
 });
+
+describe('plan vs actual', () => {
+  it('records each quarter with what the day\'s first plan expected', async () => {
+    const { ActualHistory } = await import('../lib/energy/ActualHistory.js');
+    const h = new ActualHistory(TZ);
+    const at = (hhmm: string) => new Date(`2026-09-26T${hhmm}:00+02:00`);
+    h.setDayPlan(at('00:05'), [{ start: at('12:00'), socEndPct: 55 }, { start: at('12:15'), socEndPct: 60 }]);
+    h.setDayPlan(at('06:00'), [{ start: at('12:00'), socEndPct: 99 }]); // later plans do not replace the day's first
+    h.add(at('12:01'), 50, 3, 1, 1.2);
+    h.add(at('12:11'), 52, 5, 1, 1.2);
+    h.add(at('12:16'), 53, 4, 2, 1.3); // closes 12:00–12:15
+    const [q] = h.since(at('00:00'));
+    assert.deepEqual(q, { t: at('12:00').toISOString(), soc: 52, pvKw: 4, loadKw: 1, price: 1.2, plannedSoc: 55 });
+    assert.equal(h.since(at('12:05')).length, 0);
+  });
+});

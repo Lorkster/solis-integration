@@ -7,6 +7,7 @@ import {
   type CalibrationData, createPvPowerProvider, looksCurtailed, SolarCalibration, SolarForecaster, type SolarSource,
 } from '../../lib/forecast/SolarForecast.js';
 import { extraPowerCost, houseSupply, type HouseSupply, usesSource } from '../../lib/energy/EnergyFlow.js';
+import { ActualHistory, type ActualHistoryData } from '../../lib/energy/ActualHistory.js';
 import { type PeakData, PeakTracker, type PowerTariffConfig } from '../../lib/energy/PowerTariff.js';
 import { type SavingsData, SavingsTracker } from '../../lib/energy/Savings.js';
 import { LockDetector } from '../../lib/inverter/LockDetector.js';
@@ -95,6 +96,7 @@ export default class SolisInverterDevice extends Homey.Device {
   private peaks!: PeakTracker; // actual import peaks
   private peaksWithoutBattery!: PeakTracker; // what the peaks would have been without the battery
   private savings!: SavingsTracker;
+  private history!: ActualHistory;
   private peakRiskPeriod = 0;
   private peakRisk = false;
   private planError: string | null = null;
@@ -105,6 +107,7 @@ export default class SolisInverterDevice extends Homey.Device {
     this.info = (this.getStoreValue('inverterInfo') as InverterInfo | undefined) ?? null;
     this.powerCut = new PowerCutTracker(this.getStoreValue('powerCut') as PowerCutState | undefined);
     this.savings = new SavingsTracker(tz, this.getStoreValue('savings') as SavingsData | undefined);
+    this.history = new ActualHistory(tz, this.getStoreValue('actualHistory') as ActualHistoryData | undefined);
     this.peaks = new PeakTracker(tz, this.powerTariff(), this.getStoreValue('peaks') as PeakData | undefined);
     this.peaksWithoutBattery = new PeakTracker(tz, this.powerTariff(), this.getStoreValue('peaksWithoutBattery') as PeakData | undefined);
     this.loadProfile = new LoadProfile(tz, this.getStoreValue('loadProfile') as LoadProfileData | undefined);
@@ -482,6 +485,8 @@ export default class SolisInverterDevice extends Homey.Device {
         learnedLoad: this.loadProfile.observations >= 96 * 3,
         solarForecast: Boolean(this.solar),
         nowState: this.nowState(),
+        // The last 12 hours as measured, with what the day's first plan expected.
+        past: this.history.since(new Date(Date.now() - 12 * 3_600_000)),
         periods: planPeriods(state.plan.intervals, state.reserveSoc, this.controller.config.maxSocPct).map((p) => ({
           state: p.state,
           start: p.start.toISOString(),
@@ -644,6 +649,7 @@ export default class SolisInverterDevice extends Homey.Device {
     this.lastPersist = Date.now();
     await this.setStoreValue('loadProfile', this.loadProfile.toJSON());
     await this.setStoreValue('savings', this.savings.toJSON());
+    await this.setStoreValue('actualHistory', this.history.toJSON());
     if (this.powerTariff().enabled) {
       await this.setStoreValue('peaks', this.peaks.toJSON());
       await this.setStoreValue('peaksWithoutBattery', this.peaksWithoutBattery.toJSON());
@@ -744,6 +750,7 @@ export default class SolisInverterDevice extends Homey.Device {
   private async measure(live: LiveData, hours: number): Promise<void> {
     const t = live.timestamp;
     const iv = this.planState?.plan.intervals.find((i) => i.start <= t && i.end > t);
+    this.history.add(t, live.socPct, live.pvPowerW / 1000, live.loadPowerW / 1000, iv?.buy ?? null);
     if (iv && !this.powerCut.active) {
       this.savings.add({
         time: t, hours, gridW: live.gridPowerW, loadW: live.loadPowerW, pvW: live.pvPowerW, buy: iv.buy, sell: iv.sell,
@@ -1166,6 +1173,7 @@ export default class SolisInverterDevice extends Homey.Device {
         && this.getSetting('negative_export_block') !== false;
       const state = await this.controller.buildPlan(this.live, now);
       this.planState = state;
+      this.history.setDayPlan(now, state.plan.intervals);
       await this.updatePlanCapabilities(state, now);
       await this.updatePowerCost();
 

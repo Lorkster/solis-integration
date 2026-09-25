@@ -3736,6 +3736,38 @@
             "sv": "Visa sol- och förbrukningsprognos"
           },
           "value": true
+        },
+        {
+          "id": "past",
+          "type": "dropdown",
+          "title": {
+            "en": "Show the past",
+            "sv": "Visa det som varit"
+          },
+          "value": "6",
+          "values": [
+            {
+              "id": "0",
+              "title": {
+                "en": "Off",
+                "sv": "Av"
+              }
+            },
+            {
+              "id": "6",
+              "title": {
+                "en": "6 hours",
+                "sv": "6 timmar"
+              }
+            },
+            {
+              "id": "12",
+              "title": {
+                "en": "12 hours",
+                "sv": "12 timmar"
+              }
+            }
+          ]
         }
       ],
       "api": {

@@ -44,6 +44,7 @@ const page = html
 const dir = mkdtempSync(join(tmpdir(), 'widget-'));
 const file = join(dir, 'page.html');
 writeFileSync(file, page);
+if (process.env.KEEP_PAGE) writeFileSync(process.env.KEEP_PAGE, page);
 const png = resolve(out ?? join(here, `${widget}-${theme}.png`));
 const edge = 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe';
 try { unlinkSync(png); } catch { /* not there yet */ }
