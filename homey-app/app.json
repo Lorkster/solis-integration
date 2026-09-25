@@ -1618,8 +1618,8 @@
                 {
                   "id": "blend",
                   "label": {
-                    "en": "Blend of five models (median)",
-                    "sv": "Mix av fem modeller (median)"
+                    "en": "Five models, weighted by how well each fits (learns)",
+                    "sv": "Fem modeller, viktade efter hur väl var och en stämmer (lär sig)"
                   }
                 },
                 {
@@ -1659,9 +1659,18 @@
                 }
               ],
               "hint": {
-                "en": "The blend takes the middle value of Yr, ICON, ECMWF, GFS and Météo-France, so one model's miss does not mislead the plan (on 25 Sep 2026 Yr forecast 68 W/m² at noon on a clear day; the others 380–640).",
-                "sv": "Mixen tar mittvärdet av Yr, ICON, ECMWF, GFS och Météo-France, så att en modells miss inte vilseleder planen (25 sep 2026 gav Yr 68 W/m² mitt på dagen en klar dag; de andra 380–640)."
+                "en": "Yr, ICON, ECMWF, GFS and Météo-France. Each is scored every quarter-hour against your measured production; the ones that fit your roof best count most. Until about two days of sun are scored, the middle value is used. A single model can be chosen instead.",
+                "sv": "Yr, ICON, ECMWF, GFS och Météo-France. Varje modell poängsätts varje kvart mot din uppmätta produktion; de som stämmer bäst för ditt tak väger tyngst. Tills ungefär två soldagar är poängsatta används mittvärdet. En enskild modell kan väljas i stället."
               }
+            },
+            {
+              "id": "pv_model_weights",
+              "type": "label",
+              "label": {
+                "en": "Learned model weights",
+                "sv": "Inlärda modellvikter"
+              },
+              "value": "–"
             },
             {
               "id": "pv_api_key",

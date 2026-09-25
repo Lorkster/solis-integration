@@ -30,7 +30,8 @@
       "unsupported": "Stöds inte: växelriktaren saknar batteristyrning"
     },
     "monitorOnly": "Växelriktarens firmware använder det äldre schemat med 3 luckor. Appen kan visa planen men inte styra batteriet ännu.",
-    "fallback": "reserv"
+    "fallback": "reserv",
+    "weightsLearning": "lär sig – ungefär två soldagar behövs"
   },
   "powerCut": {
     "started": "Strömavbrott kl. {{time}}. Batteri {{battery}} % – cirka {{hours}} h reserv vid nuvarande förbrukning.",

@@ -287,6 +287,21 @@ inverter can hold. *Save* is a charge period at 0 A: the battery neither charges
 
 ---
 
+### Which weather forecast
+
+The solar forecast comes from five weather models through Open-Meteo: **Yr** (MET Norway), **ICON**,
+**ECMWF**, **GFS** and **Météo-France**. Every quarter-hour the app compares each model's forecast
+with what your panels actually produced (after the correction for your roof's shading and
+direction, and leaving out times when the inverter held production back). Models that fit your
+roof best get more weight; recent weeks count most, and no model ever gets all of it. Until about
+two days of sun have been scored, the app uses the middle value of the five. The current weights
+are shown in the settings under **Solar forecast → Learned model weights**.
+
+On this installation, the first 14 days (Sep 2026) scored: the middle value 0.75 kW mean error,
+ICON and ECMWF 0.78, Météo-France and Yr 0.85, GFS 0.93. No single model beat the combination; on
+25 Sep, a clear day, Yr alone forecast grey skies. One model can still be chosen under **Weather
+model**. `homey-app/test/backtest.check.ts` repeats the comparison.
+
 ## Backup and power outages
 
 Two limits decide how much of the battery is available in a power outage:
@@ -592,7 +607,8 @@ Open the device and tap the gear icon.
 |---|---|---|
 | Use solar forecast in the plan | on | Calibrated against your measured production, so errors in size or orientation shrink over time. |
 | Forecast source | Open-Meteo (free, no account) | Open-Meteo: 15-minute irradiance and 14 days of history for a quick calibration. Forecast.Solar: hourly production estimate. Solcast: forecast for the rooftop sites set up in your Solcast account; uses the API key and site IDs below. |
-| Weather model (Open-Meteo) | Blend of five models (median) | The blend takes the middle value of Yr, ICON, ECMWF, GFS and Météo-France, so one model's miss does not mislead the plan (on 25 Sep 2026 Yr forecast 68 W/m² at noon on a clear day; the others 380–640). |
+| Weather model (Open-Meteo) | Five models, weighted by how well each fits (learns) | Yr, ICON, ECMWF, GFS and Météo-France. Each is scored every quarter-hour against your measured production; the ones that fit your roof best count most. Until about two days of sun are scored, the middle value is used. A single model can be chosen instead. |
+| Learned model weights | – |  |
 | API key (Solcast, or Forecast.Solar paid plan) | (from pairing) |  |
 | Solcast site IDs | (from pairing) | Resource IDs of your rooftop sites, separated by commas. Solcast allows 10 requests a day, so the app fetches at most every 2.5 hours per site. |
 | Array 1 size | 11 kWp | Also used with Solcast, to judge when production is high enough to learn from. |

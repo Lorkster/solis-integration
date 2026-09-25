@@ -2,6 +2,7 @@ import Homey from 'homey';
 
 import { BatteryController, type ControllerConfig, currentAction, type PlanState } from '../../lib/controller/BatteryController.js';
 import { LoadProfile, type LoadProfileData } from '../../lib/forecast/LoadProfile.js';
+import { ModelSkill, type SkillData } from '../../lib/forecast/ModelSkill.js';
 import {
   type CalibrationData, createPvPowerProvider, looksCurtailed, SolarCalibration, SolarForecaster, type SolarSource,
 } from '../../lib/forecast/SolarForecast.js';
@@ -111,6 +112,7 @@ export default class SolisInverterDevice extends Homey.Device {
       if (!this.solar) return;
       this.solar.learn(start, kw);
       this.setStoreValue('solarCalibration', this.solar.calibration.toJSON()).catch(this.error);
+      this.setStoreValue('solarSkill', this.solar.skill.toJSON()).catch(this.error);
     });
     await this.migrateCapabilities();
     await this.migrateSettings();
@@ -233,7 +235,9 @@ export default class SolisInverterDevice extends Homey.Device {
       if (solarChanged) {
         // New orientation: the previous calibration no longer applies.
         await this.unsetStoreValue('solarCalibration').catch(this.error);
+        await this.unsetStoreValue('solarSkill').catch(this.error);
         await this.unsetStoreValue('historyLearned').catch(this.error);
+        await this.unsetStoreValue('skillLearned').catch(this.error);
       }
       this.createController();
       if (connectionChanged) {
@@ -564,7 +568,8 @@ export default class SolisInverterDevice extends Homey.Device {
         try {
           const provider = createPvPowerProvider(s.pv_source as SolarSource, String(s.pv_api_key ?? ''), String(s.solcast_sites ?? ''),
             String(s.pv_weather_model ?? 'blend'));
-          this.solar = new SolarForecaster({ latitude, longitude, arrays, performanceRatio: 0.85, maxAcKw }, calibration, provider);
+          const skill = new ModelSkill(this.getStoreValue('solarSkill') as SkillData | undefined);
+          this.solar = new SolarForecaster({ latitude, longitude, arrays, performanceRatio: 0.85, maxAcKw }, calibration, provider, skill);
         } catch (err) {
           this.error('Solar forecast disabled:', err);
         }
@@ -1027,16 +1032,21 @@ export default class SolisInverterDevice extends Homey.Device {
   }
 
   /**
-   * Bootstraps the load profile and solar calibration from SolisCloud's 5-minute history, so
-   * planning uses the real consumption pattern and solar behaviour from day one.
+   * Bootstraps the load profile, the solar calibration and the weather models' scores from
+   * SolisCloud's 5-minute history, so planning uses the real consumption pattern and solar
+   * behaviour from day one. The models' scores are learned on their own when they are new.
    */
   private async learnFromHistory(): Promise<void> {
-    if (!this.transport.getHistory || this.getStoreValue('historyLearned')) return;
+    if (!this.transport.getHistory) return;
+    const learnAll = !this.getStoreValue('historyLearned');
+    const solar = this.solar?.provider.hasHistory ? this.solar : null;
+    const learnSkill = Boolean(solar) && !this.getStoreValue('skillLearned');
+    if (!learnAll && !learnSkill) return;
     const tz = this.homey.clock.getTimezone();
     const load = new LoadProfile(tz);
-    const solar = this.solar?.provider.hasHistory ? this.solar : null;
     await solar?.refresh(HISTORY_DAYS).catch(this.error);
-    const pv = new QuarterAverager((start, kw) => solar?.learn(start, kw));
+    const quarters: Array<[Date, number]> = [];
+    const pv = new QuarterAverager((start, kw) => quarters.push([start, kw]));
     for (let d = HISTORY_DAYS; d >= 1; d--) {
       const date = localDate(addDays(new Date(), -d), tz);
       try {
@@ -1051,12 +1061,23 @@ export default class SolisInverterDevice extends Homey.Device {
     }
     load.flush();
     if (load.observations < 96) return; // not enough data; try again at the next start
-    this.loadProfile = new LoadProfile(tz, load.toJSON());
-    await this.setStoreValue('loadProfile', this.loadProfile.toJSON());
-    if (this.solar) await this.setStoreValue('solarCalibration', this.solar.calibration.toJSON());
-    await this.setStoreValue('historyLearned', true);
-    this.log(`Learned from ${HISTORY_DAYS} days of history: ${load.observations} load quarters, `
-      + `${this.solar?.calibration.observations ?? 0} solar quarters`);
+    if (solar) {
+      // First the calibration (shading, orientation), then score the models against it.
+      if (learnAll) for (const [start, kw] of quarters) solar.learn(start, kw, { skill: false });
+      if (learnSkill) for (const [start, kw] of quarters) solar.learn(start, kw, { calibration: false });
+      await this.setStoreValue('solarCalibration', solar.calibration.toJSON());
+      await this.setStoreValue('solarSkill', solar.skill.toJSON());
+      await this.setStoreValue('skillLearned', true);
+      this.log('Weather model weights:', solar.describeWeights() ?? 'still learning');
+    }
+    if (learnAll) {
+      this.loadProfile = new LoadProfile(tz, load.toJSON());
+      await this.setStoreValue('loadProfile', this.loadProfile.toJSON());
+      await this.setStoreValue('historyLearned', true);
+      this.log(`Learned from ${HISTORY_DAYS} days of history: ${load.observations} load quarters, `
+        + `${solar?.calibration.observations ?? 0} solar quarters`);
+    }
+    await this.solar?.refresh().catch(this.error); // recombine the models with the new weights
     await this.replan();
   }
 
@@ -1154,6 +1175,10 @@ export default class SolisInverterDevice extends Homey.Device {
   /** Expected PV energy for the whole local day. */
   private async updateSolarCapability(now: Date): Promise<void> {
     if (!this.solar) return;
+    const weights = this.solar.models.length > 1
+      ? this.solar.describeWeights() ?? this.homey.__('device.weightsLearning')
+      : '–';
+    if (this.getSetting('pv_model_weights') !== weights) await this.setSettings({ pv_model_weights: weights }).catch(this.error);
     const tz = this.homey.clock.getTimezone();
     const today = localDate(now, tz);
     let kwh = 0;

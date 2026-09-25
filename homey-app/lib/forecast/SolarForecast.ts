@@ -1,4 +1,5 @@
 import { httpsRequest } from '../http.js';
+import { ModelSkill } from './ModelSkill.js';
 import { localParts } from '../time.js';
 
 /** One plane of panels. Azimuth: 0 = south, -90 = east, 90 = west (Open-Meteo convention). */
@@ -16,6 +17,8 @@ export interface Irradiance {
 
 export interface IrradianceProvider {
   get(lat: number, lon: number, array: SolarArray, pastDays: number): Promise<Irradiance[]>;
+  /** Each weather model's series separately, when the service has several. */
+  getModels?(lat: number, lon: number, array: SolarArray, pastDays: number): Promise<Map<string, Irradiance[]>>;
 }
 
 /**
@@ -37,29 +40,57 @@ export function median(values: number[]): number | null {
  * preceding hour, so the value at 12:00 covers the quarters 11:00–11:45.
  */
 export function parseBlend(json: { hourly: Record<string, Array<string | number | null>> }, models: readonly string[]): Irradiance[] {
+  return medianSeries(parseModels(json, models));
+}
+
+/** Each model's hourly values as quarter-hours (hours a model does not cover are left out). */
+export function parseModels(json: { hourly: Record<string, Array<string | number | null>> }, models: readonly string[]): Map<string, Irradiance[]> {
   const h = json.hourly;
-  const out: Irradiance[] = [];
-  (h.time as string[]).forEach((t, i) => {
-    const pick = (variable: string) => models
-      .map((m) => h[`${variable}_${m}`]?.[i])
-      .filter((v): v is number => typeof v === 'number' && Number.isFinite(v));
-    const gti = median(pick('global_tilted_irradiance'));
-    if (gti === null) return;
-    const tempC = median(pick('temperature_2m')) ?? 10;
-    const end = new Date(`${t}Z`).getTime();
-    for (let q = 4; q >= 1; q--) out.push({ start: new Date(end - q * 900_000), gti, tempC });
-  });
+  const out = new Map<string, Irradiance[]>();
+  for (const m of models) {
+    const gti = h[`global_tilted_irradiance_${m}`];
+    const temp = h[`temperature_2m_${m}`];
+    if (!gti) continue;
+    const series: Irradiance[] = [];
+    (h.time as string[]).forEach((t, i) => {
+      const g = gti[i];
+      if (typeof g !== 'number' || !Number.isFinite(g)) return;
+      const tc = temp?.[i];
+      const end = new Date(`${t}Z`).getTime();
+      for (let q = 4; q >= 1; q--) series.push({ start: new Date(end - q * 900_000), gti: g, tempC: typeof tc === 'number' ? tc : NaN });
+    });
+    out.set(m, series);
+  }
   return out;
+}
+
+/** The median across models, quarter by quarter. */
+export function medianSeries(byModel: Map<string, Irradiance[]>): Irradiance[] {
+  const at = new Map<number, { gti: number[]; temp: number[] }>();
+  for (const series of byModel.values()) {
+    for (const irr of series) {
+      const e = at.get(irr.start.getTime()) ?? { gti: [], temp: [] };
+      e.gti.push(irr.gti);
+      if (Number.isFinite(irr.tempC)) e.temp.push(irr.tempC);
+      at.set(irr.start.getTime(), e);
+    }
+  }
+  return [...at.entries()].sort((a, b) => a[0] - b[0])
+    .map(([t, e]) => ({ start: new Date(t), gti: median(e.gti)!, tempC: median(e.temp) ?? 10 }));
 }
 
 /** Open-Meteo forecast (free, no key): the median of several weather models. Includes past days for calibration. */
 export class OpenMeteoProvider implements IrradianceProvider {
-  private readonly cache = new Map<string, { at: number; data: Irradiance[] }>();
+  private readonly cache = new Map<string, { at: number; data: Map<string, Irradiance[]> }>();
 
   /** `models`: the weather models to blend; one model means that model alone (e.g. Yr). */
   constructor(private readonly models: readonly string[] = BLEND_MODELS) {}
 
   async get(lat: number, lon: number, array: SolarArray, pastDays: number): Promise<Irradiance[]> {
+    return medianSeries(await this.getModels(lat, lon, array, pastDays));
+  }
+
+  async getModels(lat: number, lon: number, array: SolarArray, pastDays: number): Promise<Map<string, Irradiance[]>> {
     const key = `${lat.toFixed(3)},${lon.toFixed(3)},${array.tilt},${array.azimuth},${pastDays},${this.models.join('+')}`;
     const cached = this.cache.get(key);
     if (cached && Date.now() - cached.at < 3_600_000) return cached.data;
@@ -78,7 +109,7 @@ export class OpenMeteoProvider implements IrradianceProvider {
         if (name !== 'time' && !name.endsWith(`_${this.models[0]}`)) json.hourly[`${name}_${this.models[0]}`] = json.hourly[name];
       }
     }
-    const data = parseBlend(json, this.models);
+    const data = parseModels(json, this.models);
     this.cache.set(key, { at: Date.now(), data });
     return data;
   }
@@ -99,7 +130,8 @@ export function looksCurtailed(pvKw: number, loadKw: number, gridKw: number, bat
 /** Physical estimate of AC output (kW) for one array, before calibration. */
 export function modelPvKw(irr: Irradiance, array: SolarArray, performanceRatio: number): number {
   if (irr.gti <= 0) return 0;
-  const cellTemp = irr.tempC + irr.gti / 800 * 20; // NOCT-style approximation
+  const air = Number.isFinite(irr.tempC) ? irr.tempC : 10; // some models lack temperature
+  const cellTemp = air + irr.gti / 800 * 20; // NOCT-style approximation
   const tempFactor = 1 + TEMP_COEFFICIENT * (cellTemp - 25);
   return Math.max(0, irr.gti / 1000 * array.kwp * performanceRatio * tempFactor);
 }
@@ -169,6 +201,8 @@ export interface PvPowerProvider {
   readonly hasHistory: boolean;
   /** kW per quarter-hour start (ms) for all arrays combined, from `pastDays` ago up to ~2 days ahead. */
   getPower(config: SolarForecastConfig, pastDays: number): Promise<Map<number, number>>;
+  /** The same per weather model, when the service has several (null when it has one). */
+  getModelPower?(config: SolarForecastConfig, pastDays: number): Promise<Map<string, Map<number, number>> | null>;
 }
 
 const QUARTER_MS = 900_000;
@@ -189,6 +223,23 @@ export class IrradiancePowerProvider implements PvPowerProvider {
       }
     }
     return power;
+  }
+
+  async getModelPower(config: SolarForecastConfig, pastDays: number): Promise<Map<string, Map<number, number>> | null> {
+    if (!this.irradiance.getModels) return null;
+    const byModel = new Map<string, Map<number, number>>();
+    for (const array of config.arrays.filter((a) => a.kwp > 0)) {
+      const models = await this.irradiance.getModels(config.latitude, config.longitude, array, pastDays);
+      for (const [model, series] of models) {
+        const power = byModel.get(model) ?? new Map<number, number>();
+        for (const irr of series) {
+          const t = irr.start.getTime();
+          power.set(t, (power.get(t) ?? 0) + modelPvKw(irr, array, config.performanceRatio));
+        }
+        byModel.set(model, power);
+      }
+    }
+    return byModel.size > 1 ? byModel : null;
   }
 }
 
@@ -311,12 +362,19 @@ export function createPvPowerProvider(source: SolarSource, apiKey: string, solca
 /** Combines the forecast service's power estimate with the learned calibration, per quarter hour. */
 export class SolarForecaster {
   private modeled = new Map<number, number>(); // quarter start ms → uncalibrated kW
+  private byModel = new Map<string, Map<number, number>>(); // weather model → quarter → uncalibrated kW
 
   constructor(
     private config: SolarForecastConfig,
     readonly calibration: SolarCalibration,
     readonly provider: PvPowerProvider = new IrradiancePowerProvider(),
+    readonly skill: ModelSkill = new ModelSkill(),
   ) {}
+
+  /** The weather models behind the forecast (empty with a single-source service). */
+  get models(): string[] {
+    return [...this.byModel.keys()];
+  }
 
   get kwpTotal(): number {
     return this.config.arrays.reduce((sum, a) => sum + a.kwp, 0);
@@ -328,10 +386,49 @@ export class SolarForecaster {
    * compared with what was measured.
    */
   async refresh(pastDays = 1): Promise<void> {
-    const fresh = await this.provider.getPower(this.config, pastDays);
     const keepFrom = Date.now() - 3 * 86_400_000;
+    const models = this.provider.getModelPower ? await this.provider.getModelPower(this.config, pastDays) : null;
+    if (models) {
+      for (const [model, old] of this.byModel) {
+        const fresh = models.get(model);
+        if (fresh) for (const [t, kw] of old) if (t >= keepFrom && !fresh.has(t)) fresh.set(t, kw);
+      }
+      this.byModel = models;
+      this.modeled = this.combine();
+      return;
+    }
+    const fresh = await this.provider.getPower(this.config, pastDays);
     for (const [t, kw] of this.modeled) if (t >= keepFrom && !fresh.has(t)) fresh.set(t, kw);
     this.modeled = fresh;
+  }
+
+  /**
+   * One series from the weather models: weighted by how well each has matched this installation's
+   * production, or the median while there is too little to judge.
+   */
+  private combine(): Map<number, number> {
+    const weights = this.skill.weights(this.models, this.kwpTotal);
+    const times = new Set<number>();
+    for (const series of this.byModel.values()) for (const t of series.keys()) times.add(t);
+    const out = new Map<number, number>();
+    for (const t of times) {
+      const values = this.models
+        .map((m) => [m, this.byModel.get(m)!.get(t)] as const)
+        .filter((e): e is readonly [string, number] => e[1] !== undefined);
+      if (values.length === 0) continue;
+      if (!weights) {
+        out.set(t, median(values.map((e) => e[1]))!);
+        continue;
+      }
+      const total = values.reduce((sum, [m]) => sum + weights[m], 0);
+      out.set(t, values.reduce((sum, [m, v]) => sum + weights[m] * v, 0) / total);
+    }
+    return out;
+  }
+
+  /** Learned weights, e.g. "Yr 31 % · ICON 24 % · …", or null while learning / with one source. */
+  describeWeights(): string | null {
+    return this.models.length > 1 ? this.skill.describe(this.models, this.kwpTotal) : null;
   }
 
   /** Uncalibrated modeled kW for the quarter containing `time`, or null if unknown. */
@@ -378,9 +475,23 @@ export class SolarForecaster {
     return 1 + (n.ratio - 1) * Math.exp(-Math.max(0, ahead) / (120 * 60_000));
   }
 
-  /** Feeds an observed quarter-hour average PV power into the calibration. */
-  learn(time: Date, actualKw: number): void {
+  /**
+   * Feeds an observed quarter-hour average PV power into the calibration and scores each weather
+   * model against it. Models are compared after the calibration, so shading and orientation (which
+   * affect all models alike) do not count against any of them.
+   */
+  learn(time: Date, actualKw: number, parts: { calibration?: boolean; skill?: boolean } = {}): void {
+    const q = Math.floor(time.getTime() / 900_000) * 900_000;
+    if (parts.skill !== false && this.byModel.size > 1) {
+      const factor = this.calibration.factorAt(time);
+      const predictions: Record<string, number> = {};
+      for (const [model, series] of this.byModel) {
+        const kw = series.get(q);
+        if (kw !== undefined) predictions[model] = Math.min(this.config.maxAcKw, kw * factor);
+      }
+      this.skill.add(predictions, actualKw, this.kwpTotal);
+    }
     const modeled = this.modeledAt(time);
-    if (modeled !== null) this.calibration.add(time, modeled, actualKw, this.kwpTotal);
+    if (parts.calibration !== false && modeled !== null) this.calibration.add(time, modeled, actualKw, this.kwpTotal);
   }
 }

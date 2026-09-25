@@ -30,7 +30,8 @@
       "unsupported": "Not supported: no battery control on this inverter"
     },
     "monitorOnly": "This inverter's firmware uses the older 3-slot schedule. The app can show the plan but not control the battery yet.",
-    "fallback": "fallback"
+    "fallback": "fallback",
+    "weightsLearning": "learning – about two days of sun needed"
   },
   "powerCut": {
     "started": "Power cut at {{time}}. Battery {{battery}} % – about {{hours}} h of backup at the current use.",
