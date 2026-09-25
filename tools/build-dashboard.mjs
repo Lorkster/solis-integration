@@ -9,9 +9,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 // Line endings follow the checkout (CRLF on Windows); normalise them so every platform builds the same file.
-const read = (file) => readFileSync(join(root, file), 'utf8').replace(/
-/g, '
-');
+const read = (file) => readFileSync(join(root, file), 'utf8').replace(/\r\n/g, '\n');
 const host = read('tools/dashboard/host.html');
 const widgets = Object.fromEntries(['battery-status', 'battery-plan']
   .map((id) => [id, read(`homey-app/widgets/${id}/public/index.html`)]));
