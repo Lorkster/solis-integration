@@ -537,7 +537,7 @@ Open the device and tap the gear icon.
 | Solcast site IDs | (from pairing) | Resource IDs of your rooftop sites, separated by commas. Solcast allows 10 requests a day, so the app fetches at most every 2.5 hours per site. |
 | Array 1 size | 11 kWp | Also used with Solcast, to judge when production is high enough to learn from. |
 | Array 1 tilt | 35 ° | 0° = flat, 90° = vertical |
-| Array 1 facing | South |  |
+| Array 1 facing | South | The direction the panels face, in 15° steps. |
 | Array 2 size (0 = none) | 0 kWp |  |
 | Array 2 tilt | 35 ° |  |
 | Array 2 facing | East |  |

@@ -330,6 +330,34 @@
               }
             },
             {
+              "id": "-15",
+              "label": {
+                "en": "15° east of south",
+                "sv": "15° öster om söder"
+              }
+            },
+            {
+              "id": "15",
+              "label": {
+                "en": "15° west of south",
+                "sv": "15° väster om söder"
+              }
+            },
+            {
+              "id": "-30",
+              "label": {
+                "en": "30° east of south",
+                "sv": "30° öster om söder"
+              }
+            },
+            {
+              "id": "30",
+              "label": {
+                "en": "30° west of south",
+                "sv": "30° väster om söder"
+              }
+            },
+            {
               "id": "-45",
               "label": {
                 "en": "South-east",
@@ -341,6 +369,34 @@
               "label": {
                 "en": "South-west",
                 "sv": "Sydväst"
+              }
+            },
+            {
+              "id": "-60",
+              "label": {
+                "en": "60° east of south",
+                "sv": "60° öster om söder"
+              }
+            },
+            {
+              "id": "60",
+              "label": {
+                "en": "60° west of south",
+                "sv": "60° väster om söder"
+              }
+            },
+            {
+              "id": "-75",
+              "label": {
+                "en": "75° east of south",
+                "sv": "75° öster om söder"
+              }
+            },
+            {
+              "id": "75",
+              "label": {
+                "en": "75° west of south",
+                "sv": "75° väster om söder"
               }
             },
             {
@@ -358,6 +414,34 @@
               }
             },
             {
+              "id": "-105",
+              "label": {
+                "en": "75° east of north",
+                "sv": "75° öster om norr"
+              }
+            },
+            {
+              "id": "105",
+              "label": {
+                "en": "75° west of north",
+                "sv": "75° väster om norr"
+              }
+            },
+            {
+              "id": "-120",
+              "label": {
+                "en": "60° east of north",
+                "sv": "60° öster om norr"
+              }
+            },
+            {
+              "id": "120",
+              "label": {
+                "en": "60° west of north",
+                "sv": "60° väster om norr"
+              }
+            },
+            {
               "id": "-135",
               "label": {
                 "en": "North-east",
@@ -372,13 +456,45 @@
               }
             },
             {
+              "id": "-150",
+              "label": {
+                "en": "30° east of north",
+                "sv": "30° öster om norr"
+              }
+            },
+            {
+              "id": "150",
+              "label": {
+                "en": "30° west of north",
+                "sv": "30° väster om norr"
+              }
+            },
+            {
+              "id": "-165",
+              "label": {
+                "en": "15° east of north",
+                "sv": "15° öster om norr"
+              }
+            },
+            {
+              "id": "165",
+              "label": {
+                "en": "15° west of north",
+                "sv": "15° väster om norr"
+              }
+            },
+            {
               "id": "180",
               "label": {
                 "en": "North",
                 "sv": "Norr"
               }
             }
-          ]
+          ],
+          "hint": {
+            "en": "The direction the panels face, in 15° steps.",
+            "sv": "Riktningen panelerna vetter åt, i steg om 15°."
+          }
         },
         {
           "id": "pv_array2_kwp",
@@ -427,6 +543,34 @@
               }
             },
             {
+              "id": "-15",
+              "label": {
+                "en": "15° east of south",
+                "sv": "15° öster om söder"
+              }
+            },
+            {
+              "id": "15",
+              "label": {
+                "en": "15° west of south",
+                "sv": "15° väster om söder"
+              }
+            },
+            {
+              "id": "-30",
+              "label": {
+                "en": "30° east of south",
+                "sv": "30° öster om söder"
+              }
+            },
+            {
+              "id": "30",
+              "label": {
+                "en": "30° west of south",
+                "sv": "30° väster om söder"
+              }
+            },
+            {
               "id": "-45",
               "label": {
                 "en": "South-east",
@@ -438,6 +582,34 @@
               "label": {
                 "en": "South-west",
                 "sv": "Sydväst"
+              }
+            },
+            {
+              "id": "-60",
+              "label": {
+                "en": "60° east of south",
+                "sv": "60° öster om söder"
+              }
+            },
+            {
+              "id": "60",
+              "label": {
+                "en": "60° west of south",
+                "sv": "60° väster om söder"
+              }
+            },
+            {
+              "id": "-75",
+              "label": {
+                "en": "75° east of south",
+                "sv": "75° öster om söder"
+              }
+            },
+            {
+              "id": "75",
+              "label": {
+                "en": "75° west of south",
+                "sv": "75° väster om söder"
               }
             },
             {
@@ -455,6 +627,34 @@
               }
             },
             {
+              "id": "-105",
+              "label": {
+                "en": "75° east of north",
+                "sv": "75° öster om norr"
+              }
+            },
+            {
+              "id": "105",
+              "label": {
+                "en": "75° west of north",
+                "sv": "75° väster om norr"
+              }
+            },
+            {
+              "id": "-120",
+              "label": {
+                "en": "60° east of north",
+                "sv": "60° öster om norr"
+              }
+            },
+            {
+              "id": "120",
+              "label": {
+                "en": "60° west of north",
+                "sv": "60° väster om norr"
+              }
+            },
+            {
               "id": "-135",
               "label": {
                 "en": "North-east",
@@ -466,6 +666,34 @@
               "label": {
                 "en": "North-west",
                 "sv": "Nordväst"
+              }
+            },
+            {
+              "id": "-150",
+              "label": {
+                "en": "30° east of north",
+                "sv": "30° öster om norr"
+              }
+            },
+            {
+              "id": "150",
+              "label": {
+                "en": "30° west of north",
+                "sv": "30° väster om norr"
+              }
+            },
+            {
+              "id": "-165",
+              "label": {
+                "en": "15° east of north",
+                "sv": "15° öster om norr"
+              }
+            },
+            {
+              "id": "165",
+              "label": {
+                "en": "15° west of north",
+                "sv": "15° väster om norr"
               }
             },
             {
