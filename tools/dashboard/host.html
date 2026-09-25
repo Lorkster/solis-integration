@@ -79,7 +79,7 @@
       en: {
         title: 'Solis Smart Battery', updated: (t) => `Updated ${t}`, offline: 'Cannot reach Homey: ',
         setupTitle: 'Connect to Homey',
-        setupText: 'This page reads the values straight from Homey on your home network, with a Homey API key. Create one in the Homey web app: Settings → API Keys → New API Key, with as few permissions as possible.',
+        setupText: 'This page reads the values straight from Homey on your home network, with a Homey API key. Create one in the Homey web app: Settings → API Keys → New API Key, with only “Apps: control”.',
         address: "Homey's address on your network", apiKey: 'Homey API key', save: 'Connect',
         setupNote: 'The address and key are stored in this browser only and are sent to nothing but your Homey.',
         forget: 'Forget the key on this device',
@@ -87,7 +87,7 @@
       sv: {
         title: 'Solis Smart Batteri', updated: (t) => `Uppdaterad ${t}`, offline: 'Når inte Homey: ',
         setupTitle: 'Anslut till Homey',
-        setupText: 'Sidan läser värdena direkt från Homey i ditt hemnätverk, med en API-nyckel för Homey. Skapa en i Homeys webbapp: Inställningar → API-nycklar → Ny API-nyckel, med så få behörigheter som möjligt.',
+        setupText: 'Sidan läser värdena direkt från Homey i ditt hemnätverk, med en API-nyckel för Homey. Skapa en i Homeys webbapp: Inställningar → API-nycklar → Ny API-nyckel, med bara ”Appar: kontroll”.',
         address: 'Homeys adress i nätverket', apiKey: 'API-nyckel för Homey', save: 'Anslut',
         setupNote: 'Adressen och nyckeln sparas bara i den här webbläsaren och skickas inte till något annat än din Homey.',
         forget: 'Glöm nyckeln på den här enheten',
@@ -208,6 +208,7 @@
     // Data straight from Homey's local API with a Homey API key: nothing public, nothing via the internet.
     // The address and key live in this browser's storage only, never in the link.
     const STORE = 'solis-dashboard';
+    const ADDRESS_STORE = 'solis-dashboard-address'; // kept after "Forget the key", so it need not be typed again
     const stored = () => {
       try { return JSON.parse(localStorage.getItem(STORE) || 'null'); } catch { return null; }
     };
@@ -228,13 +229,16 @@
       start();
     }
     document.getElementById('forget').addEventListener('click', () => {
-      try { localStorage.removeItem(STORE); } catch { /* storage blocked */ }
+      try { localStorage.removeItem(STORE); } catch { /* storage blocked */ }  // the address stays
       location.reload();
     });
     document.getElementById('setup').addEventListener('submit', (event) => {
       event.preventDefault();
       const config = { address: document.getElementById('address').value, key: document.getElementById('api-key').value.trim() };
-      try { localStorage.setItem(STORE, JSON.stringify(config)); } catch { /* storage blocked: works until reload */ }
+      try {
+        localStorage.setItem(STORE, JSON.stringify(config));
+        localStorage.setItem(ADDRESS_STORE, config.address.trim());
+      } catch { /* storage blocked: works until reload */ }
       document.getElementById('setup').hidden = true;
       connect(config);
     });
@@ -243,7 +247,14 @@
       if (source) return;
       const config = stored();
       if (config && config.address && config.key) connect(config);
-      else document.getElementById('setup').hidden = false;
+      else {
+        let last = '';
+        try { last = localStorage.getItem(ADDRESS_STORE) || (config && config.address) || ''; } catch { /* storage blocked */ }
+        const address = document.getElementById('address');
+        address.value = last;
+        document.getElementById('setup').hidden = false;
+        (last ? document.getElementById('api-key') : address).focus();
+      }
     }, 800);
     applyTexts();
   </script>

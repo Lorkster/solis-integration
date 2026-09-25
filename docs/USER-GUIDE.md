@@ -157,12 +157,14 @@ API key.
 - **On a wall screen, tablet or computer at home**: [`docs/dashboard/solis-dashboard.html`](dashboard/solis-dashboard.html)
   is one self-contained file that reads the values straight from Homey on your home network.
   Nothing goes through the internet, and no web server is needed.
-  1. In the Homey web app, create an API key: **Settings → API Keys → New API Key**, with as few
-     permissions as possible.
+  1. In the Homey web app, create an API key: **Settings → API Keys → New API Key** with only
+     **Apps: control** (tested 25 Sep 2026: *Apps: read only* is not enough – Homey answers
+     *Missing Scopes*). Such a key can also read and change other apps' settings, so keep it on
+     devices you trust and remove it in Homey if a device is lost.
   2. Copy `solis-dashboard.html` to the device and open it in the browser (or put it on a local web
      server, e.g. a Raspberry Pi, if the device cannot open files).
   3. Enter Homey's address (e.g. `192.168.1.142`) and the key. They are stored in that browser only;
-     **Forget the key on this device** removes them.
+     **Forget the key on this device** removes the key and keeps the address for next time.
   4. From away, reach your home network through your own VPN (for example Tailscale) – never by
      opening a port.
 
