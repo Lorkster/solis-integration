@@ -390,6 +390,9 @@ The app measures, every five minutes, what your electricity actually costs, and 
 the same consumption and solar production would have cost **without a battery**. The difference is
 **Saved by the battery today** and **this month** (the month includes a lower power fee, when that is
 switched on). Charging losses count against the battery, so the figure is what you really gain.
+Energy the battery holds more than at the start of the day (or month) is counted at what the plan
+expects it to save later, so solar stored at noon shows as a gain at noon – not as a loss until the
+evening, when the battery replaces bought power.
 
 - Counting starts when the app is installed, and prices are those of your price source and settings.
 - The *Battery plan* widget's *"cheaper than plain self-use"* is something else: the plan's expected

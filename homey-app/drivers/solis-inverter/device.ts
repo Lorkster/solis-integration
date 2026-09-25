@@ -730,7 +730,11 @@ export default class SolisInverterDevice extends Homey.Device {
     const t = live.timestamp;
     const iv = this.planState?.plan.intervals.find((i) => i.start <= t && i.end > t);
     if (iv && !this.powerCut.active) {
-      this.savings.add({ time: t, hours, gridW: live.gridPowerW, loadW: live.loadPowerW, pvW: live.pvPowerW, buy: iv.buy, sell: iv.sell });
+      this.savings.add({
+        time: t, hours, gridW: live.gridPowerW, loadW: live.loadPowerW, pvW: live.pvPowerW, buy: iv.buy, sell: iv.sell,
+        batteryKwh: live.socPct / 100 * this.controller.config.capacityKwh,
+        storedValue: Math.min(iv.buy, iv.storedEnergyValue),
+      });
     }
     const tariff = this.powerTariff();
     if (tariff.enabled) {

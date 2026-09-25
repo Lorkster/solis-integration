@@ -107,6 +107,20 @@ describe('measured savings', () => {
   });
 });
 
+describe('savings with stored energy', () => {
+  it('counts solar stored at noon at what it will save later, not as a loss', () => {
+    const savings = new SavingsTracker(TZ);
+    // Noon: 4 kW solar, 1 kW house, the battery takes 3 kW instead of it being sold at 1 per kWh.
+    savings.add({ time: new Date('2026-09-25T12:00:00+02:00'), hours: 1, gridW: 0, loadW: 1000, pvW: 4000, buy: 2, sell: 1, batteryKwh: 10, storedValue: 2.5 });
+    savings.add({ time: new Date('2026-09-25T13:00:00+02:00'), hours: 1, gridW: 0, loadW: 1000, pvW: 4000, buy: 2, sell: 1, batteryKwh: 13, storedValue: 2.5 });
+    // Energy alone: −3 (the unsold solar in the second hour). Stored: +3 kWh × 2.5 = +7.5.
+    assert.ok(Math.abs(savings.savedOn('2026-09-25') - (-6 + 7.5)) < 1e-9);
+    // Evening: the battery covers 3 kW at 4 per kWh and is back where the day started.
+    savings.add({ time: new Date('2026-09-25T19:00:00+02:00'), hours: 1, gridW: 0, loadW: 3000, pvW: 0, buy: 4, sell: 1, batteryKwh: 10, storedValue: 1 });
+    assert.ok(Math.abs(savings.savedOn('2026-09-25') - (-6 + 12)) < 1e-9, 'no stored term once the energy is used');
+  });
+});
+
 describe('plan monitor', () => {
   const expectation = { action: 'charge' as const, targetSoc: 90, reserveSoc: 25, maxSoc: 100 };
   const sample = (minute: number, batteryW: number, socPct = 50, gridW = 3000) => ({

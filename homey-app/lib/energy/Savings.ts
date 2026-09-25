@@ -5,6 +5,10 @@ import { localDate } from '../time.js';
  * same consumption and solar production but no battery (import = load − solar when positive,
  * export = the rest). Charging losses and wear are part of the actual cost; solar that was curtailed
  * is not counted in either.
+ *
+ * Energy the battery holds more (or less) than at the start of the day or month is counted at what
+ * the plan expects it to save later. Without that, a sunny noon looks like a loss – the solar that
+ * went into the battery was not sold – and the gain only shows in the evening.
  */
 export interface SavingsSample {
   time: Date;
@@ -14,11 +18,16 @@ export interface SavingsSample {
   pvW: number;
   buy: number; // price per kWh bought
   sell: number; // price per kWh sold
+  batteryKwh?: number; // energy in the battery now
+  storedValue?: number; // what one kWh in the battery is expected to save later
 }
 
 export interface CostTotals {
   actual: number;
   withoutBattery: number;
+  startKwh?: number; // battery energy at the first sample of the period
+  lastKwh?: number; // battery energy at the latest sample
+  lastValue?: number; // value per stored kWh at the latest sample
 }
 
 export interface SavingsData {
@@ -43,12 +52,15 @@ export class SavingsTracker {
     const withoutBattery = cost((s.loadW - s.pvW) / 1000);
     const day = localDate(s.time, this.timeZone);
     const month = day.slice(0, 7);
-    const d = (this.data.days[day] ??= { actual: 0, withoutBattery: 0 });
-    d.actual += actual;
-    d.withoutBattery += withoutBattery;
-    const m = (this.data.months[month] ??= { actual: 0, withoutBattery: 0 });
-    m.actual += actual;
-    m.withoutBattery += withoutBattery;
+    for (const totals of [(this.data.days[day] ??= { actual: 0, withoutBattery: 0 }), (this.data.months[month] ??= { actual: 0, withoutBattery: 0 })]) {
+      totals.actual += actual;
+      totals.withoutBattery += withoutBattery;
+      if (s.batteryKwh !== undefined && Number.isFinite(s.batteryKwh)) {
+        totals.startKwh ??= s.batteryKwh;
+        totals.lastKwh = s.batteryKwh;
+        if (s.storedValue !== undefined && Number.isFinite(s.storedValue)) totals.lastValue = Math.max(0, s.storedValue);
+      }
+    }
     this.prune();
   }
 
@@ -58,16 +70,16 @@ export class SavingsTracker {
     m.powerFee = amount;
   }
 
-  /** Saved on a local day (energy only). */
+  /** Saved on a local day, including the value of energy stored (or used) since the day began. */
   savedOn(date: string): number {
     const d = this.data.days[date];
-    return d ? d.withoutBattery - d.actual : 0;
+    return d ? d.withoutBattery - d.actual + stored(d) : 0;
   }
 
-  /** Saved in a month ("YYYY-MM"), including the lower power fee. */
+  /** Saved in a month ("YYYY-MM"), including the lower power fee and the stored energy. */
   savedInMonth(month: string): number {
     const m = this.data.months[month];
-    return m ? m.withoutBattery - m.actual + (m.powerFee ?? 0) : 0;
+    return m ? m.withoutBattery - m.actual + (m.powerFee ?? 0) + stored(m) : 0;
   }
 
   private prune(): void {
@@ -80,4 +92,10 @@ export class SavingsTracker {
   toJSON(): SavingsData {
     return this.data;
   }
+}
+
+/** Value of the change in stored energy over the period. */
+function stored(t: CostTotals): number {
+  if (t.startKwh === undefined || t.lastKwh === undefined || t.lastValue === undefined) return 0;
+  return (t.lastKwh - t.startKwh) * t.lastValue;
 }
