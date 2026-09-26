@@ -199,8 +199,13 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
     await this.migrateCapabilities();
     await this.migrateSettings();
     // New alarms start as "off" rather than unknown until their first change.
-    for (const cap of ['alarm_solis_power_cut', 'alarm_solis_off_plan']) {
-      if (this.hasCapability(cap) && this.getCapabilityValue(cap) === null) await this.setCapabilityValue(cap, false).catch(this.error);
+    if (this.hasCapability('alarm_solis_power_cut') && this.getCapabilityValue('alarm_solis_power_cut') === null) {
+      await this.setCapabilityValue('alarm_solis_power_cut', false).catch(this.error);
+    }
+    // The plan check starts from "on plan" after a restart, so an alarm left on by the previous run
+    // would never clear; it comes back within minutes if the deviation is still there.
+    if (this.hasCapability('alarm_solis_off_plan') && this.getCapabilityValue('alarm_solis_off_plan') !== false) {
+      await this.setCapabilityValue('alarm_solis_off_plan', false).catch(this.error);
     }
     this.createController();
 
