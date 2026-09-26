@@ -100,6 +100,21 @@ describe('BatteryController', () => {
     assert.equal(inverter.settings.storageModeRaw, 49, 'TOU off, backup + grid charge kept');
   });
 
+  it('writes the other new slots when one fails, keeps the old ones, then reports it (26 Sep)', async () => {
+    const inverter = new FakeInverter();
+    inverter.settings.chargeSlots[5] = { enabled: true, start: '03:00', end: '07:45', currentA: 0, soc: 52 }; // stale
+    const write = inverter.writeChargeSlot.bind(inverter);
+    inverter.writeChargeSlot = async (i, slot) => {
+      if (i === 0) throw new Error('Slot switch CID 5916 did not change to 1');
+      return write(i, slot);
+    };
+    const controller = solisController(inverter);
+    const state = await controller.buildPlan(live, new Date('2026-09-24T00:05:00+02:00'));
+    await assert.rejects(controller.apply(state), /Not written: charge slot 1/);
+    assert.equal(inverter.settings.chargeSlots[5].enabled, true, 'the previous plan keeps its slots when a new one is missing');
+    assert.equal(inverter.settings.storageModeRaw, 33, 'schedule not switched on with a slot missing');
+  });
+
   it('leaves the work mode alone for a brand without one', async () => {
     const inverter = new FakeInverter();
     const controller = new BatteryController(inverter, new FakePrices(), config);

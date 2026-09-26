@@ -52,6 +52,11 @@ export async function inspectInverter(client: SolisCloudClient, serialNumber: st
   };
 }
 
+/** Slot switch commands: how often to send, how often to read back after each, and how long between reads. */
+const SWITCH_SENDS = 3;
+const SWITCH_CHECKS = 3;
+const SWITCH_CHECK_MS = 5_000;
+
 export class SolisCloudTransport implements InverterTransport {
   readonly kind = 'cloud' as const;
   readonly name = 'SolisCloud';
@@ -64,7 +69,12 @@ export class SolisCloudTransport implements InverterTransport {
    */
   gridChargeLimit: (() => Promise<number | null>) | null = null;
 
-  constructor(credentials: SolisCredentials, private readonly serialNumber: string, client?: SolisCloudClient) {
+  constructor(
+    credentials: SolisCredentials,
+    private readonly serialNumber: string,
+    client?: SolisCloudClient,
+    private readonly wait: (ms: number) => Promise<void> = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+  ) {
     this.client = client ?? new SolisCloudClient(credentials);
   }
 
@@ -183,43 +193,45 @@ export class SolisCloudTransport implements InverterTransport {
   }
 
   /**
-   * Sets one slot switch and returns the bit field after the change. `mask` is the bit field as the
-   * caller knows it: a read right after an earlier switch write can still return the old value, and
-   * an "old value" computed from that makes SolisCloud accept the command without switching the slot
-   * (26 Sep 01:57: the slot stayed off). The switch is read back and written once more if it did not
-   * change; a switch that still does not follow throws, so the plan reports it and tries again.
+   * Sets one slot switch. SolisCloud accepts a command before the logger has delivered it, and a
+   * command that arrives while the logger is still busy with the previous ones can be dropped without
+   * an error (26 Sep 2026: a switch-on right after the slot's times and current stayed off, twice).
+   * So the switch is read back for a while, and sent again with a fresh bit field if it does not
+   * follow; one that still does not follow throws, so the plan reports it and tries again.
    */
-  private async writeSwitch(cids: SlotCids, on: boolean, mask?: number): Promise<number> {
-    const bit = 1 << SolisCloudTransport.SWITCH_CIDS.indexOf(cids.switch);
+  private async writeSwitch(cids: SlotCids, on: boolean): Promise<void> {
     const want = on ? '1' : '0';
-    let current = mask ?? await this.switchBitField();
-    for (let attempt = 0; attempt < 2; attempt++) {
-      await this.client.control(this.serialNumber, cids.switch, want, String(current));
-      if (await this.client.read(this.serialNumber, cids.switch) === want) return on ? current | bit : current & ~bit;
-      current = await this.switchBitField();
+    for (let send = 0; send < SWITCH_SENDS; send++) {
+      await this.client.control(this.serialNumber, cids.switch, want, String(await this.switchBitField()));
+      for (let check = 0; check < SWITCH_CHECKS; check++) {
+        await this.wait(SWITCH_CHECK_MS);
+        if (await this.client.read(this.serialNumber, cids.switch) === want) return;
+      }
     }
     throw new SolisApiError(`Slot switch CID ${cids.switch} did not change to ${want}`);
   }
 
-  /** Writes only the fields that differ. Parameters are written before the enable switch. */
+  /**
+   * Writes only the fields that differ, parameters before the switch. A slot that stays on is changed
+   * in place: switching it off and on again would add two of the commands that SolisCloud tends to
+   * drop, and the few seconds with half of the new values do no harm.
+   */
   private async writeSlot(cids: SlotCids, slot: TouSlot, previous?: TouSlot): Promise<void> {
     const sn = this.serialNumber;
     const time = `${slot.start}-${slot.end}`;
     const previousTime = previous ? `${previous.start}-${previous.end}` : undefined;
-    let mask: number | undefined;
-    if (slot.enabled && previous?.enabled) {
-      // Avoid running a half-updated slot: switch it off while changing it.
-      if (time !== previousTime || slot.currentA !== previous.currentA || slot.soc !== previous.soc) {
-        mask = await this.writeSwitch(cids, false);
-        previous = { ...previous, enabled: false };
-      }
-    }
     if (time !== previousTime) await this.client.control(sn, cids.time, time, previousTime);
     if (slot.currentA !== previous?.currentA) {
       await this.client.control(sn, cids.current, String(slot.currentA), previous?.currentA.toString());
     }
     if (slot.soc !== previous?.soc) await this.client.control(sn, cids.soc, String(slot.soc), previous?.soc.toString());
-    if (slot.enabled !== previous?.enabled) await this.writeSwitch(cids, slot.enabled, mask);
+    if (slot.enabled !== previous?.enabled) {
+      // Give the logger time to deliver the parameters before the switch command.
+      if (slot.enabled && (time !== previousTime || slot.currentA !== previous?.currentA || slot.soc !== previous?.soc)) {
+        await this.wait(SWITCH_CHECK_MS);
+      }
+      await this.writeSwitch(cids, slot.enabled);
+    }
   }
 }
 

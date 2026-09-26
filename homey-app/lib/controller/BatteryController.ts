@@ -187,34 +187,57 @@ export class BatteryController {
     this.lastApplied = null;
   }
 
-  /** Writes the schedule to the inverter. Only changed values are written. Returns what changed. */
+  /**
+   * Writes the schedule to the inverter. Only changed values are written. Returns what changed.
+   * A failed write does not stop the others (a half-written schedule is worse than one wrong slot):
+   * the failures are thrown together at the end, so the plan reports them and tries again.
+   */
   async apply(state: PlanState): Promise<string[]> {
     const current = await this.readSettings();
     const changes: string[] = [];
+    const failures: string[] = [];
+    const attempt = async (what: string, write: () => Promise<void>) => {
+      try {
+        await write();
+        changes.push(what);
+      } catch (err) {
+        failures.push(`${what}: ${(err as Error).message}`);
+      }
+    };
     const desired = this.desiredSettings(current, state);
     this.externalChange = this.lastApplied !== null && !settingsEqual(current, this.lastApplied);
     if (this.externalChange) this.log('Inverter settings were changed outside the app since the last update');
 
-    // Slots first, so enabling time-of-use never activates stale slots.
+    // Slots first, so enabling time-of-use never activates stale slots. New and changed slots go
+    // before switching old ones off: when a write fails, the previous plan's slots keep running
+    // (26 Sep: an old slot held the same charge that a failed switch-on was meant to take over).
+    const slotWrites: Array<{ off: boolean; what: string; write: () => Promise<void> }> = [];
     for (let i = 0; i < slotsFor(current); i++) {
-      if (!slotsEqual(current.chargeSlots[i], desired.chargeSlots[i])) {
-        await this.transport.writeChargeSlot(i, desired.chargeSlots[i], current.chargeSlots[i]);
-        changes.push(`charge slot ${i + 1}: ${describeSlot(desired.chargeSlots[i])}`);
-      }
-      if (!slotsEqual(current.dischargeSlots[i], desired.dischargeSlots[i])) {
-        await this.transport.writeDischargeSlot(i, desired.dischargeSlots[i], current.dischargeSlots[i]);
-        changes.push(`discharge slot ${i + 1}: ${describeSlot(desired.dischargeSlots[i])}`);
+      for (const [kind, now, want, write] of [
+        ['charge', current.chargeSlots[i], desired.chargeSlots[i], this.transport.writeChargeSlot.bind(this.transport)],
+        ['discharge', current.dischargeSlots[i], desired.dischargeSlots[i], this.transport.writeDischargeSlot.bind(this.transport)],
+      ] as const) {
+        if (slotsEqual(now, want)) continue;
+        slotWrites.push({ off: !want.enabled, what: `${kind} slot ${i + 1}: ${describeSlot(want)}`, write: () => write(i, want, now) });
       }
     }
+    for (const w of slotWrites.filter((x) => !x.off)) await attempt(w.what, w.write);
+    if (failures.length === 0) for (const w of slotWrites.filter((x) => x.off)) await attempt(w.what, w.write);
     if (current.reserveSoc !== desired.reserveSoc) {
-      await this.transport.writeReserveSoc(desired.reserveSoc, current.reserveSoc);
-      changes.push(`reserve SOC ${current.reserveSoc} → ${desired.reserveSoc}`);
+      await attempt(`reserve SOC ${current.reserveSoc} → ${desired.reserveSoc}`,
+        () => this.transport.writeReserveSoc(desired.reserveSoc, current.reserveSoc));
     }
-    if (current.storageModeRaw !== desired.storageModeRaw) {
-      await this.transport.writeStorageMode(desired.storageModeRaw, current.storageModeRaw);
-      changes.push(`work mode ${this.workMode.describe(current.storageModeRaw)} → ${this.workMode.describe(desired.storageModeRaw)}`);
+    // With a slot not written, leave the work mode as it is: switching the schedule on could run a stale slot.
+    if (current.storageModeRaw !== desired.storageModeRaw && failures.length === 0) {
+      await attempt(`work mode ${this.workMode.describe(current.storageModeRaw)} → ${this.workMode.describe(desired.storageModeRaw)}`,
+        () => this.transport.writeStorageMode(desired.storageModeRaw, current.storageModeRaw));
     }
     if (changes.length > 0) this.log('Applied', changes);
+    if (failures.length > 0) {
+      // Not all of the plan is in the inverter: do not take the difference for an outside change next time.
+      this.lastApplied = null;
+      throw new Error(`Not written: ${failures.join('; ')}`);
+    }
     this.lastApplied = desired;
     return changes;
   }

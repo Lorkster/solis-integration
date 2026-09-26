@@ -46,9 +46,14 @@ don't), run `python tools/modbus_probe.py <logger address> --grid-charge`.
 
 - **Slot switches share one register.** CIDs 5916–5927 are bits of register 43707, and SolisCloud
   builds the new value from the "old value" sent with the command, so that must be the whole bit
-  field. A read right after a switch write can still return the old field, and the command is then
-  accepted without switching anything. The app keeps the field itself and reads the switch back
-  (fixed 26 Sep 2026).
+  field.
+- **Commands can be dropped without an error.** SolisCloud accepts a control command before the
+  logger delivers it; a command sent while the logger is still busy with the previous ones can be
+  lost (26 Sep 2026: a slot switch-on right after the slot's new times stayed off, twice). The app
+  therefore changes an active slot in place instead of switching it off and on, pauses before a
+  switch command, reads the switch back for up to 15 seconds and sends it again if needed. If a
+  write still fails, the other new slots are written anyway, the previous plan's slots are left
+  running, and the next plan update (within 30 minutes) tries again.
 - **Export flag is inverted:** CID 6962 `0` = export allowed, `1` = blocked (register 43483 bit 3).
 - **Leftover remote commands** from the energy management can freeze the battery at 0 A
   (`batteryCDISet` in the inverter detail). A Quick Control command *with a duration* resets it to

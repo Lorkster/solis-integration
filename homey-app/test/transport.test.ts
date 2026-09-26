@@ -53,7 +53,7 @@ class FakeCloud extends SolisCloudClient {
 describe('SolisCloudTransport slot switches', () => {
   it('keeps other slots enabled when enabling one (24 Sep bug)', async () => {
     const cloud = new FakeCloud();
-    const transport = new SolisCloudTransport({ keyId: 'k', keySecret: 's' }, 'SN', cloud);
+    const transport = new SolisCloudTransport({ keyId: 'k', keySecret: 's' }, 'SN', cloud, async () => undefined);
     await transport.writeChargeSlot(0, { enabled: true, start: '13:45', end: '15:30', currentA: 16, soc: 84 }, { ...DISABLED_SLOT });
     await transport.writeChargeSlot(1, { enabled: true, start: '15:30', end: '17:30', currentA: 0, soc: 83 }, { ...DISABLED_SLOT });
     assert.equal(cloud.register, 0b11, 'both slot 1 and slot 2 enabled');
@@ -61,21 +61,35 @@ describe('SolisCloudTransport slot switches', () => {
     assert.equal(cloud.register, 0b10, 'disabling slot 1 leaves slot 2');
   });
 
-  it('switches a changed slot back on although SolisCloud still reports the old switches (26 Sep bug)', async () => {
+  it('changes a slot that stays on in place, without switching it off and on (26 Sep bug)', async () => {
     const cloud = new FakeCloud();
-    const transport = new SolisCloudTransport({ keyId: 'k', keySecret: 's' }, 'SN', cloud);
+    const transport = new SolisCloudTransport({ keyId: 'k', keySecret: 's' }, 'SN', cloud, async () => undefined);
     const slot = { enabled: true, start: '01:45', end: '02:00', currentA: 16, soc: 33 };
     await transport.writeChargeSlot(0, slot, { ...DISABLED_SLOT });
     await transport.writeChargeSlot(1, { ...slot, start: '02:00', end: '12:15', currentA: 0 }, { ...DISABLED_SLOT });
-    cloud.lagAfterWrite = 1;
-    await transport.writeChargeSlot(0, { ...slot, end: '02:30', soc: 47 }, slot);
-    assert.equal(cloud.register, 0b11, 'slot 1 on again, slot 2 untouched');
+    cloud.controls = [];
+    await transport.writeChargeSlot(0, { ...slot, start: '12:15', end: '17:15', soc: 100 }, slot);
+    assert.equal(cloud.register, 0b11, 'both slots still on');
+    assert.deepEqual(cloud.controls.map((c) => c.cid), [5946, 5928], 'only the time and the target level');
+  });
+
+  it('sends a dropped switch command again', async () => {
+    const cloud = new FakeCloud();
+    const control = cloud.control.bind(cloud);
+    let drop = 1;
+    cloud.control = async (sn, cid, value, previous) => {
+      if (cid === 5916 && drop-- > 0) return; // accepted, never delivered
+      return control(sn, cid, value, previous);
+    };
+    const transport = new SolisCloudTransport({ keyId: 'k', keySecret: 's' }, 'SN', cloud, async () => undefined);
+    await transport.writeChargeSlot(0, { enabled: true, start: '12:15', end: '17:15', currentA: 16, soc: 100 }, { ...DISABLED_SLOT });
+    assert.equal(cloud.register, 0b1);
   });
 
   it('fails when a switch does not follow, so the plan reports it', async () => {
     const cloud = new FakeCloud();
     cloud.control = async () => undefined; // accepted but never applied
-    const transport = new SolisCloudTransport({ keyId: 'k', keySecret: 's' }, 'SN', cloud);
+    const transport = new SolisCloudTransport({ keyId: 'k', keySecret: 's' }, 'SN', cloud, async () => undefined);
     await assert.rejects(transport.writeChargeSlot(0, { enabled: true, start: '01:45', end: '02:00', currentA: 16, soc: 33 }, { ...DISABLED_SLOT }),
       /did not change/);
   });
@@ -85,7 +99,7 @@ describe('SolisCloudTransport grid charging limit', () => {
   it('adds the max grid charging current from the other reader, after the cloud reads', async () => {
     const cloud = new FakeCloud();
     cloud.values.set(6798, '43605');
-    const transport = new SolisCloudTransport({ keyId: 'k', keySecret: 's' }, 'SN', cloud);
+    const transport = new SolisCloudTransport({ keyId: 'k', keySecret: 's' }, 'SN', cloud, async () => undefined);
     assert.equal((await transport.readSettings()).maxGridChargeCurrentA, null, 'unknown without a reader');
     transport.gridChargeLimit = async () => 0;
     assert.equal((await transport.readSettings()).maxGridChargeCurrentA, 0);
