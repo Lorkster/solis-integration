@@ -189,40 +189,56 @@ export class BatteryController {
 
   /**
    * Writes the schedule to the inverter. Only changed values are written. Returns what changed.
-   * A failed write does not stop the others (a half-written schedule is worse than one wrong slot):
-   * the failures are thrown together at the end, so the plan reports them and tries again.
+   * A failed write does not stop the others: the failures are thrown together at the end, so the
+   * plan reports them and tries again at the next update.
    */
   async apply(state: PlanState): Promise<string[]> {
     const current = await this.readSettings();
     const changes: string[] = [];
     const failures: string[] = [];
-    const attempt = async (what: string, write: () => Promise<void>) => {
+    const attempt = async (what: string, write: () => Promise<void>): Promise<boolean> => {
       try {
         await write();
         changes.push(what);
+        return true;
       } catch (err) {
         failures.push(`${what}: ${(err as Error).message}`);
+        return false;
       }
     };
     const desired = this.desiredSettings(current, state);
+    desired.chargeSlots = alignSlots(current.chargeSlots, desired.chargeSlots);
     this.externalChange = this.lastApplied !== null && !settingsEqual(current, this.lastApplied);
     if (this.externalChange) this.log('Inverter settings were changed outside the app since the last update');
 
-    // Slots first, so enabling time-of-use never activates stale slots. New and changed slots go
-    // before switching old ones off: when a write fails, the previous plan's slots keep running
-    // (26 Sep: an old slot held the same charge that a failed switch-on was meant to take over).
-    const slotWrites: Array<{ off: boolean; what: string; write: () => Promise<void> }> = [];
-    for (let i = 0; i < slotsFor(current); i++) {
-      for (const [kind, now, want, write] of [
-        ['charge', current.chargeSlots[i], desired.chargeSlots[i], this.transport.writeChargeSlot.bind(this.transport)],
-        ['discharge', current.dischargeSlots[i], desired.dischargeSlots[i], this.transport.writeDischargeSlot.bind(this.transport)],
-      ] as const) {
-        if (slotsEqual(now, want)) continue;
-        slotWrites.push({ off: !want.enabled, what: `${kind} slot ${i + 1}: ${describeSlot(want)}`, write: () => write(i, want, now) });
+    // Slots first, so enabling time-of-use never activates stale slots. The inverter refuses to
+    // switch on a slot that overlaps another active one (26 Sep 2026), so slots that change or go
+    // away are switched off first, then the new ones are written and switched on.
+    const kinds = [
+      { kind: 'charge', now: current.chargeSlots, want: desired.chargeSlots, write: this.transport.writeChargeSlot.bind(this.transport) },
+      { kind: 'discharge', now: current.dischargeSlots, want: desired.dischargeSlots, write: this.transport.writeDischargeSlot.bind(this.transport) },
+    ] as const;
+    const after = kinds.map((k) => k.now.slice(0, slotsFor(current)).map((slot) => ({ ...slot })));
+    for (const [n, k] of kinds.entries()) {
+      for (let i = 0; i < after[n].length; i++) {
+        const now = after[n][i];
+        if (!now.enabled || slotsEqual(now, k.want[i])) continue;
+        const off = { ...now, enabled: false };
+        if (await attempt(`${k.kind} slot ${i + 1}: off`, () => k.write(i, off, now))) after[n][i] = off;
       }
     }
-    for (const w of slotWrites.filter((x) => !x.off)) await attempt(w.what, w.write);
-    if (failures.length === 0) for (const w of slotWrites.filter((x) => x.off)) await attempt(w.what, w.write);
+    for (const [n, k] of kinds.entries()) {
+      for (let i = 0; i < after[n].length; i++) {
+        const want = k.want[i];
+        if (slotsEqual(after[n][i], want)) continue;
+        const clash = after.flat().find((other) => other !== after[n][i] && other.enabled && want.enabled && overlaps(other, want));
+        if (clash) {
+          failures.push(`${k.kind} slot ${i + 1}: not switched on, overlaps ${clash.start}-${clash.end} that could not be switched off`);
+          continue;
+        }
+        await attempt(`${k.kind} slot ${i + 1}: ${describeSlot(want)}`, () => k.write(i, want, after[n][i]));
+      }
+    }
     if (current.reserveSoc !== desired.reserveSoc) {
       await attempt(`reserve SOC ${current.reserveSoc} → ${desired.reserveSoc}`,
         () => this.transport.writeReserveSoc(desired.reserveSoc, current.reserveSoc));
@@ -322,6 +338,45 @@ function slotsEqual(a: TouSlot, b: TouSlot): boolean {
   if (!a.enabled && !b.enabled) return true;
   return a.enabled === b.enabled && a.start === b.start && a.end === b.end
     && a.currentA === b.currentA && a.soc === b.soc;
+}
+
+const minutes = (hhmm: string) => {
+  const [h, m] = hhmm.split(':').map(Number);
+  return h * 60 + m;
+};
+
+/** Minute ranges a daily slot covers; a slot past midnight is two ranges. */
+function ranges(s: TouSlot): Array<[number, number]> {
+  const a = minutes(s.start);
+  const b = minutes(s.end);
+  return b > a ? [[a, b]] : [[a, 1440], [0, b]];
+}
+
+export function overlaps(a: TouSlot, b: TouSlot): boolean {
+  return ranges(a).some(([a0, a1]) => ranges(b).some(([b0, b1]) => a0 < b1 && b0 < a1));
+}
+
+/**
+ * Places the planned slots so that a slot already running in the inverter keeps its position: a
+ * planned slot identical to an active one stays there (nothing to write), the others take the
+ * remaining positions, unused ones first. The inverter does not care about the order.
+ */
+export function alignSlots(current: TouSlot[], wanted: TouSlot[]): TouSlot[] {
+  const placed: Array<TouSlot | null> = current.map(() => null);
+  const rest: TouSlot[] = [];
+  for (const slot of wanted.filter((s) => s.enabled)) {
+    const i = current.findIndex((c, index) => placed[index] === null && c.enabled && slotsEqual(c, slot));
+    if (i >= 0) placed[i] = slot;
+    else rest.push(slot);
+  }
+  const free = placed.map((s, i) => i).filter((i) => placed[i] === null)
+    .sort((a, b) => Number(current[a].enabled) - Number(current[b].enabled));
+  for (const slot of rest) {
+    const i = free.shift();
+    if (i !== undefined) placed[i] = slot;
+  }
+  // Positions left over are switched off; their times and levels stay as they are (one write, not four).
+  return placed.map((s, i) => s ?? { ...current[i], enabled: false });
 }
 
 function describeSlot(s: TouSlot): string {

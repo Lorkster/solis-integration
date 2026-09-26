@@ -47,13 +47,15 @@ don't), run `python tools/modbus_probe.py <logger address> --grid-charge`.
 - **Slot switches share one register.** CIDs 5916–5927 are bits of register 43707, and SolisCloud
   builds the new value from the "old value" sent with the command, so that must be the whole bit
   field.
-- **Commands can be dropped without an error.** SolisCloud accepts a control command before the
-  logger delivers it; a command sent while the logger is still busy with the previous ones can be
-  lost (26 Sep 2026: a slot switch-on right after the slot's new times stayed off, twice). The app
-  therefore changes an active slot in place instead of switching it off and on, pauses before a
-  switch command, reads the switch back for up to 15 seconds and sends it again if needed. If a
-  write still fails, the other new slots are written anyway, the previous plan's slots are left
-  running, and the next plan update (within 30 minutes) tries again.
+- **The inverter refuses to switch on a slot that overlaps another active slot**, silently: the
+  command is accepted and the switch stays off (26 Sep 2026: at 01:57 a charge slot overlapping the
+  old hold, at 11:06 a charge identical to one already running in another slot). The app therefore
+  keeps a planned slot where an identical one already runs, switches changed and old slots off
+  first, and only then writes and switches on the new ones. It reads each switch back for up to 15
+  seconds and resends it if needed. A slot that would overlap one that could not be switched off is
+  not switched on, and the failure is reported; the next plan update retries within 30 minutes.
+- SolisCloud accepts a control command before the logger delivers it, so a command can still be
+  lost when the logger is busy; the read-back covers that too.
 - **Export flag is inverted:** CID 6962 `0` = export allowed, `1` = blocked (register 43483 bit 3).
 - **Leftover remote commands** from the energy management can freeze the battery at 0 A
   (`batteryCDISet` in the inverter detail). A Quick Control command *with a duration* resets it to

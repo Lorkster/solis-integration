@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import { solisWorkMode } from '../lib/brands/solis/storageMode.js';
-import { BatteryController, type ControllerConfig } from '../lib/controller/BatteryController.js';
+import { alignSlots, BatteryController, type ControllerConfig, overlaps, type PlanState } from '../lib/controller/BatteryController.js';
 import { DISABLED_SLOT, type InverterSettings, type InverterTransport, type LiveData, type TouSlot } from '../lib/inverter/types.js';
 import type { PriceProvider, SpotPrice } from '../lib/prices/PriceProvider.js';
 import { DEFAULT_TARIFF } from '../lib/tariff.js';
@@ -100,19 +100,58 @@ describe('BatteryController', () => {
     assert.equal(inverter.settings.storageModeRaw, 49, 'TOU off, backup + grid charge kept');
   });
 
-  it('writes the other new slots when one fails, keeps the old ones, then reports it (26 Sep)', async () => {
+  const slot = (start: string, end: string, currentA: number, soc: number, enabled = true): TouSlot => ({ enabled, start, end, currentA, soc });
+  const planWith = (...slots: TouSlot[]) => ({
+    reserveSoc: 25,
+    schedule: { chargeSlots: [...slots, ...Array.from({ length: 6 - slots.length }, () => ({ ...DISABLED_SLOT }))], warnings: [] },
+  }) as unknown as PlanState;
+
+  it('keeps a planned slot that is already running where it is (26 Sep 11:06)', async () => {
     const inverter = new FakeInverter();
-    inverter.settings.chargeSlots[5] = { enabled: true, start: '03:00', end: '07:45', currentA: 0, soc: 52 }; // stale
+    inverter.settings.chargeSlots[0] = slot('12:15', '17:15', 16, 100, false);
+    inverter.settings.chargeSlots[1] = slot('03:00', '07:45', 0, 52);
+    inverter.settings.chargeSlots[2] = slot('12:15', '17:15', 16, 100);
+    const controller = new BatteryController(inverter, new FakePrices(), config);
+    await controller.apply(planWith(slot('12:15', '17:15', 16, 100)));
+    assert.deepEqual(inverter.writes, ['charge 1'], 'only the old hold switched off');
+    assert.equal(inverter.settings.chargeSlots[1].enabled, false);
+    assert.equal(inverter.settings.chargeSlots[2].enabled, true);
+  });
+
+  it('switches changed slots off before switching new ones on, so none overlap (26 Sep 01:57)', async () => {
+    const inverter = new FakeInverter();
+    inverter.settings.chargeSlots[0] = slot('01:45', '02:00', 16, 33);
+    inverter.settings.chargeSlots[1] = slot('02:00', '12:15', 0, 32);
+    const order: string[] = [];
     const write = inverter.writeChargeSlot.bind(inverter);
-    inverter.writeChargeSlot = async (i, slot) => {
-      if (i === 0) throw new Error('Slot switch CID 5916 did not change to 1');
-      return write(i, slot);
+    inverter.writeChargeSlot = async (i, s) => {
+      order.push(`${i + 1} ${s.enabled ? `on ${s.start}-${s.end}` : 'off'}`);
+      return write(i, s);
     };
-    const controller = solisController(inverter);
-    const state = await controller.buildPlan(live, new Date('2026-09-24T00:05:00+02:00'));
-    await assert.rejects(controller.apply(state), /Not written: charge slot 1/);
-    assert.equal(inverter.settings.chargeSlots[5].enabled, true, 'the previous plan keeps its slots when a new one is missing');
-    assert.equal(inverter.settings.storageModeRaw, 33, 'schedule not switched on with a slot missing');
+    const controller = new BatteryController(inverter, new FakePrices(), config);
+    await controller.apply(planWith(slot('01:45', '02:30', 16, 47), slot('02:30', '08:00', 0, 46)));
+    assert.deepEqual(order, ['1 off', '2 off', '3 on 01:45-02:30', '4 on 02:30-08:00'], 'new slots in unused positions');
+  });
+
+  it('does not switch on a slot over one that could not be switched off, and reports it', async () => {
+    const inverter = new FakeInverter();
+    inverter.settings.chargeSlots[0] = slot('02:00', '12:15', 0, 32);
+    const write = inverter.writeChargeSlot.bind(inverter);
+    inverter.writeChargeSlot = async (i, s) => {
+      if (i === 0 && !s.enabled) throw new Error('Slot switch CID 5916 did not change to 0');
+      return write(i, s);
+    };
+    const controller = new BatteryController(inverter, new FakePrices(), config);
+    await assert.rejects(controller.apply(planWith(slot('01:45', '02:30', 16, 47), slot('02:30', '08:00', 0, 46))), /overlaps 02:00-12:15/);
+    assert.equal(inverter.settings.chargeSlots[0].start, '02:00', 'the old slot is left as it was');
+  });
+
+  it('finds overlapping daily slots, also past midnight', () => {
+    assert.equal(overlaps(slot('12:15', '17:15', 16, 100), slot('12:15', '17:15', 16, 100)), true);
+    assert.equal(overlaps(slot('01:45', '02:30', 16, 47), slot('02:30', '08:00', 0, 46)), false, 'touching is fine');
+    assert.equal(overlaps(slot('22:00', '02:00', 16, 80), slot('01:00', '03:00', 0, 80)), true);
+    assert.deepEqual(alignSlots([slot('03:00', '07:45', 0, 52), slot('12:15', '17:15', 16, 100)],
+      [slot('12:15', '17:15', 16, 100), { ...DISABLED_SLOT }]).map((s) => s.enabled), [false, true]);
   });
 
   it('leaves the work mode alone for a brand without one', async () => {
