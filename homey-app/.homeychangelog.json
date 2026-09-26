@@ -13,5 +13,9 @@
   "0.2.2": {
     "en": "The Battery plan widget no longer lists periods that have already ended, which could show times like 01:26–01:00.",
     "sv": "Widgeten Batteriplan visar inte längre perioder som redan är slut, vilket kunde ge tider som 01:26–01:00."
+  },
+  "0.2.3": {
+    "en": "Savings just below zero show as 0 instead of -0. The Battery plan widget says it is starting up while the first plan is being made.",
+    "sv": "En besparing strax under noll visas som 0 i stället för -0. Widgeten Batteriplan visar att appen startar medan den första planen görs."
   }
 }

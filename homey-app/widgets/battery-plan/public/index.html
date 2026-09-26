@@ -137,7 +137,7 @@
         actual: 'Actual', planned: 'planned this morning', plannedLegend: 'Battery as planned this morning',
         saves: (amount) => `≈ <b>${amount} ${cur()}</b> cheaper than plain self-use`,
         updated: (t) => `Updated ${t}`,
-        waiting: 'Waiting for the first plan…', notPaired: 'Add your inverter in Homey to see the plan.',
+        waiting: 'Starting up and making the first plan. This can take a minute…', notPaired: 'Add your inverter in Homey to see the plan.',
         today: 'Today', tomorrow: 'Tomorrow', soc: 'charged',
       },
       sv: {
@@ -167,7 +167,7 @@
         actual: 'Utfall', planned: 'planerat i morse', plannedLegend: 'Batteriet enligt morgonens plan',
         saves: (amount) => `≈ <b>${amount} ${cur()}</b> billigare än vanlig egenanvändning`,
         updated: (t) => `Uppdaterad ${t}`,
-        waiting: 'Väntar på den första planen…', notPaired: 'Lägg till din växelriktare i Homey för att se planen.',
+        waiting: 'Startar och gör den första planen. Det kan ta någon minut…', notPaired: 'Lägg till din växelriktare i Homey för att se planen.',
         today: 'Idag', tomorrow: 'Imorgon', soc: 'laddat',
       },
     };
@@ -220,7 +220,8 @@
       return new Date(iso).toLocaleDateString('sv-SE', { timeZone: view.timeZone });
     }
     function fmtNum(v, d) {
-      return Number(v).toLocaleString(view.language === 'sv' ? 'sv-SE' : 'en-GB', { minimumFractionDigits: d, maximumFractionDigits: d });
+      // Rounded first: + 0 turns -0 into 0, so a tiny negative value does not show as "-0".
+      return (Math.round(Number(v) * 10 ** d) / 10 ** d + 0).toLocaleString(view.language === 'sv' ? 'sv-SE' : 'en-GB', { minimumFractionDigits: d, maximumFractionDigits: d });
     }
     function nowMs() { return view.mockNow ? new Date(view.mockNow).getTime() : Date.now(); }
 

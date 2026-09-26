@@ -182,7 +182,8 @@
     const cur = () => ({ SEK: 'kr', NOK: 'kr', DKK: 'kr', EUR: '€', PLN: 'zł' })[view && view.currency] || (view && view.currency) || 'kr';
     const T = () => TEXT[view && view.language === 'sv' ? 'sv' : 'en'];
     const locale = () => (view.language === 'sv' ? 'sv-SE' : 'en-GB');
-    const num = (v, d = 0, min = 0) => v.toLocaleString(locale(), { maximumFractionDigits: d, minimumFractionDigits: min });
+    // Rounded first: + 0 turns -0 into 0, so a tiny negative value does not show as "-0".
+    const num = (v, d = 0, min = 0) => (Math.round(v * 10 ** d) / 10 ** d + 0).toLocaleString(locale(), { maximumFractionDigits: d, minimumFractionDigits: min });
     const fmtTime = (iso) => new Date(iso).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit', timeZone: view.timeZone });
     function nowMs() { return view.mockNow ? new Date(view.mockNow).getTime() : Date.now(); }
 
