@@ -5,5 +5,9 @@
   "0.2.0": {
     "en": "Now a brand-neutral home battery planner, with Solis as the first supported brand. Local Modbus connection with failover, weather warnings from SMHI or MET Norway, prices from Nord Pool or a flow, a solar forecast that learns which weather model fits your roof, power fee (effektavgift) support, power cut alerts, measured savings, plan versus actual, a check that the inverter follows the plan, stopping export at negative prices, Solar panels and Grid meter devices for Homey Energy, and support for Solis inverters with the older 3-slot schedule.",
     "sv": "Nu en märkesoberoende planerare för hembatterier, med Solis som första märke. Lokal Modbus-anslutning med reserv, vädervarningar från SMHI eller MET Norge, priser från Nord Pool eller ett flöde, en solprognos som lär sig vilken vädermodell som passar ditt tak, stöd för effektavgift, larm vid strömavbrott, uppmätt besparing, plan mot utfall, kontroll att växelriktaren följer planen, stopp för export vid negativa priser, enheterna Solpaneler och Elnätsmätare för Homey Energy samt stöd för Solis-växelriktare med det äldre schemat med 3 luckor."
+  },
+  "0.2.1": {
+    "en": "New look for the Battery status and Battery plan widgets. Grid charging that does not start is nudged with a short Remote Dispatch command (Solis, Modbus). Fixes a plan alarm that could stay on after a restart.",
+    "sv": "Nytt utseende för widgetarna Batteristatus och Batteriplan. Nätladdning som inte kommer igång får en knuff med ett kort Remote Dispatch-kommando (Solis, Modbus). Rättar ett planlarm som kunde ligga kvar efter en omstart."
   }
 }
