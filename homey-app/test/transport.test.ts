@@ -81,6 +81,19 @@ describe('SolisCloudTransport slot switches', () => {
   });
 });
 
+describe('SolisCloudTransport grid charging limit', () => {
+  it('adds the max grid charging current from the other reader, after the cloud reads', async () => {
+    const cloud = new FakeCloud();
+    cloud.values.set(6798, '43605');
+    const transport = new SolisCloudTransport({ keyId: 'k', keySecret: 's' }, 'SN', cloud);
+    assert.equal((await transport.readSettings()).maxGridChargeCurrentA, null, 'unknown without a reader');
+    transport.gridChargeLimit = async () => 0;
+    assert.equal((await transport.readSettings()).maxGridChargeCurrentA, 0);
+    transport.gridChargeLimit = async () => { throw new Error('logger busy'); };
+    assert.equal((await transport.readSettings()).maxGridChargeCurrentA, null, 'a failed read is not a block');
+  });
+});
+
 describe('SolisCloud live data', () => {
   it('reads lifetime totals in their units (MWh on this inverter)', () => {
     const live = parseLiveData({

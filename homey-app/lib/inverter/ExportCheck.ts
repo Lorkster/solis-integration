@@ -1,11 +1,12 @@
 import type { InverterSettings } from './types.js';
 
 /**
- * Finds solar being thrown away: export switched off or capped in the inverter (a leftover from
- * SolisCloud's energy management, for example), or production held down to the house load while
- * the forecast says the panels could give much more.
+ * Finds inverter settings that work against the plan: grid charging blocked (a max grid charging
+ * current of 0 A), export switched off or capped (a leftover from SolisCloud's energy management,
+ * for example), or production held down to the house load while the forecast says the panels could
+ * give much more.
  */
-export type ExportIssue = 'export_blocked' | 'export_limited' | 'solar_throttled';
+export type ExportIssue = 'grid_charge_blocked' | 'export_blocked' | 'export_limited' | 'solar_throttled';
 
 /** Export limits below this are treated as a cap rather than a grid-company limit (W). */
 const LOW_LIMIT_W = 1000;
@@ -13,6 +14,8 @@ const LOW_LIMIT_W = 1000;
 /** Issue visible in the inverter settings, ignoring a block the app set itself. */
 export function exportSettingIssue(settings: InverterSettings | null, blockedByApp: boolean): ExportIssue | null {
   if (!settings) return null;
+  // Solis 26 Sep: register 43342 at 0 A silently stopped every grid-charge slot.
+  if (settings.maxGridChargeCurrentA === 0) return 'grid_charge_blocked';
   if (settings.exportAllowed === false && !blockedByApp) return 'export_blocked';
   if (settings.exportAllowed !== false && settings.exportLimitW !== null && settings.exportLimitW !== undefined
     && settings.exportLimitW < LOW_LIMIT_W) return 'export_limited';

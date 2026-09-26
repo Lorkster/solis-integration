@@ -41,13 +41,14 @@
     "warning": "Power cut since {{time}}: the battery powers the backup output."
   },
   "offPlan": {
-    "not_charging": "Planned grid charging, but the battery is not charging",
+    "not_charging": "Planned grid charging, but the battery is not charging. Check that the inverter allows charging from the grid (on Solis also the max grid charging current)",
     "discharging_while_saving": "Planned to save the battery, but it is discharging",
     "not_covering_house": "The battery is above the reserve but not powering the house",
     "unplanned_grid_charging": "The battery is charging from the grid without a plan",
     "no_data": "No new data from the inverter since {{time}}",
     "settings_changed": "The inverter settings were changed outside the app; the app has written its schedule again",
     "notification": "Home battery: {{reason}}.",
+    "grid_charge_blocked": "Grid charging is blocked in the inverter: its max grid charging current is 0 A, so the planned charging cannot happen (on Solis: Modbus register 43342, factory default 80 A)",
     "export_blocked": "Export to the grid is switched off in the inverter, so surplus solar is thrown away",
     "export_limited": "Export is limited to {{limit}} W in the inverter, so surplus solar is thrown away",
     "solar_throttled": "Solar seems throttled: production follows the house load although the forecast expects more"

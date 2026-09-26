@@ -31,6 +31,7 @@ export const Reg = {
   maxChargeCurrent: 43117, // 0.1 A
   maxDischargeCurrent: 43118,
   offGridOverDischargeSoc: 43137,
+  maxGridChargeCurrent: 43342, // 0.1 A; 0 blocks grid charging in the time slots (factory default 80 A)
   exportFlags: 43483, // bit 3 set = export blocked
   slotSwitches: 43707, // charge slots 1-6 = bits 0-5, discharge slots 1-6 = bits 6-11
   chargeSlots: 43708, // 7 registers per slot: SOC, current (0.1 A), cut-off voltage, start h, start m, end h, end m
@@ -87,6 +88,11 @@ export class SolisModbusTransport implements InverterTransport {
     });
   }
 
+  /** Max grid charging current in A (register 43342), which SolisCloud cannot read on hybrids. */
+  readMaxGridChargeCurrent(): Promise<number> {
+    return this.modbus.session(async (m) => (await m.readHolding(Reg.maxGridChargeCurrent, 1))[0] / 10);
+  }
+
   /** Inverter serial number (the same id SolisCloud uses). */
   getSerialNumber(): Promise<string> {
     return this.modbus.session(async (m) => {
@@ -118,6 +124,7 @@ export class SolisModbusTransport implements InverterTransport {
         decodeSlot(regs.slice(offset + i * SLOT_REGS, offset + (i + 1) * SLOT_REGS), Boolean(switches & (1 << (bitBase + i)))));
       const exportFlags = await one(Reg.exportFlags);
       const [maxCharge, maxDischarge] = await m.readHolding(Reg.maxChargeCurrent, 2);
+      const gridCharge = await one(Reg.maxGridChargeCurrent).catch(() => null);
       return {
         storageModeRaw: await one(Reg.storageMode),
         reserveSoc: await one(Reg.reserveSoc),
@@ -130,6 +137,7 @@ export class SolisModbusTransport implements InverterTransport {
         touV2: true,
         exportAllowed: (exportFlags & EXPORT_BLOCKED_BIT) === 0,
         exportLimitW: null,
+        maxGridChargeCurrentA: gridCharge === null ? null : gridCharge / 10,
         chargeSlots: slots(charge, 1, 0),
         dischargeSlots: slots(discharge, 0, 6),
       };

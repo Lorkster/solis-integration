@@ -57,6 +57,13 @@ export class SolisCloudTransport implements InverterTransport {
   readonly name = 'SolisCloud';
   private readonly client: SolisCloudClient;
 
+  /**
+   * Reads the max grid charging current another way (SolisCloud has no CID for it on hybrids; the
+   * Solis device uses a sparse Modbus read when a logger address is set up). Called after the cloud
+   * reads are done, so it never overlaps the app's own commands.
+   */
+  gridChargeLimit: (() => Promise<number | null>) | null = null;
+
   constructor(credentials: SolisCredentials, private readonly serialNumber: string, client?: SolisCloudClient) {
     this.client = client ?? new SolisCloudClient(credentials);
   }
@@ -92,6 +99,7 @@ export class SolisCloudTransport implements InverterTransport {
     const v1 = this.touV1 ? parseTouV1(values.get(Cid.touV1)) : null;
     if (this.touV1 && !v1) throw new SolisApiError(`CID ${Cid.touV1} (3-slot schedule) unreadable: ${values.get(Cid.touV1)}`);
     const exportValues = await this.client.readBatch(this.serialNumber, [Cid.exportBlocked, Cid.exportLimit]).catch(() => new Map<number, string>());
+    const maxGridCharge = this.gridChargeLimit ? await this.gridChargeLimit().catch(() => null) : null;
     const exportFlag = exportValues.get(Cid.exportBlocked);
     const exportLimit = Number(exportValues.get(Cid.exportLimit));
     const num = (cid: number): number => {
@@ -121,6 +129,7 @@ export class SolisCloudTransport implements InverterTransport {
       touV2: marker === TOU_V2_MARKER,
       exportAllowed: exportFlag === '0' ? true : exportFlag === '1' ? false : null,
       exportLimitW: Number.isFinite(exportLimit) ? exportLimit * 100 : null,
+      maxGridChargeCurrentA: maxGridCharge,
       chargeSlots: v1 ? touV1Slots(v1).charge : CHARGE_SLOT_CIDS.map(slot),
       dischargeSlots: v1 ? touV1Slots(v1).discharge : DISCHARGE_SLOT_CIDS.map(slot),
     };

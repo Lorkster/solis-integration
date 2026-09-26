@@ -28,6 +28,8 @@ export interface InverterSettings {
   touV2: boolean; // 6+6 slot schedule firmware
   exportAllowed?: boolean | null; // null = not reported
   exportLimitW?: number | null;
+  /** Largest current the inverter may take from the grid for charging; 0 blocks grid charging in the schedule. null = not reported. */
+  maxGridChargeCurrentA?: number | null;
   chargeSlots: TouSlot[];
   dischargeSlots: TouSlot[];
 }

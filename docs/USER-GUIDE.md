@@ -440,12 +440,14 @@ evening, when the battery replaces bought power.
 ## Is the inverter following the plan?
 
 In Automatic mode the app compares what the battery does with what the plan says. When a difference
-lasts 20 minutes, the **Not following the plan** alarm switches on, the device's warning line says
+lasts 20 minutes (or most of a shorter planned period: a 15-minute charge is checked over 10 minutes),
+the **Not following the plan** alarm switches on, the device's warning line says
 what is wrong, and you get a notification:
 
 | Message | Usual cause |
 |---|---|
-| Planned grid charging, but the battery is not charging | A limit in SolisCloud (grid charging switched off, max charge current), or the battery is warm or cold |
+| Planned grid charging, but the battery is not charging | Grid charging not allowed in the inverter, a max grid charging current of 0 A, a low max charge current, or the battery is warm or cold |
+| Grid charging is blocked in the inverter | The inverter's **max grid charging current** is 0 A, so no charge period can take power from the grid. On Solis this is Modbus register 43342 (factory default 80 A); SolisCloud cannot show or change it, so the app reads it over Modbus every few hours when a logger address is set up. Ask your installer to set it, or set it to your battery's max charge current |
 | Planned to save the battery, but it is discharging | The inverter did not take the save period, e.g. time-of-use switched off |
 | The battery is above the reserve but not powering the house | A SolisCloud command holding the battery (see [Troubleshooting](#troubleshooting)) |
 | The battery is charging from the grid without a plan | A SolisCloud energy-management strategy or the inverter's own force-charge level |

@@ -68,7 +68,9 @@ describe('Solis over Modbus', () => {
     [99, 150, 0, 12, 15, 14, 45].forEach((v, i) => inv.holding.set(Reg.chargeSlots + i, v));
     inv.holding.set(Reg.exportFlags, 80);
     inv.holding.set(Reg.storageMode, 51);
+    inv.holding.set(Reg.maxGridChargeCurrent, 0); // as found on 26 Sep
     const settings = await new SolisModbusTransport(inv).readSettings();
+    assert.equal(settings.maxGridChargeCurrentA, 0);
     assert.deepEqual(settings.chargeSlots[0], { enabled: true, start: '12:15', end: '14:45', currentA: 15, soc: 99 });
     assert.equal(settings.chargeSlots[1].enabled, false);
     assert.equal(settings.exportAllowed, true);

@@ -5,6 +5,10 @@ import { BatteryPlannerDevice, type Connections, num, type Settings } from '../.
 import { type InverterInfo, type InverterTransport, supportLevel } from '../../lib/inverter/types.js';
 import { ModbusTcpClient } from '../../lib/modbus/ModbusTcpClient.js';
 
+/** How often the max grid charging current is read over Modbus while SolisCloud is the connection (sooner while it blocks charging). */
+const GRID_CHARGE_CHECK_MS = 6 * 3_600_000;
+const GRID_CHARGE_RECHECK_MS = 30 * 60_000;
+
 /** A Solis hybrid inverter, through SolisCloud or locally over Modbus TCP. */
 export default class SolisInverterDevice extends BatteryPlannerDevice {
   protected readonly workMode = solisWorkMode;
@@ -22,11 +26,28 @@ export default class SolisInverterDevice extends BatteryPlannerDevice {
         host: String(s.modbus_host).trim(), port: num(s.modbus_port, 502), unit: num(s.modbus_unit, 1),
       }))
       : null;
+    if (cloud && modbus) cloud.gridChargeLimit = this.sparse(() => modbus.readMaxGridChargeCurrent());
     const wantModbus = s.connection_primary === 'modbus';
     const primary = wantModbus ? modbus ?? cloud : cloud ?? modbus;
     if (!primary) throw new Error('Set up SolisCloud or Modbus in the device settings');
     const other = primary === cloud ? modbus : cloud;
     return { primary, fallback: s.connection_fallback !== false ? other : null, history: cloud };
+  }
+
+  private gridChargeCache: { value: number | null; at: number } = { value: null, at: 0 };
+
+  /**
+   * One Modbus read every few hours, kept across reconnects: polling Modbus often makes SolisCloud
+   * commands fail (B0173), a single read between the app's commands does not.
+   */
+  private sparse(read: () => Promise<number>): () => Promise<number | null> {
+    return async () => {
+      const every = this.gridChargeCache.value === 0 ? GRID_CHARGE_RECHECK_MS : GRID_CHARGE_CHECK_MS;
+      if (Date.now() - this.gridChargeCache.at >= every) {
+        this.gridChargeCache = { value: await read().catch(() => this.gridChargeCache.value), at: Date.now() };
+      }
+      return this.gridChargeCache.value;
+    };
   }
 
   protected override connectionName(transport: InverterTransport): string {

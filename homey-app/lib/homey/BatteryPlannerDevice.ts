@@ -994,9 +994,10 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
     this.monitor.update(new Date(), sample, live ? this.expectation(live.timestamp) : null);
     // A locked battery has its own alarm and instructions.
     const planDeviation = this.monitor.deviation === 'not_covering_house' && this.lock.locked ? null : this.monitor.deviation;
-    const exportIssue = exportSettingIssue(this.controller.lastRead, this.controller.exportBlockedByApp)
+    const settingIssue = exportSettingIssue(this.controller.lastRead, this.controller.exportBlockedByApp)
       ?? (this.throttle.throttled ? 'solar_throttled' : null);
-    const deviation = planDeviation ?? exportIssue;
+    // A blocked grid charge explains "not charging" and says what to change, so it goes first.
+    const deviation = settingIssue === 'grid_charge_blocked' ? settingIssue : planDeviation ?? settingIssue;
     if (deviation === this.offPlan) return;
     this.offPlan = deviation;
     await this.setCapabilityValue('alarm_solis_off_plan', deviation !== null);

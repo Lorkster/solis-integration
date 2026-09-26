@@ -55,6 +55,12 @@ describe('export control', () => {
     assert.equal(exportSettingIssue(settings(true), false), null);
   });
 
+  it('flags grid charging blocked by a max grid charging current of 0 A (26 Sep)', () => {
+    assert.equal(exportSettingIssue({ ...settings(true), maxGridChargeCurrentA: 0 }, false), 'grid_charge_blocked');
+    assert.equal(exportSettingIssue({ ...settings(true), maxGridChargeCurrentA: 16 }, false), null);
+    assert.equal(exportSettingIssue({ ...settings(true), maxGridChargeCurrentA: null }, false), null, 'unknown is not a problem');
+  });
+
   it('switches export off at negative prices and only undoes its own change', async () => {
     const writes: boolean[] = [];
     let allowed = true;
