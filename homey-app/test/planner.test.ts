@@ -32,6 +32,13 @@ describe('planBattery', () => {
     assert.ok(Math.abs(plan.savingsSek) < 0.01);
   });
 
+  it('does not charge a battery that sits exactly at the reserve', () => {
+    // 25 % of 21.68 kWh is 5.42 kWh, between two 0.05 kWh steps of the planner.
+    const plan = planBattery({ ...base, socPct: 25, intervals: intervals('2026-09-24T00:00:00+02:00', Array(96).fill(3)) });
+    assert.ok(plan.intervals.every((iv) => iv.action !== 'charge'));
+    assert.ok(Math.abs(plan.savingsSek) < 0.01);
+  });
+
   it('charges in the cheap night and uses the battery in the peaks', () => {
     const plan = planBattery({ ...base, intervals: intervals('2026-09-24T00:00:00+02:00', DAY) });
     assert.ok(actionsOf(plan, 0, 24).has('charge'), 'charges before the morning peak');

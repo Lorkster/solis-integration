@@ -17,5 +17,9 @@
   "0.2.3": {
     "en": "Savings just below zero show as 0 instead of -0. The Battery plan widget says it is starting up while the first plan is being made.",
     "sv": "En besparing strax under noll visas som 0 i stället för -0. Widgeten Batteriplan visar att appen startar medan den första planen görs."
+  },
+  "0.2.4": {
+    "en": "Fixes short, pointless grid charging when the battery sits exactly at the reserve.",
+    "sv": "Rättar kort, onödig nätladdning när batteriet ligger precis på reserven."
   }
 }

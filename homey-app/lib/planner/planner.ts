@@ -115,7 +115,9 @@ export function planBattery(input: PlanInput): PlanResult {
 
   const eff = Math.sqrt(input.roundTripEfficiency); // one-way efficiency
   const maxE = input.capacityKwh * input.maxSocPct / 100;
-  const reserveE = input.capacityKwh * input.reserveSocPct / 100;
+  // On the energy grid: a reserve between two steps would count a battery exactly at the reserve
+  // as below it, and the penalty would make the plan charge just to lift it one step.
+  const reserveE = Math.round(input.capacityKwh * input.reserveSocPct / 100 / ENERGY_STEP_KWH) * ENERGY_STEP_KWH;
   const states = Math.floor(maxE / ENERGY_STEP_KWH) + 1;
   const penalty = input.reservePenaltyPerKwhHour ?? 20;
   const terminalValue = input.terminalValuePerKwh ?? defaultTerminalValue(input, eff);
