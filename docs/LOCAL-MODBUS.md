@@ -51,6 +51,14 @@ Options:
 3. **Better link first**: the weak Wi-Fi (−80 dBm) may make the logger slower than it needs to be;
    a stronger signal or a cable to the logger's LAN port could reduce the contention. Re-test after.
 
+## Grid charging and Remote Dispatch (26 Sep 2026)
+
+Modbus found why the time slots never charged from the grid: register **43342** (max grid charging
+current) was 0 A, which SolisCloud cannot see. Setting it to 16 A fixed it. It also showed that
+SolisCloud's Quick Control runs through **Remote Dispatch** (44100). Single reads next to cloud
+commands can still make a command fail. Details: [Solis notes](SOLIS-NOTES.md).
+`python tools/modbus_probe.py <address> --grid-charge` shows all grid-charge settings.
+
 ## Steps
 
 1. **Find the logger's address** in the router's list of connected devices. The S2-WL-ST names

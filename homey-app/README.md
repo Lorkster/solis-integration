@@ -111,6 +111,9 @@ npx homey app install    # install permanently
 - [x] Verify on the inverter that a 0 A charge slot blocks discharge (hold) on TOU v2 firmware (24 Sep 2026)
 - [x] Verify the battery discharges to the house outside charge slots with time-of-use enabled (24 Sep 2026)
 - [x] Read the off-grid over-discharge SOC (CID 469, now 15 % on this inverter) for backup time and reserve warning
+- [x] Grid charging from a low battery through a charge slot: works once the inverter's max grid charging
+      current (Modbus 43342) is above 0 A; it was 0 A here (26 Sep 2026, see `docs/SOLIS-NOTES.md`)
+- [x] Warn when the inverter blocks grid charging (`grid_charge_blocked`, read over Modbus)
 - [ ] Confirm power-cut detection (grid voltage uAc1–3, `lib/inverter/PowerCut.ts`) during a real cut
 - [x] Learned load profile from observed consumption
 - [x] Solar forecast with learned calibration

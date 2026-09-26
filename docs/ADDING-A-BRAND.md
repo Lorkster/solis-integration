@@ -14,7 +14,9 @@ dashboard page, the flow cards and the Homey Energy devices. A brand only teache
 | A **device** class extending `BatteryPlannerDevice` | `drivers/solis-inverter/device.ts` | ~70 lines |
 | A **driver**: pairing, and a manifest that reuses the shared template | `drivers/solis-inverter/` | pairing screens + ~40 lines of JSON |
 
-Put brand code in `lib/brands/<brand>/` and the driver in `drivers/<brand>-inverter/`.
+Put brand code in `lib/brands/<brand>/` and the driver in `drivers/<brand>-inverter/`. Keep notes
+on what you verified on the real inverter, like [Solis notes](SOLIS-NOTES.md): settings that
+silently block the schedule are the hardest part.
 
 ## 1. The connection: `InverterTransport`
 

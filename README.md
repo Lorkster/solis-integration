@@ -11,7 +11,7 @@ the same day and never generates plans for the following days. This project repl
 that writes charge slots directly to the inverter based on Nord Pool day-ahead prices, while keeping a
 battery reserve for power outages.
 
-**Homey app:** [user guide](docs/USER-GUIDE.md) · [install, update, uninstall](INSTALL.md) · [developer notes](homey-app/README.md) · [adding a brand](docs/ADDING-A-BRAND.md) · [local Modbus plan](docs/LOCAL-MODBUS.md)
+**Homey app:** [user guide](docs/USER-GUIDE.md) · [install, update, uninstall](INSTALL.md) · [developer notes](homey-app/README.md) · [adding a brand](docs/ADDING-A-BRAND.md) · [Solis notes](docs/SOLIS-NOTES.md) · [local Modbus plan](docs/LOCAL-MODBUS.md)
 
 ## Status
 
@@ -23,6 +23,8 @@ battery reserve for power outages.
       (see its README for open items)
 - [x] Verify inverter behaviour with TOU enabled: the battery discharges to the house outside charge slots,
       and a 0 A charge slot holds it (both confirmed on 24 Sep 2026)
+- [x] Grid charging through a charge slot (26 Sep 2026), after fixing a max grid charging current of 0 A
+      in the inverter: see [Solis notes](docs/SOLIS-NOTES.md)
 
 ## Diagnostic usage
 

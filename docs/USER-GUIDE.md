@@ -63,6 +63,11 @@ may have either, depending on their firmware.
 The data logger must allow control through SolisCloud: the **S2-WL-ST** (Wi-Fi stick) and
 S3/S5-WiFi-ST work; DLS-W and DLS-L loggers do not.
 
+For grid charging, the inverter's **max grid charging current** must be above 0 A. It is 80 A from
+the factory, but we have seen it set to 0 A, which silently stops all grid charging. SolisCloud
+cannot show this setting. See [Grid charging does nothing](#grid-charging-does-nothing) for how to
+check it, and [Solis notes](SOLIS-NOTES.md) for everything we have verified on these inverters.
+
 ---
 
 ## Dashboard widgets
@@ -794,7 +799,35 @@ Open the device and tap the gear icon.
 
 ## Troubleshooting
 
-**"Battery locked by SolisCloud"**: SolisCloud's energy management and its *Quick Control* steer the
+### Grid charging does nothing
+
+The plan shows *Grid charging*, the inverter has the charge period, but the battery stays at 0 W
+while the house runs on the grid. The device shows *Planned grid charging, but the battery is not
+charging* or *Grid charging is blocked in the inverter*.
+
+1. **Check the max grid charging current.** Solis inverters have a setting that caps how much current
+   the battery may take from the grid in the charge periods. At **0 A**, no charge period ever
+   charges from the grid; SolisCloud's Quick Control still works, because it bypasses this setting.
+   SolisCloud cannot show it, so:
+   - with a Modbus logger address in the device settings, the app reads it every few hours and
+     warns *Grid charging is blocked in the inverter*;
+   - from a computer on the same network: `python tools/modbus_probe.py <logger address> --grid-charge`
+     (from this project, needs Python), and `--set-grid-charge-current 16` to set it (use your
+     battery's max charge current; it asks before writing);
+   - or ask your installer to set *max grid charging current* in the inverter.
+2. **Check that no SolisCloud command is running.** While Quick Control or a SolisCloud
+   energy-management strategy steers the battery, the inverter ignores the charge periods. Stop it,
+   or let it end.
+3. **Check grid charging is allowed** in the storage mode. The app switches it on itself in
+   Automatic mode; SolisCloud shows it as *Allow grid charging*.
+
+Don't use Modbus tools while SolisCloud is sending a command (the app updating the plan, Quick
+Control): the logger then drops the command and SolisCloud reports *Command send fail*. Wait a
+minute and try again.
+
+### Battery locked by SolisCloud
+
+SolisCloud's energy management and its *Quick Control* steer the
 battery with a remote current limit. If such a command is left behind at 0 A, the battery neither
 charges nor discharges and no inverter setting can override it. To release it:
 

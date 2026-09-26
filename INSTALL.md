@@ -116,7 +116,12 @@ for a day or two and check that the plan makes sense. Then:
 1. **Switch off the SolisCloud EMS**: in SolisCloud, open the energy management strategy and tap the
    check mark on the active strategy so none is selected. Otherwise SolisCloud and the app will
    overwrite each other.
-2. In Homey, set the device's **Control mode** to **Automatic**.
+2. **Make sure the inverter can charge from the grid.** Its *max grid charging current* must be above
+   0 A; SolisCloud cannot show it. If you entered a Modbus address, the app checks it and warns
+   *Grid charging is blocked in the inverter*. Otherwise run
+   `python tools/modbus_probe.py <logger address> --grid-charge`, or watch the first planned grid
+   charging: see [Grid charging does nothing](docs/USER-GUIDE.md#grid-charging-does-nothing).
+3. In Homey, set the device's **Control mode** to **Automatic**.
 
 From then on the app writes the charging schedule into the inverter every half hour when it changes.
 

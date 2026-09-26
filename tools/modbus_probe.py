@@ -1,10 +1,15 @@
-"""Read-only Modbus TCP probe for a Solis hybrid inverter behind an S2-WL-ST data logger.
+"""Modbus TCP probe for a Solis hybrid inverter behind an S2-WL-ST data logger.
 
-Only reads input registers (function 04). Nothing is ever written.
+Reads only, except with --set-grid-charge-current (one register, after you confirm).
 
   python tools/modbus_probe.py --find                 # look for loggers with port 502 open on this PC's /24 network
   python tools/modbus_probe.py 192.168.1.50           # read the key values once
   python tools/modbus_probe.py 192.168.1.50 --watch 30 --compare   # every 30 s, next to SolisCloud's values
+  python tools/modbus_probe.py 192.168.1.50 --grid-charge          # can the time slots charge from the grid?
+  python tools/modbus_probe.py 192.168.1.50 --set-grid-charge-current 16   # fix a max grid charging current of 0 A
+
+Do not run it while a SolisCloud command is on its way (the app updating the plan, Quick Control):
+Modbus traffic on the logger makes cloud commands fail ("Command send fail", B0173).
 
 Register map: Solis hybrid input registers as used by github.com/Pho3niX90/solis_modbus.
 """
@@ -26,7 +31,7 @@ class ModbusError(Exception):
 
 
 class ModbusTcp:
-    """Minimal Modbus TCP client: function 04 (read input registers) only."""
+    """Minimal Modbus TCP client: read input (04) and holding (03) registers, write one register (06)."""
 
     def __init__(self, host: str, unit: int = 1, timeout: float = 5.0) -> None:
         self.host, self.unit, self.timeout = host, unit, timeout
@@ -59,6 +64,54 @@ class ModbusTcp:
         if body[0] & 0x80:
             raise ModbusError(f"exception code {body[1]} reading {start}+{count}")
         return list(struct.unpack(f">{body[1] // 2}H", body[2:2 + body[1]]))
+
+    def _request(self, pdu: bytes) -> bytes:
+        self.tid = (self.tid + 1) & 0xFFFF
+        self.sock.sendall(struct.pack(">HHHB", self.tid, 0, len(pdu) + 1, self.unit) + pdu)
+        _tid, _proto, length, _unit = struct.unpack(">HHHB", self._recv(7))
+        body = self._recv(length - 1)
+        if body[0] & 0x80:
+            raise ModbusError(f"exception code {body[1]} (function {body[0] & 0x7F})")
+        return body
+
+    def read_holding(self, start: int, count: int) -> list[int]:
+        body = self._request(struct.pack(">BHH", 3, start, count))
+        return list(struct.unpack(f">{body[1] // 2}H", body[2:2 + body[1]]))
+
+    def write_holding(self, register: int, value: int) -> None:
+        self._request(struct.pack(">BHH", 6, register, value))
+
+
+# Holding registers from Solis' Modbus document for hybrids ("RS485_MODBUS (ESINV-33000ID) Hybrid Inverter").
+STORAGE_MODE = 43110  # bit 1 time of use, bit 5 allow grid to charge the battery
+MAX_CHARGE_CURRENT = 43117  # 0.1 A
+MAX_GRID_CHARGE_CURRENT = 43342  # 0.1 A; 0 = the time slots never take power from the grid (factory default 80 A)
+TOU_SWITCHES = 43707  # bits 0-5 charge slots, 6-11 discharge slots
+REMOTE_DISPATCH = 44100  # 1 while SolisCloud Quick Control / energy management steers the battery
+
+
+def grid_charge_report(client: "ModbusTcp") -> list[str]:
+    """Everything that decides whether a time slot can charge the battery from the grid."""
+    mode = client.read_holding(STORAGE_MODE, 1)[0]
+    max_charge = client.read_holding(MAX_CHARGE_CURRENT, 1)[0] / 10
+    grid_charge = client.read_holding(MAX_GRID_CHARGE_CURRENT, 1)[0] / 10
+    slots = client.read_holding(TOU_SWITCHES, 1)[0]
+    dispatch = client.read_holding(REMOTE_DISPATCH, 1)[0]
+    lines = [
+        f"storage mode (43110)              {mode}: time of use {'on' if mode & 2 else 'OFF'}, "
+        f"grid charging {'allowed' if mode & 32 else 'NOT ALLOWED'}",
+        f"max charge current (43117)        {max_charge:g} A",
+        f"max grid charging current (43342) {grid_charge:g} A",
+        f"charge slots switched on (43707)  {[i + 1 for i in range(6) if slots >> i & 1] or 'none'}",
+        f"remote dispatch (44100)           {'ON: SolisCloud is steering the battery, the slots wait' if dispatch == 1 else 'off'}",
+    ]
+    if grid_charge == 0:
+        lines.append("=> Grid charging in the time slots is BLOCKED: set 43342 (--set-grid-charge-current).")
+    elif not mode & 32:
+        lines.append("=> Grid charging is not allowed in the storage mode (bit 5 of 43110).")
+    else:
+        lines.append("=> The time slots can charge from the grid.")
+    return lines
 
 
 def s16(v: int) -> int:
@@ -148,6 +201,9 @@ def main() -> None:
     ap.add_argument("--find", action="store_true", help="look for Modbus TCP port 502 on the local network")
     ap.add_argument("--watch", type=int, metavar="SECONDS", help="repeat every SECONDS")
     ap.add_argument("--compare", action="store_true", help="also show SolisCloud's values (needs .env)")
+    ap.add_argument("--grid-charge", action="store_true", help="show the settings that allow grid charging in the time slots")
+    ap.add_argument("--set-grid-charge-current", type=float, metavar="AMPS",
+                    help="write the max grid charging current (register 43342), e.g. your battery's max charge current")
     args = ap.parse_args()
 
     if args.find:
@@ -156,6 +212,27 @@ def main() -> None:
         return
     if not args.host:
         ap.error("give the logger's IP address, or use --find")
+
+    if args.set_grid_charge_current is not None:
+        value = round(args.set_grid_charge_current * 10)
+        if not 0 < value <= 1000:
+            ap.error("give a current between 0.1 and 100 A")
+        with ModbusTcp(args.host, args.unit) as client:
+            before = client.read_holding(MAX_GRID_CHARGE_CURRENT, 1)[0] / 10
+        answer = input(f"Max grid charging current is {before:g} A. Write {value / 10:g} A to the inverter? Type yes: ")
+        if answer.strip().lower() != "yes":
+            print("Nothing written.")
+            return
+        with ModbusTcp(args.host, args.unit) as client:
+            client.write_holding(MAX_GRID_CHARGE_CURRENT, value)
+            after = client.read_holding(MAX_GRID_CHARGE_CURRENT, 1)[0] / 10
+        print(f"Max grid charging current: {before:g} A -> {after:g} A" + ("" if after == value / 10 else "  (did not stick!)"))
+        return
+    if args.grid_charge:
+        with ModbusTcp(args.host, args.unit) as client:
+            for line in grid_charge_report(client):
+                print(line)
+        return
 
     while True:
         started = time.time()
