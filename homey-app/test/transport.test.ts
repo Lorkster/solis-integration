@@ -16,19 +16,33 @@ class FakeCloud extends SolisCloudClient {
     super({ keyId: 'k', keySecret: 's' });
   }
 
+  /** Batch reads right after a switch write return the register as it was before it, this many times (SolisCloud lag). */
+  lagAfterWrite = 0;
+  private staleBatchReads = 0;
+  private before = 0;
+
   override async readBatch(_sn: string, cids: number[]): Promise<Map<number, string>> {
+    const register = this.staleBatchReads > 0 ? (this.staleBatchReads--, this.before) : this.register;
     return new Map(cids.map((cid) => {
       const bit = FakeCloud.SWITCHES.indexOf(cid);
-      return [cid, bit >= 0 ? String((this.register >> bit) & 1) : this.values.get(cid) ?? '0'];
+      return [cid, bit >= 0 ? String((register >> bit) & 1) : this.values.get(cid) ?? '0'];
     }));
+  }
+
+  override async read(_sn: string, cid: number): Promise<string> {
+    const bit = FakeCloud.SWITCHES.indexOf(cid);
+    return bit >= 0 ? String((this.register >> bit) & 1) : this.values.get(cid) ?? '0';
   }
 
   override async control(_sn: string, cid: number, value: string, previous?: string): Promise<void> {
     this.controls.push({ cid, value, previous });
     const bit = FakeCloud.SWITCHES.indexOf(cid);
     if (bit >= 0) {
-      // What SolisCloud does: apply the bit to the old value it was given.
+      this.before = this.register;
+      this.staleBatchReads = this.lagAfterWrite;
+      // What SolisCloud does: apply the bit to the old value it was given; nothing when that already has it.
       const base = Number(previous ?? 0);
+      if (((base >> bit) & 1) === Number(value)) return;
       this.register = value === '1' ? base | (1 << bit) : base & ~(1 << bit);
     } else {
       this.values.set(cid, value);
@@ -45,6 +59,25 @@ describe('SolisCloudTransport slot switches', () => {
     assert.equal(cloud.register, 0b11, 'both slot 1 and slot 2 enabled');
     await transport.writeChargeSlot(0, { ...DISABLED_SLOT }, { enabled: true, start: '13:45', end: '15:30', currentA: 16, soc: 84 });
     assert.equal(cloud.register, 0b10, 'disabling slot 1 leaves slot 2');
+  });
+
+  it('switches a changed slot back on although SolisCloud still reports the old switches (26 Sep bug)', async () => {
+    const cloud = new FakeCloud();
+    const transport = new SolisCloudTransport({ keyId: 'k', keySecret: 's' }, 'SN', cloud);
+    const slot = { enabled: true, start: '01:45', end: '02:00', currentA: 16, soc: 33 };
+    await transport.writeChargeSlot(0, slot, { ...DISABLED_SLOT });
+    await transport.writeChargeSlot(1, { ...slot, start: '02:00', end: '12:15', currentA: 0 }, { ...DISABLED_SLOT });
+    cloud.lagAfterWrite = 1;
+    await transport.writeChargeSlot(0, { ...slot, end: '02:30', soc: 47 }, slot);
+    assert.equal(cloud.register, 0b11, 'slot 1 on again, slot 2 untouched');
+  });
+
+  it('fails when a switch does not follow, so the plan reports it', async () => {
+    const cloud = new FakeCloud();
+    cloud.control = async () => undefined; // accepted but never applied
+    const transport = new SolisCloudTransport({ keyId: 'k', keySecret: 's' }, 'SN', cloud);
+    await assert.rejects(transport.writeChargeSlot(0, { enabled: true, start: '01:45', end: '02:00', currentA: 16, soc: 33 }, { ...DISABLED_SLOT }),
+      /did not change/);
   });
 });
 

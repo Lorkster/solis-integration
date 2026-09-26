@@ -154,26 +154,42 @@ export class SolisCloudTransport implements InverterTransport {
     if (value !== current) await this.client.control(this.serialNumber, Cid.touV1, value);
   }
 
+  writeExportAllowed(allowed: boolean, previous: boolean): Promise<void> {
+    return this.client.control(this.serialNumber, Cid.exportBlocked, allowed ? '0' : '1',
+      previous ? EXPORT_REGISTER.allowed : EXPORT_REGISTER.blocked);
+  }
+
   /**
    * The 12 slot switches are bits of one inverter register (charge slots 1-6 = bits 0-5, discharge
    * slots 1-6 = bits 6-11). SolisCloud flips the bit of the CID that is written and computes the
    * new register value from the "old value" sent along, so that must be the whole bit field as it is
    * now - sending just the slot's own old value clears every other slot.
    */
-  writeExportAllowed(allowed: boolean, previous: boolean): Promise<void> {
-    return this.client.control(this.serialNumber, Cid.exportBlocked, allowed ? '0' : '1',
-      previous ? EXPORT_REGISTER.allowed : EXPORT_REGISTER.blocked);
-  }
+  private static readonly SWITCH_CIDS = [...CHARGE_SLOT_CIDS, ...DISCHARGE_SLOT_CIDS].map((s) => s.switch);
 
-  private async switchBitField(): Promise<string> {
-    const cids = [...CHARGE_SLOT_CIDS, ...DISCHARGE_SLOT_CIDS].map((s) => s.switch);
+  private async switchBitField(): Promise<number> {
+    const cids = SolisCloudTransport.SWITCH_CIDS;
     const values = await this.client.readBatch(this.serialNumber, cids);
-    const mask = cids.reduce((m, cid, bit) => (values.get(cid) === '1' ? m | (1 << bit) : m), 0);
-    return String(mask);
+    return cids.reduce((m, cid, bit) => (values.get(cid) === '1' ? m | (1 << bit) : m), 0);
   }
 
-  private async writeSwitch(cids: SlotCids, on: boolean): Promise<void> {
-    await this.client.control(this.serialNumber, cids.switch, on ? '1' : '0', await this.switchBitField());
+  /**
+   * Sets one slot switch and returns the bit field after the change. `mask` is the bit field as the
+   * caller knows it: a read right after an earlier switch write can still return the old value, and
+   * an "old value" computed from that makes SolisCloud accept the command without switching the slot
+   * (26 Sep 01:57: the slot stayed off). The switch is read back and written once more if it did not
+   * change; a switch that still does not follow throws, so the plan reports it and tries again.
+   */
+  private async writeSwitch(cids: SlotCids, on: boolean, mask?: number): Promise<number> {
+    const bit = 1 << SolisCloudTransport.SWITCH_CIDS.indexOf(cids.switch);
+    const want = on ? '1' : '0';
+    let current = mask ?? await this.switchBitField();
+    for (let attempt = 0; attempt < 2; attempt++) {
+      await this.client.control(this.serialNumber, cids.switch, want, String(current));
+      if (await this.client.read(this.serialNumber, cids.switch) === want) return on ? current | bit : current & ~bit;
+      current = await this.switchBitField();
+    }
+    throw new SolisApiError(`Slot switch CID ${cids.switch} did not change to ${want}`);
   }
 
   /** Writes only the fields that differ. Parameters are written before the enable switch. */
@@ -181,10 +197,11 @@ export class SolisCloudTransport implements InverterTransport {
     const sn = this.serialNumber;
     const time = `${slot.start}-${slot.end}`;
     const previousTime = previous ? `${previous.start}-${previous.end}` : undefined;
+    let mask: number | undefined;
     if (slot.enabled && previous?.enabled) {
       // Avoid running a half-updated slot: switch it off while changing it.
       if (time !== previousTime || slot.currentA !== previous.currentA || slot.soc !== previous.soc) {
-        await this.writeSwitch(cids, false);
+        mask = await this.writeSwitch(cids, false);
         previous = { ...previous, enabled: false };
       }
     }
@@ -193,7 +210,7 @@ export class SolisCloudTransport implements InverterTransport {
       await this.client.control(sn, cids.current, String(slot.currentA), previous?.currentA.toString());
     }
     if (slot.soc !== previous?.soc) await this.client.control(sn, cids.soc, String(slot.soc), previous?.soc.toString());
-    if (slot.enabled !== previous?.enabled) await this.writeSwitch(cids, slot.enabled);
+    if (slot.enabled !== previous?.enabled) await this.writeSwitch(cids, slot.enabled, mask);
   }
 }
 

@@ -2,7 +2,8 @@ import type { BatteryAction } from '../planner/planner.js';
 
 /**
  * Checks that the inverter does what the plan says. Cloud data arrives every ~5 minutes and the
- * inverter reacts with some delay, so a deviation is only reported when it lasts.
+ * inverter reacts with some delay, so a deviation is only reported when it lasts: 20 minutes, or
+ * most of the planned period when that is shorter (a 15-minute charge slot is checked over 10).
  */
 export type Deviation =
   | 'not_charging' // planned grid charging, battery not charging
@@ -23,6 +24,14 @@ export interface Expectation {
   targetSoc: number; // charge: SOC the slot charges to
   reserveSoc: number;
   maxSoc: number;
+  /** Length of the planned period the sample falls in; shorter periods are judged sooner. */
+  periodMinutes?: number;
+}
+
+/** A short period's deviation counts after its length minus 5 minutes (the inverter's reaction and one sample), at least 5. */
+export function minutesToReport(e: Expectation | null, minMinutes: number): number {
+  if (!e?.periodMinutes) return minMinutes;
+  return Math.max(5, Math.min(minMinutes, e.periodMinutes - 5));
 }
 
 const W = 300; // battery power that counts as moving
@@ -67,7 +76,7 @@ export class PlanMonitor {
         }
         this.okSince = 0;
         if (this.deviation === 'no_data') this.deviation = null;
-        if (t - this.candidateSince >= this.minMinutes * 60_000) this.deviation = seen;
+        if (t - this.candidateSince >= minutesToReport(expectation, this.minMinutes) * 60_000) this.deviation = seen;
       } else {
         this.candidate = null;
         this.okSince ||= t;

@@ -962,28 +962,36 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
 
   // --- is the inverter following the plan? --------------------------------------------------
 
-  /** What the battery should be doing now, or null when the app does not control it right now. */
-  private expectation(): Expectation | null {
+  /**
+   * What the battery should be doing at a time (the sample's, so a sample from the end of a short
+   * slot is judged against that slot), or null when the app does not control it then.
+   */
+  private expectation(at: Date): Expectation | null {
     const state = this.planState;
     if (!state || this.controlMode !== 'auto' || !this.canControl() || this.powerCut.active) return null;
-    const now = new Date();
-    const index = state.plan.intervals.findIndex((iv) => iv.start <= now && iv.end > now);
+    const ivs = state.plan.intervals;
+    const index = ivs.findIndex((iv) => iv.start <= at && iv.end > at);
     if (index < 0) return null;
-    const action = displayAction(state.plan.intervals[index], state.reserveSoc);
+    const action = displayAction(ivs[index], state.reserveSoc);
+    const same = (i: number) => displayAction(ivs[i], state.reserveSoc) === action;
+    let start = index;
+    while (start > 0 && same(start - 1)) start--;
     let end = index;
-    while (end + 1 < state.plan.intervals.length && state.plan.intervals[end + 1].action === action) end++;
+    while (end + 1 < ivs.length && same(end + 1)) end++;
     return {
       action,
-      targetSoc: state.plan.intervals[end].socEndPct,
+      targetSoc: ivs[end].socEndPct,
       reserveSoc: state.reserveSoc,
       maxSoc: this.controller.config.maxSocPct,
+      // Plans start at the current quarter, so a long period that began earlier counts from there.
+      periodMinutes: (ivs[end].end.getTime() - ivs[start].start.getTime()) / 60_000,
     };
   }
 
   private async checkPlan(): Promise<void> {
     const live = this.live;
     const sample = live && { time: live.timestamp, socPct: live.socPct, batteryW: live.batteryPowerW, gridW: live.gridPowerW };
-    this.monitor.update(new Date(), sample, this.expectation());
+    this.monitor.update(new Date(), sample, live ? this.expectation(live.timestamp) : null);
     // A locked battery has its own alarm and instructions.
     const planDeviation = this.monitor.deviation === 'not_covering_house' && this.lock.locked ? null : this.monitor.deviation;
     const exportIssue = exportSettingIssue(this.controller.lastRead, this.controller.exportBlockedByApp)

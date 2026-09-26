@@ -3,7 +3,7 @@ import { describe, it } from 'node:test';
 
 import { NO_POWER_TARIFF, PeakTracker, peakWeight, type PowerTariffConfig } from '../lib/energy/PowerTariff.js';
 import { SavingsTracker } from '../lib/energy/Savings.js';
-import { deviationOf, PlanMonitor } from '../lib/inverter/PlanMonitor.js';
+import { deviationOf, minutesToReport, PlanMonitor } from '../lib/inverter/PlanMonitor.js';
 import { gridLost, PowerCutTracker } from '../lib/inverter/PowerCut.js';
 import { planBattery, type PlanInterval } from '../lib/planner/planner.js';
 import { TZ } from './helpers.js';
@@ -149,6 +149,19 @@ describe('plan monitor', () => {
     assert.equal(monitor.deviation, null, 'charging again for 10 minutes');
     monitor.update(now(70), sample(35, 4000), expectation);
     assert.equal(monitor.deviation, 'no_data');
+  });
+
+  it('catches a 15-minute charge slot that does not charge (26 Sep 01:45)', () => {
+    const monitor = new PlanMonitor(20, 20);
+    const short = { ...expectation, periodMinutes: 15 };
+    const now = (m: number) => new Date(Date.UTC(2026, 9, 5, 2, m));
+    monitor.update(now(4), sample(4, 0), short);
+    monitor.update(now(9), sample(9, 0), short);
+    assert.equal(monitor.deviation, null, 'still within the reaction time');
+    monitor.update(now(14), sample(14, 0), short);
+    assert.equal(monitor.deviation, 'not_charging');
+    assert.equal(minutesToReport({ ...expectation, periodMinutes: 240 }, 20), 20, 'long periods keep 20 minutes');
+    assert.equal(minutesToReport({ ...expectation, periodMinutes: 5 }, 20), 5);
   });
 });
 
