@@ -26,6 +26,8 @@ export interface Expectation {
   maxSoc: number;
   /** Length of the planned period the sample falls in; shorter periods are judged sooner. */
   periodMinutes?: number;
+  /** Start of that period (as far as the plan reaches back). */
+  periodStart?: Date;
 }
 
 /** A short period's deviation counts after its length minus 5 minutes (the inverter's reaction and one sample), at least 5. */

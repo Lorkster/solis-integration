@@ -191,6 +191,19 @@
             "en": "How often values are read over Modbus. SolisCloud updates every 5 minutes.",
             "sv": "Hur ofta värden läses över Modbus. SolisCloud uppdateras var 5:e minut."
           }
+        },
+        {
+          "id": "grid_charge_pulse",
+          "type": "checkbox",
+          "label": {
+            "en": "Start stuck grid charging with a Remote Dispatch pulse",
+            "sv": "Starta nätladdning som inte kommer igång med en Remote Dispatch-puls"
+          },
+          "value": true,
+          "hint": {
+            "en": "Some Solis firmware ignores grid charging in the time slots until a SolisCloud Quick Control command has run. When a planned grid charge has not started after 5 minutes, the app sends the same short command over Modbus (1 kW, ends by itself after a minute), at most twice per charge period. Needs the Modbus address above; Automatic mode only.",
+            "sv": "Viss Solis-firmware struntar i nätladdning i tidsluckorna tills ett Quick Control-kommando från SolisCloud har körts. När en planerad nätladdning inte har kommit igång efter 5 minuter skickar appen samma korta kommando över Modbus (1 kW, avslutas av sig självt efter en minut), högst två gånger per laddperiod. Kräver Modbus-adressen ovan; bara i läget Automatiskt."
+          }
         }
       ]
     },

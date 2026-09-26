@@ -33,12 +33,16 @@ export const Reg = {
   offGridOverDischargeSoc: 43137,
   maxGridChargeCurrent: 43342, // 0.1 A; 0 blocks grid charging in the time slots (factory default 80 A)
   exportFlags: 43483, // bit 3 set = export blocked
+  dispatchSwitch: 44100, // Remote Dispatch on/off, then the failsafe in minutes (44101)
+  dispatchControl: 44105, // real-time control: mode, power (S32, 10 W), function switches (44108)
   slotSwitches: 43707, // charge slots 1-6 = bits 0-5, discharge slots 1-6 = bits 6-11
   chargeSlots: 43708, // 7 registers per slot: SOC, current (0.1 A), cut-off voltage, start h, start m, end h, end m
   dischargeSlots: 43750,
 } as const;
 
 const SLOT_REGS = 7;
+/** 44108 as Quick Control sets it: PV shutdown off, DO off, grid charging allowed, off-grid standby off (01 in each pair). */
+const DISPATCH_FLAGS = 0x5555;
 const EXPORT_BLOCKED_BIT = 1 << 3;
 
 const u32 = (hi: number, lo: number) => hi * 0x10000 + lo;
@@ -86,6 +90,29 @@ export class SolisModbusTransport implements InverterTransport {
         touV2,
       };
     });
+  }
+
+  /**
+   * A short Remote Dispatch command, as SolisCloud's Quick Control → Charge sends it: charge with
+   * grid charging allowed, a failsafe that ends it after a minute whatever happens, then off again.
+   * On an S6-EH3P20K-H, time-of-use slots did not charge from the grid until such a command had run
+   * (26 Sep 2026); afterwards the active slot charged at its own current.
+   */
+  async pulseRemoteDispatch(chargeW: number, holdMs: number, wait: (ms: number) => Promise<void>): Promise<void> {
+    const power = Math.max(1, Math.round(chargeW / 10));
+    await this.modbus.session(async (m) => {
+      await m.writeMultiple(Reg.dispatchControl, [2, (power >> 16) & 0xffff, power & 0xffff, DISPATCH_FLAGS]);
+      await m.writeMultiple(Reg.dispatchSwitch, [1, 1]);
+    });
+    try {
+      await wait(holdMs);
+    } finally {
+      await this.modbus.session(async (m) => {
+        await m.writeMultiple(Reg.dispatchSwitch, [0]);
+        const [on] = await m.readHolding(Reg.dispatchSwitch, 1);
+        if (on !== 0) throw new ModbusError('Remote Dispatch still on; its 1-minute failsafe ends it');
+      });
+    }
   }
 
   /** Max grid charging current in A (register 43342), which SolisCloud cannot read on hybrids. */

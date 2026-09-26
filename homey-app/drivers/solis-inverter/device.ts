@@ -9,6 +9,13 @@ import { ModbusTcpClient } from '../../lib/modbus/ModbusTcpClient.js';
 const GRID_CHARGE_CHECK_MS = 6 * 3_600_000;
 const GRID_CHARGE_RECHECK_MS = 30 * 60_000;
 
+/** Remote Dispatch pulse for grid charging that does not start: after how long, how often, how strong. */
+const PULSE_AFTER_MIN = 5;
+const PULSES_PER_PERIOD = 2;
+const PULSE_GAP_MS = 15 * 60_000;
+const PULSE_HOLD_MS = 45_000;
+const PULSE_CHARGE_W = 1000;
+
 /** A Solis hybrid inverter, through SolisCloud or locally over Modbus TCP. */
 export default class SolisInverterDevice extends BatteryPlannerDevice {
   protected readonly workMode = solisWorkMode;
@@ -27,6 +34,7 @@ export default class SolisInverterDevice extends BatteryPlannerDevice {
       }))
       : null;
     if (cloud && modbus) cloud.gridChargeLimit = this.sparse(() => modbus.readMaxGridChargeCurrent());
+    this.modbus = modbus;
     const wantModbus = s.connection_primary === 'modbus';
     const primary = wantModbus ? modbus ?? cloud : cloud ?? modbus;
     if (!primary) throw new Error('Set up SolisCloud or Modbus in the device settings');
@@ -35,6 +43,35 @@ export default class SolisInverterDevice extends BatteryPlannerDevice {
   }
 
   private gridChargeCache: { value: number | null; at: number } = { value: null, at: 0 };
+  private modbus: SolisModbusTransport | null = null;
+  /** Pulses sent per charge period (period start → times). */
+  private readonly pulses = new Map<number, number[]>();
+
+  /**
+   * Time-of-use slots on this firmware can stop charging from the grid until a Remote Dispatch
+   * command has run (26 Sep 2026). When a planned grid charge has not started for a few minutes,
+   * send the short command Quick Control would send, at most twice per period, 15 minutes apart.
+   */
+  protected override async onGridChargeStalled(minutes: number, periodStart: Date): Promise<void> {
+    const modbus = this.modbus;
+    if (!modbus || this.getSetting('grid_charge_pulse') === false || this.controlMode !== 'auto') return;
+    if (minutes < PULSE_AFTER_MIN) return;
+    const now = Date.now();
+    for (const [start] of this.pulses) if (now - start > 86_400_000) this.pulses.delete(start);
+    const sent = this.pulses.get(periodStart.getTime()) ?? [];
+    if (sent.length >= PULSES_PER_PERIOD || (sent.length > 0 && now - sent[sent.length - 1] < PULSE_GAP_MS)) return;
+    this.pulses.set(periodStart.getTime(), [...sent, now]);
+    this.log(`Planned grid charging has not started for ${Math.round(minutes)} min: Remote Dispatch pulse ${sent.length + 1}`);
+    this.inverterBusy = true;
+    try {
+      await modbus.pulseRemoteDispatch(PULSE_CHARGE_W, PULSE_HOLD_MS, (ms) => new Promise((resolve) => this.homey.setTimeout(resolve, ms)));
+      this.log('Remote Dispatch pulse done');
+    } catch (err) {
+      this.error('Remote Dispatch pulse failed:', err);
+    } finally {
+      this.inverterBusy = false;
+    }
+  }
 
   /**
    * One Modbus read every few hours, kept across reconnects: polling Modbus often makes SolisCloud

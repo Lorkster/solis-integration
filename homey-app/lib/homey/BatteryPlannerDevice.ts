@@ -97,6 +97,9 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
   private lastAction: BatteryAction | null = null;
   private lastSampleTime = 0;
   private planning = false;
+  /** Set while a brand talks to the inverter outside the plan (e.g. a Modbus command): plan updates wait. */
+  protected inverterBusy = false;
+  private chargeStall: { period: number; since: number } | null = null;
   /** Battery floor during a power outage, read from the inverter (Solis: 20-30 % by default). */
   private offGridFloorSoc: number | null = null;
   private readonly lock = new LockDetector();
@@ -160,6 +163,14 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
   /** Why the app only shows the plan, when canControl() is false. */
   protected cannotControlText(): string {
     return this.homey.__('device.cannotControl');
+  }
+
+  /**
+   * A planned grid charge has not started for `minutes` (measured between the inverter's samples).
+   * Brands can try to get it going; Solis sends a short Remote Dispatch command.
+   */
+  protected async onGridChargeStalled(_minutes: number, _periodStart: Date): Promise<void> {
+    // Nothing by default: the plan check reports it after a while.
   }
 
   /** Warning while a remote command keeps the battery at 0 A (see LockDetector). */
@@ -799,6 +810,7 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
       if (!this.live) await this.setUnavailable(`${this.transport?.name ?? '–'}: ${(err as Error).message}`);
     } finally {
       await this.checkPlan().catch(this.error);
+      await this.checkGridCharge().catch(this.error);
       await this.refreshWarning().catch(this.error);
     }
   }
@@ -985,6 +997,7 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
       maxSoc: this.controller.config.maxSocPct,
       // Plans start at the current quarter, so a long period that began earlier counts from there.
       periodMinutes: (ivs[end].end.getTime() - ivs[start].start.getTime()) / 60_000,
+      periodStart: ivs[start].start,
     };
   }
 
@@ -1278,8 +1291,29 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
       : '–');
   }
 
+  /** Follows planned grid charging that does not start, and tells the brand how long it has been. */
+  private async checkGridCharge(): Promise<void> {
+    if (this.planning) return; // not while the plan is being written to the inverter
+    const live = this.live;
+    const e = live ? this.expectation(live.timestamp) : null;
+    const stalled = live && e?.action === 'charge' && e.periodStart && live.gridLost !== true
+      && live.batteryPowerW < 300 && live.socPct < Math.min(e.targetSoc, e.maxSoc) - 2;
+    if (!stalled || !live || !e?.periodStart) {
+      this.chargeStall = null;
+      return;
+    }
+    const period = e.periodStart.getTime();
+    if (this.chargeStall?.period !== period) this.chargeStall = { period, since: live.timestamp.getTime() };
+    const minutes = (live.timestamp.getTime() - this.chargeStall.since) / 60_000;
+    if (minutes > 0) await this.onGridChargeStalled(minutes, e.periodStart);
+  }
+
   private async replan(): Promise<void> {
     if (this.planning || !this.live) return;
+    if (this.inverterBusy) {
+      this.homey.setTimeout(() => this.replan().catch(this.error), 10_000);
+      return;
+    }
     this.planning = true;
     try {
       const now = new Date();

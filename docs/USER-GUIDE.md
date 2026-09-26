@@ -673,6 +673,7 @@ Open the device and tap the gear icon.
 | Modbus port | 502 |  |
 | Modbus unit id | 1 |  |
 | Modbus update interval | 60 s | How often values are read over Modbus. SolisCloud updates every 5 minutes. |
+| Start stuck grid charging with a Remote Dispatch pulse | on | Some Solis firmware ignores grid charging in the time slots until a SolisCloud Quick Control command has run. When a planned grid charge has not started after 5 minutes, the app sends the same short command over Modbus (1 kW, ends by itself after a minute), at most twice per charge period. Needs the Modbus address above; Automatic mode only. |
 
 **Backup reserve**
 
@@ -820,6 +821,11 @@ charging* or *Grid charging is blocked in the inverter*.
    or let it end.
 3. **Check grid charging is allowed** in the storage mode. The app switches it on itself in
    Automatic mode; SolisCloud shows it as *Allow grid charging*.
+4. **If everything above is right and it still does not charge:** some Solis firmware ignores grid
+   charging in the charge periods until a SolisCloud Quick Control command has run. Start
+   *Quick Control → Charge* (grid charging allowed) and stop it after a minute; the charge period
+   then takes over. With a Modbus address set up, the app does this by itself (setting *Start stuck
+   grid charging with a Remote Dispatch pulse*, on by default).
 
 Don't use Modbus tools while SolisCloud is sending a command (the app updating the plan, Quick
 Control): the logger then drops the command and SolisCloud reports *Command send fail*. Wait a

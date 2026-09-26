@@ -97,6 +97,22 @@ describe('Solis over Modbus', () => {
     assert.equal(inv.holding.get(Reg.exportFlags), 88);
   });
 
+  it('sends a Remote Dispatch pulse like Quick Control, and always switches it off (26 Sep)', async () => {
+    const inv = new FakeInverter();
+    const t = new SolisModbusTransport(inv);
+    let waited = 0;
+    await t.pulseRemoteDispatch(1000, 45_000, async (ms) => { waited = ms; });
+    assert.deepEqual(inv.writes, [
+      [Reg.dispatchControl, [2, 0, 100, 0x5555]], // charge 1 kW, grid charging allowed
+      [Reg.dispatchSwitch, [1, 1]], // on, failsafe 1 minute
+      [Reg.dispatchSwitch, [0]], // off
+    ]);
+    assert.equal(waited, 45_000);
+    inv.writes = [];
+    await assert.rejects(t.pulseRemoteDispatch(1000, 1, async () => { throw new Error('stopped'); }));
+    assert.deepEqual(inv.writes.at(-1), [Reg.dispatchSwitch, [0]], 'off even when the wait fails');
+  });
+
   it('reads the serial number', async () => {
     const inv = new FakeInverter();
     const text = 'ABC1234567890XYZ';

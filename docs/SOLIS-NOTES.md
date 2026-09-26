@@ -26,6 +26,31 @@ A charge slot only takes power from the grid when **all** of these hold:
 3. **Remote Dispatch** (register 44100) is off. While SolisCloud's Quick Control or energy
    management is running, it steers the battery directly and the slots wait.
 
+### A hidden block that a Quick Control command clears
+
+Even with all three conditions met, the slots on this inverter can stop charging from the grid.
+On 26 Sep 2026 the daytime slot (12:15–17:15, 16 A) did nothing. None of these helped, each
+tested inside the slot's window:
+
+- rewriting 43342, or changing it (16 → 15 → 16 A);
+- clearing a switched-off slot with the same times;
+- moving the slot's start to a few minutes ahead;
+- writing 44108 alone (ignored while Remote Dispatch is off).
+
+Starting **Quick Control → Charge** and stopping it after a minute did help. The same slot then
+charged at its own 16 A (7 kW) with Remote Dispatch off, just as it had at 02:21 that night. No
+register we know of differs before and after (43110, 43342, 44100, 44108 all read the same). The
+block came back some time between 03:00 and 12:15; what sets it is still unknown. Status 33121
+bit 6 ("limited by external reason") is set both when blocked and when charging, probably from the
+85 % power limit, so it is not the cause.
+
+**Workaround in the app:** when a planned grid charge has not started after 5 minutes in Automatic
+mode, the Solis device sends the Remote Dispatch sequence Quick Control uses, over Modbus. It sets
+44105–44108 = charge 1 kW with grid charging allowed (0x5555), then 44100–44101 = on with a
+1-minute failsafe, and after 45 s 44100 = off. It sends this at most twice per charge period, 15
+minutes apart, and only with a Modbus address set up. It is set in the device settings, *Start stuck
+grid charging with a Remote Dispatch pulse*. Reported to Solis support.
+
 ### The 26 Sep 2026 incident
 
 Every planned grid charge had silently done nothing. The diagnosis, step by step:
