@@ -2,7 +2,9 @@
 // result is one self-contained HTML file (widgets built in), which also works opened from disk.
 //  - homey-app/settings/index.html: the app's settings page in Homey (Homey login)
 //  - docs/dashboard/solis-dashboard.html: the standalone page for a browser or wall screen at home
-// Usage: node tools/build-dashboard.mjs
+//  - with --homeybuild (the app's `npm run build`, which the Homey CLI runs on every validate, run and install):
+//    also the settings page in homey-app/.homeybuild/
+// Usage: node tools/build-dashboard.mjs  (also runs by itself from homey-app: npm run build)
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -24,6 +26,11 @@ const targets = [
   { file: join(root, 'homey-app/settings/index.html'), script: '<script type="text/javascript" src="/homey.js" data-origin="settings"></script>' },
   { file: join(root, 'docs/dashboard/solis-dashboard.html'), script: '' },
 ];
+// --homeybuild: run as the app's `npm run build`. The Homey CLI has copied the app into .homeybuild/
+// before it calls the build, so the settings page is written there too.
+if (process.argv.includes('--homeybuild')) {
+  targets.push({ file: join(root, 'homey-app/.homeybuild/settings/index.html'), script: targets[0].script });
+}
 for (const { file, script } of targets) {
   mkdirSync(dirname(file), { recursive: true });
   writeFileSync(file, page(script));
