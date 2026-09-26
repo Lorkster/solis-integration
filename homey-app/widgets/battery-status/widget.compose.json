@@ -1,6 +1,6 @@
 {
   "name": { "en": "Battery status", "sv": "Batteristatus" },
-  "height": 360,
+  "height": 480,
   "settings": [],
   "api": {
     "getPlan": { "method": "GET", "path": "/" }

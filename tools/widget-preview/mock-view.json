@@ -1409,5 +1409,13 @@
   },
   "powerCut": null,
   "offPlan": null,
-  "peak": null
+  "peak": null,
+  "powerLevel": {
+    "level": "expensive",
+    "cheapBelow": 1.8,
+    "expensiveAbove": 2.5,
+    "otherHeatingCheaper": false,
+    "breakEven": 6.3,
+    "outdoorC": 13
+  }
 }

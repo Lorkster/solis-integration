@@ -11,7 +11,7 @@ HERE = Path(__file__).parent
 WIDGETS = HERE.parent.parent / "homey-app" / "widgets"
 BACKGROUND = {"light": (242, 242, 247), "dark": (0, 0, 0)}
 
-for widget, height in (("battery-plan", 780), ("battery-status", 460)):
+for widget, height in (("battery-plan", 900), ("battery-status", 640)):
     for theme in ("light", "dark"):
         shot = HERE / f"{widget}-{theme}.png"
         subprocess.run(["node", str(HERE / "render.mjs"), widget, theme, "384", str(height), str(shot)], check=True, capture_output=True)

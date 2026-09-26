@@ -4,44 +4,59 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
+    /* One colour per part of the system, shared with the Battery status widget:
+       grid violet, battery blue, solar amber; holding the battery back pink; the rest grey. */
     :root {
-      --c-charge: #2a78d6;
-      --c-hold: #e87ba4;
-      --c-solar: #eda100;
-      --c-use: #008300;
-      --c-price: #6f4bd8;
+      --c-charge: #7a5af8;
+      --c-hold: #d6457f;
+      --c-solar: #e08a00;
+      --c-use: #2b7de9;
+      --c-good: #1a9a4b;
       --c-quiet: var(--homey-text-color-light, #8a8a8e);
       --c-ink: var(--homey-text-color, #1a1a1a);
       --c-muted: var(--homey-text-color-light, #8a8a8e);
+      --c-price: var(--c-ink);
       --c-grid: rgba(0, 0, 0, 0.08);
+      --c-well: rgba(0, 0, 0, 0.045);
       --c-surface: var(--homey-background-color, #fff);
+      --tint: 14%;
+      --on-tint: 62%;
+      --wash: 0.09;
     }
     .homey-dark-mode {
-      --c-charge: #3987e5;
-      --c-hold: #d55181;
-      --c-solar: #c98500;
-      --c-price: #9d86f5;
+      --c-charge: #9d86f5;
+      --c-hold: #f07aa8;
+      --c-solar: #f5a524;
+      --c-use: #4c9af2;
+      --c-good: #3ccf73;
       --c-grid: rgba(255, 255, 255, 0.10);
+      --c-well: rgba(255, 255, 255, 0.07);
+      --tint: 22%;
+      --on-tint: 100%;
+      --wash: 0.14;
     }
     * { box-sizing: border-box; }
-    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--c-ink); }
+    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--c-ink); font-variant-numeric: tabular-nums; }
     #root { transition: opacity 0.2s; }
     #root.refreshing { opacity: 0.6; }
 
     /* Status header */
     .status { display: flex; align-items: center; gap: var(--homey-su-3, 12px); }
-    .status-icon { flex: none; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--c-grid); }
-    .status-icon svg { width: 20px; height: 20px; }
+    .status-icon { flex: none; width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center;
+      color: var(--c); background: color-mix(in srgb, var(--c) var(--tint), transparent); }
+    .status-icon svg { width: 22px; height: 22px; }
     .status-text { flex: 1; min-width: 0; }
-    .status-title { font-weight: 600; font-size: var(--homey-font-size-default, 15px); line-height: 1.3; }
+    .status-title { font-weight: 650; font-size: 16px; line-height: 1.3; }
     .status-sub { color: var(--c-muted); font-size: var(--homey-font-size-small, 13px); line-height: 1.3; }
     .soc { text-align: right; flex: none; }
-    .soc-value { font-weight: 600; font-size: 22px; line-height: 1; }
-    .soc-label { color: var(--c-muted); font-size: 11px; }
+    .soc-value { font-weight: 650; font-size: 28px; line-height: 1; letter-spacing: -0.01em; }
+    .soc-value small { font-size: 15px; font-weight: 500; color: var(--c-muted); margin-left: 1px; }
+    .soc-label { color: var(--c-muted); font-size: 11px; margin-top: 2px; }
 
-    .pill { display: inline-flex; align-items: center; gap: 6px; margin-top: var(--homey-su-2, 8px); padding: 4px 10px; border-radius: 999px; font-size: 12px; background: var(--c-grid); }
-    .pill svg { width: 14px; height: 14px; flex: none; }
-    .pill.warning { background: color-mix(in srgb, var(--homey-color-warning, #fab219) 22%, transparent); }
+    .pill { display: flex; align-items: flex-start; gap: 8px; margin-top: var(--homey-su-2, 8px); padding: 8px 10px; border-radius: 12px; font-size: 12px; line-height: 1.35; background: var(--c-well); color: var(--c-muted); }
+    .pill svg { width: 15px; height: 15px; flex: none; margin-top: 1px; }
+    .pill.warning { color: var(--c-ink); background: color-mix(in srgb, var(--homey-color-warning, #f5a300) var(--tint), transparent); }
+    .pill.warning svg { color: var(--homey-color-warning, #f5a300); }
 
     /* Chart */
     .chart { position: relative; margin-top: var(--homey-su-3, 12px); touch-action: pan-y; }
@@ -49,8 +64,8 @@
     .chart:focus { outline: none; }
     .chart:focus-visible { outline: 2px solid var(--homey-color-highlight, #0092ff); outline-offset: 4px; border-radius: 4px; }
     .axis-text { font-size: 10px; fill: var(--c-muted); font-variant-numeric: tabular-nums; }
-    .panel-title { font-size: 10px; fill: var(--c-muted); font-weight: 600; letter-spacing: 0.02em; }
-    .band-label { font-size: 10px; fill: var(--c-ink); font-weight: 600; }
+    .panel-title { font-size: 11px; fill: var(--c-muted); }
+    .band-label { font-size: 10px; font-weight: 650; }
     .band-label.quiet { fill: var(--c-muted); font-weight: 400; }
 
     .tooltip { position: absolute; top: 0; pointer-events: none; min-width: 132px; padding: 8px 10px; border-radius: 8px;
@@ -69,18 +84,22 @@
 
     /* Schedule list (also the table view of the chart) */
     .schedule { margin-top: var(--homey-su-3, 12px); border-top: 1px solid var(--c-grid); }
-    .schedule h3 { display: flex; justify-content: space-between; margin: var(--homey-su-2, 8px) 0 2px; font-size: 11px; font-weight: 600; color: var(--c-muted); text-transform: uppercase; letter-spacing: 0.04em; }
-    .schedule h3 .col { text-transform: none; letter-spacing: 0; font-weight: 400; }
+    .schedule h3 { display: flex; justify-content: space-between; margin: 10px 0 2px; font-size: 13px; font-weight: 650; }
+    .schedule h3 .col { font-size: 11px; font-weight: 400; color: var(--c-muted); align-self: flex-end; }
     .row { display: flex; align-items: center; gap: 10px; padding: 6px 0; font-size: 13px; }
     .row + .row { border-top: 1px solid var(--c-grid); }
-    .day { margin-top: 8px; padding: 4px 0 2px; font-size: 11px; font-weight: 600; color: var(--c-muted); border-top: 1px solid var(--c-grid); }
-    .row .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
-    .row .what { flex: 1; }
-    .row .when { font-variant-numeric: tabular-nums; }
-    .row .target { color: var(--c-muted); font-variant-numeric: tabular-nums; min-width: 44px; text-align: right; }
+    .day { margin-top: 6px; padding: 6px 0 2px; font-size: 11px; font-weight: 650; color: var(--c-muted); border-top: 1px solid var(--c-grid); }
+    .row .badge { width: 26px; height: 26px; border-radius: 8px; flex: none; display: grid; place-items: center;
+      color: var(--c); background: color-mix(in srgb, var(--c) var(--tint), transparent); }
+    .row .badge svg { width: 15px; height: 15px; }
+    .row .what { flex: 1; min-width: 0; }
+    .row .when { font-variant-numeric: tabular-nums; color: var(--c-muted); }
+    .row .target { font-weight: 600; font-variant-numeric: tabular-nums; min-width: 44px; text-align: right; }
 
-    .footer { display: flex; justify-content: space-between; gap: 8px; margin-top: var(--homey-su-2, 8px); font-size: 11px; color: var(--c-muted); }
-    .footer b { color: var(--c-ink); font-weight: 600; }
+    .footer { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: var(--homey-su-3, 12px); font-size: 11px; color: var(--c-muted); }
+    .footer .saves { padding: 4px 10px; border-radius: 999px; font-size: 12px;
+      color: color-mix(in srgb, var(--c-good) var(--on-tint), var(--c-ink)); background: color-mix(in srgb, var(--c-good) var(--tint), transparent); }
+    .footer b { font-weight: 650; }
     .message { color: var(--c-muted); font-size: 13px; padding: var(--homey-su-4, 16px) 0; text-align: center; }
   </style>
 </head>
@@ -153,17 +172,20 @@
       },
     };
 
+    // Icons after Lucide (ISC licence), the same set as the Battery status widget.
+    const SHIELD = '<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>';
+    const SUN = '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>';
     const ICON = {
-      grid_charge: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
-      save: '<rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>',
-      battery: '<rect x="6" y="4" width="12" height="17" rx="2"/><path d="M10 2h4M12 16V9M9 12l3-3 3 3"/>',
-      solar_charge: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
-      solar_house: '<circle cx="8" cy="7" r="3"/><path d="M8 1.5v1.5M2.5 7H4M3.8 2.8l1 1M12.2 2.8l-1 1"/><path d="M11 14l5.5-4.5L22 14"/><path d="M13 12.5V20h7v-7.5"/>',
-      at_reserve: '<path d="M12 21.5s7.5-3.2 7.5-9.5V5.5L12 2.5 4.5 5.5V12c0 6.3 7.5 9.5 7.5 9.5z"/>',
-      full: '<rect x="6" y="4" width="12" height="17" rx="2"/><path d="M10 2h4M9 8h6M9 12h6M9 16h6"/>',
-      warning: '<path d="M10.3 3.7L2.4 17.5A2 2 0 004.1 20.5h15.8a2 2 0 001.7-3L13.7 3.7a2 2 0 00-3.4 0z"/><path d="M12 9v4.5M12 16.8v.1"/>',
-      shield: '<path d="M12 21.5s7.5-3.2 7.5-9.5V5.5L12 2.5 4.5 5.5V12c0 6.3 7.5 9.5 7.5 9.5z"/>',
-      eye: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+      grid_charge: '<path d="M12 2v20M2 5h20M3 3v2M7 3v2M17 3v2M21 3v2M19 5l-7 7-7-7"/>',
+      save: '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+      battery: '<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .71-1.53l7-6a2 2 0 0 1 2.58 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+      solar_charge: SUN,
+      solar_house: SUN,
+      at_reserve: SHIELD,
+      full: '<rect x="2" y="6" width="16" height="12" rx="2"/><path d="M22 14v-4M6 10v4M10 10v4M14 10v4"/>',
+      warning: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4M12 17h.01"/>',
+      shield: SHIELD,
+      eye: '<path d="M2.06 12.35a1 1 0 0 1 0-.7 10.75 10.75 0 0 1 19.88 0 1 1 0 0 1 0 .7 10.75 10.75 0 0 1-19.88 0"/><circle cx="12" cy="12" r="3"/>',
     };
     const icon = (name, color) =>
       `<svg viewBox="0 0 24 24" fill="none" stroke="${color || 'currentColor'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[name]}</svg>`;
@@ -239,9 +261,10 @@
       const header = document.createElement('div');
       header.className = 'status';
       header.innerHTML = `
-        <div class="status-icon">${icon(state, QUIET.has(state) ? 'var(--c-ink)' : STATE_COLOR[state])}</div>
+        <div class="status-icon">${icon(state)}</div>
         <div class="status-text"><div class="status-title"></div><div class="status-sub"></div></div>
-        <div class="soc"><div class="soc-value">${soc} %</div><div class="soc-label">${T.soc}</div></div>`;
+        <div class="soc"><div class="soc-value">${soc}<small>%</small></div><div class="soc-label">${T.soc}</div></div>`;
+      header.querySelector('.status-icon').style.setProperty('--c', STATE_COLOR[state]);
       header.querySelector('.status-title').textContent = T.titles[state];
       header.querySelector('.status-sub').textContent = sub;
       root.appendChild(header);
@@ -321,13 +344,12 @@
         const x0 = x(b.from), x1 = x(b.to + 1);
         const quiet = QUIET.has(b.state);
         if (!quiet) {
-          const wash = b.state === 'battery' || b.state === 'solar_charge' ? 0.07 : 0.1;
-          svg.appendChild(el('rect', { x: x0, y: top, width: Math.max(x1 - x0, 1), height: bottom - top, fill: STATE_COLOR[b.state], opacity: wash }));
+          svg.appendChild(el('rect', { x: x0, y: top, width: Math.max(x1 - x0, 1), height: bottom - top, fill: STATE_COLOR[b.state], style: 'opacity: var(--wash)' }));
         }
-        svg.appendChild(el('rect', { x: x0, y: top, width: Math.max(x1 - x0 - 2, 1), height: 3, rx: 1.5, fill: STATE_COLOR[b.state], opacity: quiet ? 0.6 : 1 }));
+        svg.appendChild(el('rect', { x: x0, y: top, width: Math.max(x1 - x0 - 2, 1), height: 4, rx: 2, fill: STATE_COLOR[b.state], opacity: quiet ? 0.5 : 1 }));
         const label = T.bands[b.state];
-        if (x1 - x0 > label.length * 5.6 + 6) { // ~5.6 px per character at 10 px
-          svg.appendChild(el('text', { x: x0 + 4, y: top + 14, class: quiet ? 'band-label quiet' : 'band-label' }, label));
+        if (x1 - x0 > label.length * 5.4 + 6) { // ~5.4 px per character at 10 px
+          svg.appendChild(el('text', { x: x0 + 4, y: top + 15, class: quiet ? 'band-label quiet' : 'band-label', fill: STATE_COLOR[b.state] }, label));
         }
       }
 
@@ -379,8 +401,8 @@
           const line = intervals.map((iv, i) => `${i ? 'L' : 'M'}${x(i + 1)},${p.y(iv.soc)}`).join('');
           intervals.forEach((iv, i) => { area += `L${x(i + 1)},${p.y(iv.soc)}`; });
           area += `L${x(n)},${p.y(0)}Z`;
-          svg.appendChild(el('path', { d: area, fill: 'var(--c-ink)', opacity: 0.06 }));
-          svg.appendChild(el('path', { d: line, fill: 'none', stroke: 'var(--c-ink)', 'stroke-width': 2, 'stroke-linejoin': 'round' }));
+          svg.appendChild(el('path', { d: area, fill: 'var(--c-use)', opacity: 0.16 }));
+          svg.appendChild(el('path', { d: line, fill: 'none', stroke: 'var(--c-use)', 'stroke-width': 2.25, 'stroke-linejoin': 'round' }));
           // Plan vs actual: what the day's first plan expected, dashed, over the measured line.
           let planned = '';
           let open = false;
@@ -393,7 +415,7 @@
           if (planned) svg.appendChild(el('path', { d: planned, fill: 'none', stroke: 'var(--c-ink)', 'stroke-width': 1.5, 'stroke-dasharray': '4 3', opacity: 0.6 }));
           if (view.live) {
             // Current state of charge as an end-dot at the start of the forecast.
-            svg.appendChild(el('circle', { cx: x(pastCount), cy: p.y(view.live.socPct), r: 4, fill: 'var(--c-ink)', stroke: 'var(--c-surface)', 'stroke-width': 2 }));
+            svg.appendChild(el('circle', { cx: x(pastCount), cy: p.y(view.live.socPct), r: 4.5, fill: 'var(--c-use)', stroke: 'var(--c-surface)', 'stroke-width': 2 }));
           }
         }
       }
@@ -414,7 +436,10 @@
 
       // "Now" marker at the left edge of the current interval.
       if (nowX >= LEFT && nowX <= W) {
-        svg.appendChild(el('line', { x1: nowX, x2: nowX, y1: top - 2, y2: bottom, stroke: 'var(--c-ink)', 'stroke-width': 1 }));
+        // One segment per panel, so the line does not run through the panel titles.
+        for (const p of panels) {
+          svg.appendChild(el('line', { x1: nowX, x2: nowX, y1: p === panels[0] ? top - 2 : p.top, y2: p.bottom, stroke: 'var(--c-ink)', 'stroke-width': 1 }));
+        }
         svg.appendChild(el('text', { x: nowX, y: bottom + 13, 'text-anchor': 'middle', class: 'axis-text', 'font-weight': 600 }, T.now));
       }
 
@@ -461,7 +486,7 @@
           row('var(--c-solar)', `${fmtNum(iv.pvKw, 1)} kW`, T.solar);
           row('var(--c-muted)', `${fmtNum(iv.loadKw, 1)} kW`, T.load);
         }
-        row('var(--c-ink)', `${Math.round(iv.soc)} %`, T.battery.replace(' %', ''));
+        row('var(--c-use)', `${Math.round(iv.soc)} %`, T.battery.replace(' %', ''));
         if (iv.past && iv.plannedSoc !== null && iv.plannedSoc !== undefined) row('transparent', `${Math.round(iv.plannedSoc)} %`, T.planned);
         tip.classList.add('visible');
         const tw = tip.offsetWidth;
@@ -488,13 +513,12 @@
       });
       wrap.setAttribute('aria-label', `${T.price()}, ${T.energy}, ${T.battery}`);
 
+      // The coloured periods are named in the chart and in the list below; the legend covers the lines.
       const legend = document.createElement('div');
       legend.className = 'legend';
       const item = (html) => { const s = document.createElement('span'); s.innerHTML = html; legend.appendChild(s); };
-      for (const state of ['grid_charge', 'save', 'battery', 'solar_charge']) {
-        item(`<i class="swatch" style="background:${STATE_COLOR[state]}"></i>${T.names[state]}`);
-      }
-      item(`<i class="swatch" style="background:var(--c-quiet);opacity:.6"></i>${T.quiet}`);
+      item(`<i class="key" style="background:var(--c-price)"></i>${T.price()}`);
+      item(`<i class="key" style="background:var(--c-use)"></i>${T.battery}`);
       if (showEnergy) {
         item(`<i class="key" style="background:var(--c-solar)"></i>${T.solar}`);
         item(`<i class="key" style="background:var(--c-muted)"></i>${T.load}`);
@@ -515,8 +539,8 @@
       const addRow = (state, when, soc) => {
         const row = document.createElement('div');
         row.className = 'row';
-        row.innerHTML = '<span class="dot"></span><span class="what"></span><span class="when"></span><span class="target"></span>';
-        row.querySelector('.dot').style.background = STATE_COLOR[state];
+        row.innerHTML = `<span class="badge">${icon(state)}</span><span class="what"></span><span class="when"></span><span class="target"></span>`;
+        row.querySelector('.badge').style.setProperty('--c', STATE_COLOR[state]);
         row.querySelector('.what').textContent = T.names[state];
         row.querySelector('.when').textContent = when;
         row.querySelector('.target').textContent = `${soc} %`;
@@ -563,6 +587,7 @@
       const footer = document.createElement('div');
       footer.className = 'footer';
       const left = document.createElement('span');
+      left.className = 'saves';
       left.innerHTML = t().saves(fmtNum(view.plan.savingsSek, 0));
       const right = document.createElement('span');
       right.textContent = t().updated(fmtTime(view.plan.generatedAt));
