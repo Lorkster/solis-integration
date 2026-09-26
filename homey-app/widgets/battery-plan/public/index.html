@@ -249,10 +249,15 @@
         .map((p) => ({ ...p, from: Math.max(0, p.from), to: Math.min(n - 1, p.to) }));
     }
 
+    /** Periods not yet over. The plan starts where it was made, up to 30 minutes ago. */
+    function upcomingPeriods(intervals) {
+      return periods(intervals).filter((p) => new Date(p.end).getTime() > nowMs());
+    }
+
     function renderHeader(root, intervals) {
       const T = t();
-      const current = intervals[0];
-      const first = periods(intervals)[0];
+      const current = intervals.find((iv) => new Date(iv.t).getTime() + 900e3 > nowMs()) || intervals[intervals.length - 1];
+      const first = upcomingPeriods(intervals)[0];
       const planned = first ? first.state : current.state;
       // Live data wins over the forecast in self-use periods (e.g. a sunnier morning than expected).
       const state = view.plan.nowState || planned;
@@ -549,7 +554,7 @@
       // What really happens now comes first when it differs from the plan (e.g. more sun than forecast).
       if (view.plan.nowState && view.live) addRow(view.plan.nowState, T.nowRow, Math.round(view.live.socPct));
       const horizon = nowMs() + 24 * 3600e3;
-      const upcoming = periods(intervals).filter((p) => new Date(p.start).getTime() < horizon).slice(0, 8);
+      const upcoming = upcomingPeriods(intervals).filter((p) => new Date(p.start).getTime() < horizon).slice(0, 8);
       const today = fmtDay(new Date(nowMs()).toISOString());
       let dayShown = today;
       for (const p of upcoming) {

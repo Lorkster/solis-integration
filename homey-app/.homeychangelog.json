@@ -9,5 +9,9 @@
   "0.2.1": {
     "en": "New look for the Battery status and Battery plan widgets. Grid charging that does not start is nudged with a short Remote Dispatch command (Solis, Modbus). Fixes a plan alarm that could stay on after a restart.",
     "sv": "Nytt utseende för widgetarna Batteristatus och Batteriplan. Nätladdning som inte kommer igång får en knuff med ett kort Remote Dispatch-kommando (Solis, Modbus). Rättar ett planlarm som kunde ligga kvar efter en omstart."
+  },
+  "0.2.2": {
+    "en": "The Battery plan widget no longer lists periods that have already ended, which could show times like 01:26–01:00.",
+    "sv": "Widgeten Batteriplan visar inte längre perioder som redan är slut, vilket kunde ge tider som 01:26–01:00."
   }
 }
