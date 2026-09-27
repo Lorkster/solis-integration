@@ -118,7 +118,7 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
   protected inverterBusy = false;
   private chargeStall: { period: number; since: number } | null = null;
   /** The last direct command the inverter confirmed, and when its failsafe ends it (ms). */
-  private direct: { command: DirectCommand; at: number; expiresAt: number } | null = null;
+  private direct: { command: DirectCommand; at: number; expiresAt: number; until?: number | null } | null = null;
   private directFailures = 0;
   /** After repeated failures the time slots carry out the plan, until the settings change or the app restarts. */
   private directBroken = false;
@@ -688,9 +688,11 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
       exportPaused: this.controller.exportBlockedByApp,
       offPlan: this.offPlan && this.deviationText(this.offPlan),
       alarm: this.alarm,
+      // What Remote Dispatch does now (null with time slots): the widgets show it.
       direct: this.usesDirect() ? this.direct && {
-        command: describeCommand(this.direct.command),
+        ...this.direct.command,
         since: new Date(this.direct.at).toISOString(),
+        until: this.direct.until ? new Date(this.direct.until).toISOString() : null,
         failsafeUntil: this.direct.expiresAt ? new Date(this.direct.expiresAt).toISOString() : null,
       } : null,
       events: this.events,
@@ -711,7 +713,8 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
         reserveSoc: state.reserveSoc,
         savingsSek: round(state.plan.savingsSek, 1),
         warnings: state.schedule.warnings,
-        slots: state.schedule.chargeSlots.filter((s) => s.enabled),
+        // With direct control the slots stay off in the inverter; `direct` says what it does.
+        slots: this.usesDirect() ? [] : state.schedule.chargeSlots.filter((s) => s.enabled),
         learnedLoad: this.loadProfile.observations >= 96 * 3,
         solarForecast: Boolean(this.solar),
         nowState: this.nowState(),
@@ -1579,6 +1582,7 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
     const covered = last !== null && sameCommand(last.command, step.command)
       && (step.command.kind === 'off' || last.expiresAt - now.getTime() >= wanted);
     if (covered && !force) {
+      last.until = step.until?.getTime() ?? null; // a replan can move the end without a new write
       this.scheduleDirect(step.until);
       return;
     }
@@ -1590,6 +1594,7 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
         command: step.command,
         at: Date.now(),
         expiresAt: step.command.kind === 'off' ? 0 : Date.now() + failsafe * 60_000,
+        until: step.until?.getTime() ?? null,
       };
       this.directFailures = 0;
       await this.setStoreValue('direct', this.direct).catch(this.error);

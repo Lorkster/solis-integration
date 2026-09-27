@@ -45,5 +45,9 @@
   "0.3.0": {
     "en": "New setting Battery control for Solis with Modbus: Remote Dispatch lets the app start and stop grid charging and holds itself, as Quick Control does, instead of writing time slots. Daytime holds let surplus solar charge the battery.",
     "sv": "Ny inställning Batteristyrning för Solis med Modbus: med Remote Dispatch startar och stoppar appen nätladdning och sparning själv, som Quick Control gör, i stället för att skriva tidsluckor. Sparning på dagen låter solöverskott ladda batteriet."
+  },
+  "0.3.1": {
+    "en": "The Battery status widget shows what Remote Dispatch does now, and the energy flow uses arrows that point the way the power flows.",
+    "sv": "Widgeten Batteristatus visar vad Remote Dispatch gör just nu, och energiflödet visas med pilar i den riktning effekten går."
   }
 }

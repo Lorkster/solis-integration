@@ -65,6 +65,7 @@
     .bar-reserve { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--c-surface); opacity: 0.9; }
     .bar-caption { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 12px; font-size: 12px; color: var(--c-muted); }
     .bar-caption .plan { color: var(--c-ink); }
+    .direct { margin-top: 4px; font-size: 12px; color: var(--c-muted); }
 
     /* Energy flow */
     .flow { margin-top: 14px; }
@@ -74,11 +75,10 @@
     .value { font-size: 15px; font-weight: 600; fill: var(--c-ink); }
     .label { font-size: 11.5px; fill: var(--c-muted); }
     .line-base { stroke: var(--c-line); stroke-width: 2; stroke-linecap: round; fill: none; }
-    .line-flow { stroke-linecap: round; fill: none; stroke-dasharray: 0.1 9; animation: flow linear infinite; }
-    .line-flow.reverse { animation-direction: reverse; }
-    @keyframes flow { to { stroke-dashoffset: -18.2; } }
+    /* Active lines: a faint track in the source's colour, with chevrons pointing the way the power flows. */
+    .line-track { stroke-linecap: round; fill: none; opacity: 0.3; }
+    .chevron { fill: none; stroke-linecap: round; stroke-linejoin: round; }
     @media (prefers-reduced-motion: reduce) {
-      .line-flow { animation: none; stroke-dasharray: none; opacity: 0.85; }
       .bar-fill.charging { animation: none; background-image: none; }
     }
 
@@ -119,6 +119,11 @@
         importing: 'buying', exporting: 'selling',
         charging: 'Charging', discharging: 'Discharging', idle: 'Idle', full: 'Full',
         reserve: (p) => `Reserve ${p} %`,
+        direct: {
+          charge: (kw, soc, u) => `Remote Dispatch: charging at ${kw} kW to ${soc} %${u ? ` until ${u}` : ''}`,
+          hold: (u) => `Remote Dispatch: holding the battery${u ? ` until ${u}` : ''}`,
+          off: 'Remote Dispatch: off – the inverter runs self-use',
+        },
         plan: {
           grid_charge: (u, s) => `Grid charging until ${u} · to ${s} %`, save: (u) => `Held for later until ${u}`,
           battery: (u) => `Powers the house until ${u}`, solar_charge: (u, s) => `Solar charging until ${u} · to ${s} %`,
@@ -142,6 +147,11 @@
         importing: 'köper', exporting: 'säljer',
         charging: 'Laddar', discharging: 'Laddar ur', idle: 'Vilar', full: 'Fullt',
         reserve: (p) => `Reserv ${p} %`,
+        direct: {
+          charge: (kw, soc, u) => `Remote Dispatch: laddar med ${kw} kW upp till ${soc} %${u ? ` fram till ${u}` : ''}`,
+          hold: (u) => `Remote Dispatch: sparar batteriet${u ? ` fram till ${u}` : ''}`,
+          off: 'Remote Dispatch: av – växelriktaren kör egenanvändning',
+        },
         plan: {
           grid_charge: (u, s) => `Nätladdning till ${u} · upp till ${s} %`, save: (u) => `Sparas till senare, till ${u}`,
           battery: (u) => `Driver huset till ${u}`, solar_charge: (u, s) => `Solladdning till ${u} · upp till ${s} %`,
@@ -219,6 +229,14 @@
       return t.plan[period.state](fmtTime(period.end), Math.round(period.socEnd));
     }
 
+    /** What Remote Dispatch does now, when the app steers the battery that way. */
+    function directLine(d) {
+      const t = T();
+      const until = d.until ? fmtTime(d.until) : null;
+      if (d.kind === 'charge') return t.direct.charge(num(d.powerW / 1000, 1, 1), Math.round(d.targetSoc), until);
+      return d.kind === 'hold' ? t.direct.hold(until) : t.direct.off;
+    }
+
     function renderHero(root) {
       const t = T();
       const live = view.live;
@@ -262,6 +280,7 @@
       caption.appendChild(div('plan', planLine()));
       if (reserve !== null) caption.appendChild(div('', t.reserve(reserve)));
       root.appendChild(caption);
+      if (view.direct) root.appendChild(div('direct', directLine(view.direct)));
     }
 
     // --- energy flow ----------------------------------------------------------------------------
@@ -285,20 +304,51 @@
       const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img' });
       svg.setAttribute('aria-label', Object.values(nodes).map((n) => `${n.label} ${power(n.w)}`).join(', '));
 
-      for (const n of Object.values(nodes)) {
+      const still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const defs = el('defs');
+      svg.appendChild(defs);
+      for (const [key, n] of Object.entries(nodes)) {
         const dx = n.x - hub.x, dy = n.y - hub.y, len = Math.hypot(dx, dy);
         const ux = dx / len, uy = dy / len;
-        const d = `M${hub.x + ux * 7},${hub.y + uy * 7}L${n.x - ux * (R + 5)},${n.y - uy * (R + 5)}`;
+        const a = { x: hub.x + ux * 7, y: hub.y + uy * 7 };
+        const b = { x: n.x - ux * (R + 5), y: n.y - uy * (R + 5) };
+        const d = `M${a.x},${a.y}L${b.x},${b.y}`;
         svg.appendChild(el('path', { d, class: 'line-base' }));
         const kw = Math.abs(n.w || 0) / 1000;
-        if (kw >= 0.03) {
-          // Thicker for more power; faster for more power.
-          const width = 3 + Math.min(1, kw / 8) * 4;
-          const seconds = Math.max(0.45, Math.min(2.6, 2.2 - Math.log10(kw * 10) * 0.8));
-          const flow = el('path', { d, class: `line-flow${n.towardHub ? ' reverse' : ''}`, stroke: n.color, 'stroke-width': width.toFixed(1) });
-          flow.style.animationDuration = `${seconds.toFixed(2)}s`;
-          svg.appendChild(flow);
+        if (kw < 0.03) continue;
+        // Bigger and faster for more power.
+        const scale = 1 + Math.min(1, kw / 8) * 0.6;
+        const seconds = Math.max(0.6, Math.min(2.4, 2 - Math.log10(kw * 10) * 0.6));
+        svg.appendChild(el('path', { d, class: 'line-track', stroke: n.color, 'stroke-width': (2.5 * scale).toFixed(1) }));
+        const [from, to] = n.towardHub ? [b, a] : [a, b];
+        const length = Math.hypot(to.x - from.x, to.y - from.y);
+        const fx = (to.x - from.x) / length, fy = (to.y - from.y) / length;
+        const angle = (Math.atan2(fy, fx) * 180) / Math.PI;
+        const gap = 18;
+        // Chevrons only show on the line itself (lines run straight up/down or left/right).
+        const clip = el('clipPath', { id: `flow-${key}` });
+        const x0 = Math.min(a.x, b.x), y0 = Math.min(a.y, b.y);
+        clip.appendChild(el('rect', Math.abs(fx) > Math.abs(fy)
+          ? { x: x0, y: y0 - 8, width: Math.abs(a.x - b.x), height: 16 }
+          : { x: x0 - 8, y: y0, width: 16, height: Math.abs(a.y - b.y) }));
+        defs.appendChild(clip);
+        const lane = el('g', { 'clip-path': `url(#flow-${key})` });
+        const moving = el('g');
+        for (let s = -gap; s <= length + gap; s += gap) {
+          moving.appendChild(el('path', {
+            d: `M${-3 * scale},${-4 * scale}L${2 * scale},0L${-3 * scale},${4 * scale}`,
+            class: 'chevron', stroke: n.color, 'stroke-width': (2 * scale).toFixed(1),
+            transform: `translate(${(from.x + fx * s).toFixed(1)},${(from.y + fy * s).toFixed(1)}) rotate(${angle})`,
+          }));
         }
+        if (!still) {
+          moving.appendChild(el('animateTransform', {
+            attributeName: 'transform', type: 'translate', from: '0 0', to: `${(fx * gap).toFixed(2)} ${(fy * gap).toFixed(2)}`,
+            dur: `${seconds.toFixed(2)}s`, repeatCount: 'indefinite',
+          }));
+        }
+        lane.appendChild(moving);
+        svg.appendChild(lane);
       }
       svg.appendChild(el('circle', { cx: hub.x, cy: hub.y, r: 5, fill: 'var(--c-muted)' }));
 
