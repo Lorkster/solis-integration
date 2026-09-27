@@ -674,7 +674,8 @@ Open the device and tap the gear icon.
 | Modbus port | 502 |  |
 | Modbus unit id | 1 |  |
 | Modbus update interval | 60 s | How often values are read over Modbus. SolisCloud updates every 5 minutes. |
-| Start stuck grid charging with a Remote Dispatch pulse | on | Some Solis firmware ignores grid charging in the time slots until a SolisCloud Quick Control command has run. When a planned grid charge has not started after 5 minutes, the app sends the same short command over Modbus (1 kW, ends by itself after a minute), at most twice per charge period. Needs the Modbus address above; Automatic mode only. |
+| Battery control | Time slots | Time slots: the plan is written to the inverter's time-of-use schedule, which is stored in its flash memory. Remote Dispatch: the app starts and stops grid charging and holds itself over Modbus, as SolisCloud's Quick Control does, with a safety timer that hands the battery back to self-use if the app stops. It avoids time slots that do not charge from the grid and wear on the stored schedule, and lets surplus solar charge the battery during daytime holds. Needs the Modbus address above; after two unconfirmed commands in a row the app goes back to time slots. |
+| Start stuck grid charging with a Remote Dispatch pulse | on | With time slots only. Some Solis firmware ignores grid charging in the time slots until a SolisCloud Quick Control command has run. When a planned grid charge has not started after 5 minutes, the app sends the same short command over Modbus (1 kW, ends by itself after a minute), at most twice per charge period. Needs the Modbus address above; Automatic mode only. |
 
 **Backup reserve**
 

@@ -1,6 +1,6 @@
 {
   "id": "com.lorkster.solisbattery",
-  "version": "0.2.10",
+  "version": "0.3.0",
   "compatibility": ">=12.4.0",
   "sdk": 3,
   "runtime": "nodejs",

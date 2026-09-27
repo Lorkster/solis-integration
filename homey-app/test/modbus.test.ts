@@ -113,6 +113,44 @@ describe('Solis over Modbus', () => {
     assert.deepEqual(inv.writes.at(-1), [Reg.dispatchSwitch, [0]], 'off even when the wait fails');
   });
 
+  /** The fake inverter's Remote Dispatch status (34504) follows what was written, as the real one did. */
+  function dispatchInverter(): FakeInverter {
+    const inv = new FakeInverter();
+    inv.holding.set(Reg.dispatchReserved, 40);
+    inv.holding.set(Reg.dispatchReserved + 1, 10000);
+    const write = inv.writeMultiple.bind(inv);
+    inv.writeMultiple = async (start, values) => {
+      await write(start, values);
+      const on = inv.holding.get(Reg.dispatchSwitch) === 1;
+      inv.input.set(Reg.dispatchStatus, on ? ((inv.holding.get(Reg.dispatchControl) ?? 1) << 8) | 2 : 0);
+    };
+    return inv;
+  }
+
+  it('charges and holds through Remote Dispatch, as tested on 27 Sep', async () => {
+    const inv = dispatchInverter();
+    const t = new SolisModbusTransport(inv);
+    t.dispatchSettleMs = 0;
+    await t.writeDirect({ kind: 'charge', powerW: 6500, targetSoc: 80 }, 55);
+    assert.deepEqual(inv.writes, [
+      [Reg.dispatchSwitch, [1, 55, 0, 0xffff, 0xffff]], // on, failsafe, no limits
+      [Reg.dispatchControl, [2, 0, 650, 0x5555, 0, 80, 40, 10000]], // charge 6.5 kW up to 80 %, reserved kept
+    ]);
+    inv.writes = [];
+    await t.writeDirect({ kind: 'hold' }, 600);
+    assert.deepEqual(inv.writes[1], [Reg.dispatchControl, [1, 0, 0, 0x5555, 0, 100, 40, 10000]]);
+    inv.writes = [];
+    await t.writeDirect({ kind: 'off' }, 1);
+    assert.deepEqual(inv.writes, [[Reg.dispatchSwitch, [0, 5, 0, 0xffff, 0xffff]]]);
+  });
+
+  it('fails when the inverter does not confirm the command', async () => {
+    const inv = new FakeInverter(); // status stays 0: not in real-time control
+    const t = new SolisModbusTransport(inv);
+    t.dispatchSettleMs = 0;
+    await assert.rejects(t.writeDirect({ kind: 'hold' }, 10), /not confirmed/);
+  });
+
   it('reads the serial number', async () => {
     const inv = new FakeInverter();
     const text = 'ABC1234567890XYZ';

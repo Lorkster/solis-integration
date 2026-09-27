@@ -63,6 +63,11 @@ export interface PlanInput {
    * differences, which would fragment it into more blocks than the inverter has slots.
    */
   switchPenaltySek?: number;
+  /**
+   * A hold stores surplus solar instead of exporting it. True with direct control, where a hold
+   * in a quarter with surplus solar is carried out as self-use (which does not discharge then).
+   */
+  holdStoresSurplus?: boolean;
   /** Action in effect before the first interval (for the switch penalty). */
   initialAction?: BatteryAction;
   /** Power-based grid fee; omitted when the grid company has none. */
@@ -142,6 +147,8 @@ export function planBattery(input: PlanInput): PlanResult {
       } else {
         delta = Math.min(-netKwh * eff, maxE - e, input.maxChargeKw * hours * eff);
       }
+    } else if (action === 'hold' && input.holdStoresSurplus && netKwh < 0) {
+      delta = Math.min(-netKwh * eff, maxE - e, input.maxChargeKw * hours * eff);
     } else if (action === 'charge') {
       // With a power fee, charge only in the headroom below the peak level.
       const headroomKw = weight > 0 ? Math.max(0, peak!.thresholdKw / weight - netKwh / hours) : Infinity;

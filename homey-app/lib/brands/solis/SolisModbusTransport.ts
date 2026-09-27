@@ -1,5 +1,5 @@
 import { gridLost } from '../../inverter/PowerCut.js';
-import type { InverterInfo, InverterSettings, InverterTransport, LiveData, TouSlot } from '../../inverter/types.js';
+import type { DirectCommand, DirectControl, InverterInfo, InverterSettings, InverterTransport, LiveData, TouSlot } from '../../inverter/types.js';
 import { type ModbusConnector, ModbusError, type ModbusSession } from '../../modbus/ModbusTcpClient.js';
 
 /**
@@ -34,7 +34,9 @@ export const Reg = {
   maxGridChargeCurrent: 43342, // 0.1 A; 0 blocks grid charging in the time slots (factory default 80 A)
   exportFlags: 43483, // bit 3 set = export blocked
   dispatchSwitch: 44100, // Remote Dispatch on/off, then the failsafe in minutes (44101)
-  dispatchControl: 44105, // real-time control: mode, power (S32, 10 W), function switches (44108)
+  dispatchControl: 44105, // real-time control: mode, power (S32, 10 W), function switches (44108), SOC window (44109-10)
+  dispatchReserved: 44111, // reserved 1-2: kept as the inverter has them
+  dispatchStatus: 34504, // input: low byte 0 off / 2 real-time; high byte the real-time mode
   slotSwitches: 43707, // charge slots 1-6 = bits 0-5, discharge slots 1-6 = bits 6-11
   chargeSlots: 43708, // 7 registers per slot: SOC, current (0.1 A), cut-off voltage, start h, start m, end h, end m
   dischargeSlots: 43750,
@@ -64,9 +66,11 @@ export function encodeSlot(slot: TouSlot, current: number[]): number[] {
   return [Math.round(slot.soc), Math.round(slot.currentA * 10), current[2] ?? 0, sh, sm, eh, em];
 }
 
-export class SolisModbusTransport implements InverterTransport {
+export class SolisModbusTransport implements InverterTransport, DirectControl {
   readonly kind = 'local' as const;
   readonly name = 'Modbus';
+  /** Wait before reading back a Remote Dispatch command; the inverter confirmed within a second in tests. */
+  dispatchSettleMs = 1000;
   /** False when getInfo found no 6+6 slot registers: schedule writes are refused (SolisCloud handles those). */
   private touV2: boolean | null = null;
 
@@ -113,6 +117,37 @@ export class SolisModbusTransport implements InverterTransport {
         if (on !== 0) throw new ModbusError('Remote Dispatch still on; its 1-minute failsafe ends it');
       });
     }
+  }
+
+  /**
+   * Remote Dispatch as the app's way to steer the battery (Solis Modbus protocol Ver3.2, pp. 132-136;
+   * tested on an S6-EH3P20K-H with function version 3 on 27 Sep 2026): the general block
+   * (44100-44104), then the real-time block (44105-44112), then a read-back. The registers are in
+   * RAM, so the stored time-of-use schedule is not worn by frequent changes. When dispatch ends (off,
+   * failsafe, power cycle) the inverter resets the block and runs its own mode.
+   */
+  async writeDirect(command: DirectCommand, failsafeMin: number): Promise<void> {
+    await this.modbus.session(async (m) => {
+      if (command.kind === 'off') {
+        await m.writeMultiple(Reg.dispatchSwitch, [0, 5, 0, 0xffff, 0xffff]);
+      } else {
+        const [reserved1, reserved2] = await m.readHolding(Reg.dispatchReserved, 2);
+        const failsafe = Math.min(1440, Math.max(1, Math.round(failsafeMin)));
+        const power = command.kind === 'charge' ? Math.max(0, Math.round(command.powerW / 10)) : 0;
+        const mode = command.kind === 'charge' ? 2 : 1;
+        const upper = command.kind === 'charge' ? Math.min(100, Math.max(1, Math.round(command.targetSoc))) : 100;
+        // 44102 = 0: no import or export limit; 0xFFFF keeps the limits at their defaults.
+        await m.writeMultiple(Reg.dispatchSwitch, [1, failsafe, 0, 0xffff, 0xffff]);
+        await m.writeMultiple(Reg.dispatchControl, [mode, (power >>> 16) & 0xffff, power & 0xffff, DISPATCH_FLAGS, 0, upper, reserved1, reserved2]);
+      }
+      await new Promise((resolve) => setTimeout(resolve, this.dispatchSettleMs));
+      const [on] = await m.readHolding(Reg.dispatchSwitch, 1);
+      const [status] = await m.readInput(Reg.dispatchStatus, 1);
+      const confirmed = command.kind === 'off'
+        ? on === 0
+        : on === 1 && (status & 0xff) === 2 && status >> 8 === (command.kind === 'charge' ? 2 : 1);
+      if (!confirmed) throw new ModbusError(`Remote Dispatch not confirmed: switch ${on}, status 0x${status.toString(16)}`);
+    });
   }
 
   /** Max grid charging current in A (register 43342), which SolisCloud cannot read on hybrids. */

@@ -1,6 +1,8 @@
 # Design: grid charging and holds through Remote Dispatch
 
-Status: **proposal, tested on the inverter** (27 Sep 2026). Not built into the app yet.
+Status: **built in 0.3.0** (27 Sep 2026): device setting *Battery control → Remote Dispatch (Modbus)*.
+The logic is in `lib/controller/direct.ts` (plan → command), `SolisModbusTransport.writeDirect`
+(registers) and `BatteryPlannerDevice.runDirect` (when to write, failsafe, fallback).
 
 ## Why
 
@@ -139,6 +141,27 @@ Consequences for the design:
   back cleanly (above).
 - **Brands.** This is Solis-specific. It fits behind the transport as an optional `directControl`,
   so other brands keep the slot method.
+
+## As built (0.3.0)
+
+- **Commands** as proposed. The charge power is the block's lowest planned power; the target is its
+  final level. A charge that has reached its target (live SOC) behaves like a hold.
+- **Daytime holds**: a hold in a quarter where the plan expects surplus solar is carried out as
+  self-use (dispatch off), so the surplus charges the battery instead of being exported; self-use
+  does not discharge while solar covers the house. With direct control the planner models a hold
+  that way (`holdStoresSurplus`). The same applies to a finished charge.
+- **When it writes**: after each plan update, at the plan's next change (a timer), and on live data
+  (a reached target). Only when the command changes, or when the failsafe would end before the block
+  does (renewed at most about once a day for long blocks). Right after a start it waits for the
+  first plan, so a running command survives a restart.
+- **Taking over again**: if live data contradicts the command three minutes after it was written
+  (not charging, or a hold that moves more than 500 W), the command is written again, at most every
+  15 minutes. This covers a Quick Control from the SolisCloud app, which replaces the app's dispatch.
+- **Fallback**: two unconfirmed writes in a row → time slots until the settings change or the app
+  restarts. Switching the setting back to time slots, Monitor mode, a power cut or deleting the
+  device switch dispatch off.
+- **Slots**: switched off by the next plan update in this mode (through SolisCloud), then left alone.
+  The storage mode, reserve and export flag are handled as before. The grid-charging pulse is off.
 
 ## Phase 2 (later, optional)
 

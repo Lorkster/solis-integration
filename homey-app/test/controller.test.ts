@@ -168,6 +168,18 @@ describe('BatteryController', () => {
     assert.equal(controller.scheduledAction(new Date('2026-09-27T18:00:00+02:00')), 'self_use');
   });
 
+  it('switches the slots off when direct control carries out the plan', async () => {
+    const inverter = new FakeInverter();
+    const controller = new BatteryController(inverter, new FakePrices(), config);
+    await controller.apply(planWith(slot('12:30', '17:15', 16, 100)));
+    assert.equal(inverter.settings.chargeSlots.filter((s) => s.enabled).length, 1);
+    controller.directMode = true;
+    await controller.apply(planWith(slot('12:30', '17:15', 16, 100)));
+    assert.ok(inverter.settings.chargeSlots.every((s) => !s.enabled));
+    inverter.writes = [];
+    assert.deepEqual(await controller.apply(planWith(slot('13:30', '17:15', 16, 100))), [], 'plan changes: nothing to write');
+  });
+
   it('hands control back to the inverter', async () => {
     const inverter = new FakeInverter();
     const controller = solisController(inverter);

@@ -20,7 +20,10 @@ import { LockDetector } from '../inverter/LockDetector.js';
 import { type ExportIssue, exportSettingIssue, ThrottleDetector } from '../inverter/ExportCheck.js';
 import { type Deviation, type Expectation, PlanMonitor } from '../inverter/PlanMonitor.js';
 import { type PowerCutEvent, type PowerCutState, PowerCutTracker } from '../inverter/PowerCut.js';
-import { type InverterInfo, type InverterTransport, type LiveData, supportLevel, type WorkMode } from '../inverter/types.js';
+import { describeCommand, type DirectStep, directStep, failsafeMinutes, sameCommand } from '../controller/direct.js';
+import {
+  type DirectCommand, type DirectControl, type InverterInfo, type InverterTransport, type LiveData, supportLevel, type WorkMode,
+} from '../inverter/types.js';
 import { bestWindow, type BestWindow, isBestTimeNow } from '../planner/bestTime.js';
 import type { BatteryAction } from '../planner/planner.js';
 import { displayAction, intervalState, liveState, planPeriods, planSummary } from '../planner/summary.js';
@@ -51,6 +54,10 @@ const LIVE_INTERVAL_MS = 5 * 60_000;
 const PLAN_INTERVAL_MS = 30 * 60_000;
 /** Model and firmware are read again after this long (and when the connection settings change). */
 const INFO_MAX_AGE_MS = 7 * 86_400_000;
+/** Failed direct writes in a row before the time slots take over. */
+const DIRECT_FAILURES_BEFORE_SLOTS = 2;
+/** At most one forced rewrite of the direct command in this time. */
+const DIRECT_RECHECK_MS = 15 * 60_000;
 /** Log lines kept for the dashboard data. */
 const EVENTS_KEPT = 40;
 /** Live data sampled this soon after the app's last write may not show the write yet. */
@@ -110,6 +117,14 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
   /** Set while a brand talks to the inverter outside the plan (e.g. a Modbus command): plan updates wait. */
   protected inverterBusy = false;
   private chargeStall: { period: number; since: number } | null = null;
+  /** The last direct command the inverter confirmed, and when its failsafe ends it (ms). */
+  private direct: { command: DirectCommand; at: number; expiresAt: number } | null = null;
+  private directFailures = 0;
+  /** After repeated failures the time slots carry out the plan, until the settings change or the app restarts. */
+  private directBroken = false;
+  private directTimer: ReturnType<typeof setTimeout> | null = null;
+  /** No forced rewrite of the direct command before this time (ms). */
+  private directRecheckAt = 0;
   /** Battery floor during a power outage, read from the inverter (Solis: 20-30 % by default). */
   private offGridFloorSoc: number | null = null;
   private readonly lock = new LockDetector();
@@ -242,6 +257,7 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
       await this.setCapabilityValue('alarm_solis_off_plan', false).catch(this.error);
     }
     this.alarm = (this.getStoreValue('alarm') as string | null | undefined) ?? null;
+    this.direct = (this.getStoreValue('direct') as typeof this.direct | undefined) ?? null;
     this.createController();
     lap('stores');
 
@@ -348,7 +364,16 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
     const solarChanged = changedKeys.some((k) => k.startsWith('pv_array') || k === 'pv_source' || k === 'solcast_sites' || k === 'pv_weather_model');
     const tariffChanged = changedKeys.some((k) => k.startsWith('power_tariff'));
     const connectionChanged = changedKeys.some((k) => k.startsWith('modbus_') || k.startsWith('connection_') || k.startsWith('key_'));
+    // New settings apply after this returns: remember how direct control was reached until now.
+    const directBefore = this.directControl();
+    this.directBroken = false;
+    this.directFailures = 0;
     this.homey.setTimeout(async () => {
+      if (directBefore && !this.directControl() && this.direct && this.direct.command.kind !== 'off') {
+        await directBefore.writeDirect({ kind: 'off' }, 1).catch(this.error);
+        this.note('Remote Dispatch off: the time slots carry out the plan again');
+      }
+      if (!this.directControl()) this.direct = null;
       if (tariffChanged) {
         // Peaks are measured differently now: start over from the history of this month.
         const tz = this.homey.clock.getTimezone();
@@ -383,7 +408,9 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
     if (this.controlMode === 'auto') {
       // Do not leave the app's schedule repeating in the inverter.
       await this.controller.restoreInverter().catch(this.error);
+      await this.directControl()?.writeDirect({ kind: 'off' }, 1).catch(this.error);
     }
+    if (this.directTimer) this.homey.clearTimeout(this.directTimer);
   }
 
   // --- used by flow cards and widgets -------------------------------------------------------
@@ -661,6 +688,11 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
       exportPaused: this.controller.exportBlockedByApp,
       offPlan: this.offPlan && this.deviationText(this.offPlan),
       alarm: this.alarm,
+      direct: this.usesDirect() ? this.direct && {
+        command: describeCommand(this.direct.command),
+        since: new Date(this.direct.at).toISOString(),
+        failsafeUntil: this.direct.expiresAt ? new Date(this.direct.expiresAt).toISOString() : null,
+      } : null,
       events: this.events,
       savings: { today: round(this.savedToday(), 2), month: round(this.savedThisMonth(), 0) },
       timings: {
@@ -901,6 +933,14 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
         await this.persistLearning();
         await this.updateAlarm(live.alarm ?? null);
         await this.checkReportedSettings(live).catch((err) => this.error('Settings check failed:', err));
+        if (this.usesDirect()) {
+          const force = this.directDeviates(live) && Date.now() >= this.directRecheckAt;
+          if (force) {
+            this.directRecheckAt = Date.now() + DIRECT_RECHECK_MS;
+            this.note('The battery does not follow the Remote Dispatch command (another command may have taken over): writing it again');
+          }
+          await this.runDirect(force).catch(this.error);
+        }
       }
       await this.setAvailable();
       await this.updateExport().catch((err) => this.error('Export control failed:', err));
@@ -1077,6 +1117,7 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
       if (notify) await this.notify(this.homey.__('powerCut.started', { time: localHHMM(live.timestamp, tz), battery, hours: this.formatNumber(hours) }));
       // A save or charge slot must not hold the battery back while it powers the house.
       if (this.controlMode === 'auto') await this.controller.restoreInverter().catch(this.error);
+      await this.runDirect().catch(this.error); // off while the battery powers the backup output
     } else if (event === 'backup_low') {
       await this.homey.flow.getDeviceTriggerCard('backup_low').trigger(this, { battery, backup_hours: hours }).catch(this.error);
       if (notify) await this.notify(this.homey.__('powerCut.low', { battery, hours: this.formatNumber(hours) }));
@@ -1413,7 +1454,7 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
 
   /** Follows planned grid charging that does not start, and tells the brand how long it has been. */
   private async checkGridCharge(): Promise<void> {
-    if (this.planning) return; // not while the plan is being written to the inverter
+    if (this.planning || this.usesDirect()) return; // not while the plan is being written; direct control needs no nudge
     const live = this.live;
     const e = live ? this.expectation(live.timestamp) : null;
     const stalled = live && e?.action === 'charge' && e.periodStart && live.gridLost !== true
@@ -1449,7 +1490,10 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
       this.controller.exportControl = this.controlMode === 'auto' && this.canControl() && !this.powerCut.active
         && this.getSetting('negative_export_block') !== false;
       // In Automatic mode the inverter runs the previous plan; otherwise it does its own thing.
-      const running = this.controlMode === 'auto' ? currentAction(this.planState, now) ?? this.controller.scheduledAction(now) : null;
+      this.controller.directMode = this.usesDirect();
+      const running = this.controlMode === 'auto'
+        ? currentAction(this.planState, now) ?? this.directRunning(now) ?? this.controller.scheduledAction(now)
+        : null;
       const state = await this.controller.buildPlan(this.live, now, running);
       lap('prices and plan');
       this.planState = state;
@@ -1492,6 +1536,99 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
     } finally {
       this.planning = false;
     }
+    await this.runDirect().catch(this.error);
+  }
+
+  // --- direct control (Solis: Remote Dispatch) -----------------------------------------------
+
+  /** Direct control, when the brand and connection offer it and the user chose it. */
+  protected directControl(): DirectControl | null {
+    return null;
+  }
+
+  protected usesDirect(): boolean {
+    return !this.directBroken && this.directControl() !== null;
+  }
+
+  /** What a still-running direct command does, for the first plan after a restart. */
+  private directRunning(now: Date): BatteryAction | null {
+    const d = this.direct;
+    if (!d || !this.usesDirect() || d.command.kind === 'off' || d.expiresAt <= now.getTime()) return null;
+    return d.command.kind === 'charge' ? 'charge' : 'hold';
+  }
+
+  /**
+   * Carries out the plan's current block through direct control. Writes only when the command
+   * changes or its failsafe runs short, so a day takes a handful of writes (to RAM). Off outside
+   * Automatic mode, during a power cut and without a plan. Two failed writes in a row hand the plan
+   * back to the time slots.
+   */
+  private async runDirect(force = false): Promise<void> {
+    const control = this.directControl();
+    if (!control || this.directBroken || this.planning || this.inverterBusy) return;
+    const now = new Date();
+    const state = this.planState;
+    // Right after a start there is no plan yet: leave a running command alone until there is one.
+    if (!state && this.controlMode === 'auto' && !this.powerCut.active) return;
+    const step: DirectStep = state && this.controlMode === 'auto' && this.canControl() && !this.powerCut.active
+      ? directStep(state.plan.intervals, now, { reserveSoc: state.reserveSoc, maxSoc: this.controller.config.maxSocPct, socPct: this.live?.socPct })
+      : { command: { kind: 'off' }, until: null };
+    const last = this.direct;
+    // Covered: the same command, with a failsafe that lasts until the block ends (or at least an hour).
+    const wanted = step.until ? Math.min(step.until.getTime() - now.getTime(), 3_600_000) : 3_600_000;
+    const covered = last !== null && sameCommand(last.command, step.command)
+      && (step.command.kind === 'off' || last.expiresAt - now.getTime() >= wanted);
+    if (covered && !force) {
+      this.scheduleDirect(step.until);
+      return;
+    }
+    const failsafe = failsafeMinutes(step, now);
+    this.inverterBusy = true;
+    try {
+      await control.writeDirect(step.command, failsafe);
+      this.direct = {
+        command: step.command,
+        at: Date.now(),
+        expiresAt: step.command.kind === 'off' ? 0 : Date.now() + failsafe * 60_000,
+      };
+      this.directFailures = 0;
+      await this.setStoreValue('direct', this.direct).catch(this.error);
+      this.note(`Remote Dispatch: ${describeCommand(step.command)}${step.command.kind === 'off' ? '' : ` (failsafe ${failsafe} min)`}`);
+      this.scheduleDirect(step.until);
+    } catch (err) {
+      this.directFailures++;
+      this.note('Remote Dispatch failed:', err);
+      if (this.directFailures >= DIRECT_FAILURES_BEFORE_SLOTS) {
+        this.directBroken = true;
+        this.note('Remote Dispatch failed twice in a row: the time slots carry out the plan until the settings change');
+        this.homey.setTimeout(() => this.replan().catch(this.error), 1_000);
+      } else {
+        this.scheduleDirect(new Date(Date.now() + 60_000));
+      }
+    } finally {
+      this.inverterBusy = false;
+    }
+  }
+
+  /** Runs the direct control again when the plan asks for the next command. */
+  private scheduleDirect(at: Date | null): void {
+    if (this.directTimer) this.homey.clearTimeout(this.directTimer);
+    this.directTimer = null;
+    if (!at) return;
+    const ms = Math.min(Math.max(5_000, at.getTime() - Date.now() + 2_000), 6 * 3_600_000);
+    this.directTimer = this.homey.setTimeout(() => this.runDirect().catch(this.error), ms);
+  }
+
+  /**
+   * Live data that contradicts the direct command, some minutes after it was written: something else
+   * steers the battery (a Quick Control from the SolisCloud app replaces the app's dispatch, and when
+   * it ends the inverter resets dispatch) or the command was lost.
+   */
+  private directDeviates(live: LiveData): boolean {
+    const d = this.direct;
+    if (!d || d.command.kind === 'off' || live.timestamp.getTime() < d.at + 3 * 60_000) return false;
+    if (d.command.kind === 'charge') return live.batteryPowerW < 300 && live.socPct < d.command.targetSoc - 2;
+    return Math.abs(live.batteryPowerW) > 500;
   }
 
   /** Expected PV energy for the whole local day. */

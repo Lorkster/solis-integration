@@ -88,6 +88,11 @@ export class BatteryController {
   externalChange = false;
   /** How the brand's work mode changes when the app takes or hands back control. */
   workMode: WorkMode = NO_WORK_MODE;
+  /**
+   * Direct control (Remote Dispatch) carries out the plan: the time-of-use slots stay switched off,
+   * so the inverter runs plain self-use whenever direct control ends.
+   */
+  directMode = false;
   /** When the settings were last read from the inverter (ms since epoch). */
   lastReadAt = 0;
   /** When the app last wrote a setting (ms since epoch); live reports from before then are out of date. */
@@ -164,6 +169,7 @@ export class BatteryController {
       minGainPerKwh: this.config.minGainPerKwh,
       fixedActions,
       initialAction: running ?? undefined,
+      holdStoresSurplus: this.directMode,
       peak: tariff.enabled ? {
         costPerKw: tariff.pricePerKwMonth / Math.max(1, tariff.peaks),
         thresholdKw: this.peakThresholdKw(),
@@ -388,9 +394,11 @@ export class BatteryController {
       storageModeRaw: this.workMode.controlled(current.storageModeRaw, state.reserveSoc > 0),
       reserveSoc: state.reserveSoc,
       // The 3-slot format has no target level per slot: the plan's slot times end the charging.
-      chargeSlots: current.touV2
-        ? state.schedule.chargeSlots
-        : state.schedule.chargeSlots.slice(0, slotsFor(current)).map((s) => ({ ...s, soc: 100 })),
+      chargeSlots: this.directMode
+        ? current.chargeSlots.map((s) => ({ ...s, enabled: false }))
+        : current.touV2
+          ? state.schedule.chargeSlots
+          : state.schedule.chargeSlots.slice(0, slotsFor(current)).map((s) => ({ ...s, soc: 100 })),
       // Discharge is handled by self-use outside the charge slots.
       dischargeSlots: current.dischargeSlots.map(() => ({ ...DISABLED_SLOT })),
     };

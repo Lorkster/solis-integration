@@ -2,7 +2,7 @@ import { SolisCloudTransport } from '../../lib/brands/solis/SolisCloudTransport.
 import { SolisModbusTransport } from '../../lib/brands/solis/SolisModbusTransport.js';
 import { solisWorkMode } from '../../lib/brands/solis/storageMode.js';
 import { BatteryPlannerDevice, type Connections, num, type Settings } from '../../lib/homey/BatteryPlannerDevice.js';
-import { type InverterInfo, type InverterTransport, supportLevel } from '../../lib/inverter/types.js';
+import { type DirectControl, type InverterInfo, type InverterTransport, supportLevel } from '../../lib/inverter/types.js';
 import { ModbusTcpClient } from '../../lib/modbus/ModbusTcpClient.js';
 
 /** How often the max grid charging current is read over Modbus while SolisCloud is the connection (sooner while it blocks charging). */
@@ -54,7 +54,7 @@ export default class SolisInverterDevice extends BatteryPlannerDevice {
    */
   protected override async onGridChargeStalled(minutes: number, periodStart: Date): Promise<void> {
     const modbus = this.modbus;
-    if (!modbus || this.getSetting('grid_charge_pulse') === false || this.controlMode !== 'auto') return;
+    if (!modbus || this.usesDirect() || this.getSetting('grid_charge_pulse') === false || this.controlMode !== 'auto') return;
     if (minutes < PULSE_AFTER_MIN) return;
     const now = Date.now();
     for (const [start] of this.pulses) if (now - start > 86_400_000) this.pulses.delete(start);
@@ -85,6 +85,11 @@ export default class SolisInverterDevice extends BatteryPlannerDevice {
       }
       return this.gridChargeCache.value;
     };
+  }
+
+  /** Remote Dispatch over Modbus, when chosen in the settings and a Modbus address is set up. */
+  protected override directControl(): DirectControl | null {
+    return this.getSetting('control_method') === 'dispatch' ? this.modbus : null;
   }
 
   protected override connectionName(transport: InverterTransport): string {

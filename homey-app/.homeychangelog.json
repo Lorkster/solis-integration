@@ -41,5 +41,9 @@
   "0.2.10": {
     "en": "A new plan keeps a running charge or hold unless changing really pays, so the inverter's schedule is rewritten less often. Fixes an unneeded settings read after switching to Monitor mode.",
     "sv": "En ny plan behåller en pågående laddning eller sparning om det inte verkligen lönar sig att ändra, så växelriktarens schema skrivs om mer sällan. Rättar en onödig läsning av inställningarna efter byte till Övervaka."
+  },
+  "0.3.0": {
+    "en": "New setting Battery control for Solis with Modbus: Remote Dispatch lets the app start and stop grid charging and holds itself, as Quick Control does, instead of writing time slots. Daytime holds let surplus solar charge the battery.",
+    "sv": "Ny inställning Batteristyrning för Solis med Modbus: med Remote Dispatch startar och stoppar appen nätladdning och sparning själv, som Quick Control gör, i stället för att skriva tidsluckor. Sparning på dagen låter solöverskott ladda batteriet."
   }
 }

@@ -64,6 +64,24 @@ export interface LiveData {
   alarm?: string | null;
 }
 
+/**
+ * A command for the inverter's direct control (Solis: Remote Dispatch), which steers the battery
+ * from RAM instead of through the stored time-of-use schedule.
+ */
+export type DirectCommand =
+  | { kind: 'off' } // the inverter's own mode (self-use)
+  | { kind: 'hold' } // neither charge nor discharge
+  | { kind: 'charge'; powerW: number; targetSoc: number }; // from the grid (and solar) up to targetSoc
+
+/** Direct control of the battery, when the brand and connection offer it. */
+export interface DirectControl {
+  /**
+   * Carries out the command until another one replaces it. Without a new write within
+   * failsafeMin minutes the inverter ends it by itself. Throws when the inverter does not confirm it.
+   */
+  writeDirect(command: DirectCommand, failsafeMin: number): Promise<void>;
+}
+
 /** Inverter settings as reported with live data; a field is missing when not reported. */
 export interface ReportedSettings {
   storageModeRaw?: number;
