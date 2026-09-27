@@ -61,13 +61,13 @@ export default class SolisInverterDevice extends BatteryPlannerDevice {
     const sent = this.pulses.get(periodStart.getTime()) ?? [];
     if (sent.length >= PULSES_PER_PERIOD || (sent.length > 0 && now - sent[sent.length - 1] < PULSE_GAP_MS)) return;
     this.pulses.set(periodStart.getTime(), [...sent, now]);
-    this.log(`Planned grid charging has not started for ${Math.round(minutes)} min: Remote Dispatch pulse ${sent.length + 1}`);
+    this.note(`Planned grid charging has not started for ${Math.round(minutes)} min: Remote Dispatch pulse ${sent.length + 1}`);
     this.inverterBusy = true;
     try {
       await modbus.pulseRemoteDispatch(PULSE_CHARGE_W, PULSE_HOLD_MS, (ms) => new Promise((resolve) => this.homey.setTimeout(resolve, ms)));
-      this.log('Remote Dispatch pulse done');
+      this.note('Remote Dispatch pulse done');
     } catch (err) {
-      this.error('Remote Dispatch pulse failed:', err);
+      this.note('Remote Dispatch pulse failed:', err);
     } finally {
       this.inverterBusy = false;
     }

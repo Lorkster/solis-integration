@@ -33,5 +33,9 @@
   "0.2.7": {
     "en": "A new plan no longer waits for the power level and flow triggers, which Homey can be slow to take right after a start.",
     "sv": "En ny plan väntar inte längre på effektnivån och flödesutlösarna, som Homey kan vara långsam att ta emot direkt efter en start."
+  },
+  "0.2.9": {
+    "en": "Keeps the latest important events (inverter updates, grid charging pulses, failures) for diagnosis. Fixes 0.2.8, which did not start.",
+    "sv": "Sparar de senaste viktiga händelserna (uppdateringar av växelriktaren, knuffar för nätladdning, fel) för felsökning. Rättar 0.2.8, som inte startade."
   }
 }

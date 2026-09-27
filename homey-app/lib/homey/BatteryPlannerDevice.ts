@@ -51,6 +51,8 @@ const LIVE_INTERVAL_MS = 5 * 60_000;
 const PLAN_INTERVAL_MS = 30 * 60_000;
 /** Model and firmware are read again after this long (and when the connection settings change). */
 const INFO_MAX_AGE_MS = 7 * 86_400_000;
+/** Log lines kept for the dashboard data. */
+const EVENTS_KEPT = 40;
 /** Live data sampled this soon after the app's last write may not show the write yet. */
 const REPORT_DELAY_MS = 60_000;
 /** Planning slower than this is logged with the time each step took. */
@@ -134,6 +136,8 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
   private peakRiskPeriod = 0;
   private peakRisk = false;
   private planError: string | null = null;
+  /** The latest log lines, kept in the dashboard data: Homey keeps no app logs to look at afterwards. */
+  private events: Array<{ t: string; error?: true; text: string }> = [];
   /** Alarm the inverter reports with its live data (null: none). */
   private alarm: string | null = null;
   /** Live reports whose settings differ from what the app expects, counted per difference. */
@@ -196,7 +200,20 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
 
   // --- life cycle ----------------------------------------------------------------------------
 
+  /**
+   * Logs an event worth looking at afterwards and keeps it in the dashboard data. (Homey's log and
+   * error are read-only properties of the device, so they cannot be wrapped.)
+   */
+  protected note(...args: unknown[]): void {
+    const error = args.some((a) => a instanceof Error);
+    if (error) this.error(...args);
+    else this.log(...args);
+    const text = args.map((a) => (a instanceof Error ? a.message : typeof a === 'string' ? a : JSON.stringify(a))).join(' ').slice(0, 300);
+    this.events = [...this.events.slice(-(EVENTS_KEPT - 1)), { t: new Date().toISOString(), ...(error ? { error: true as const } : {}), text }];
+  }
+
   override async onInit(): Promise<void> {
+    this.events = [...(this.getStoreValue('events') as typeof this.events | undefined) ?? [], ...this.events].slice(-EVENTS_KEPT);
     const lap = stopwatch();
     const tz = this.homey.clock.getTimezone();
     this.flowPrices = new FlowPriceProvider(tz, this.getStoreValue('flowPrices') ?? []);
@@ -234,7 +251,7 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
     }
     this.registerCapabilityListener('solis_control_mode', async (mode: ControlMode) => {
       if (mode === 'auto' && !this.canControl()) throw new Error(this.cannotControlText());
-      this.log('Control mode →', mode);
+      this.note('Control mode →', mode);
       this.controller.forgetApplied();
       this.homey.setTimeout(() => this.replan().catch(this.error), 1_000);
     });
@@ -253,7 +270,7 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
     await this.replan().catch(this.error);
     lap('plan');
     this.timings.startup = `${lap.summary()}${this.planState ? '' : ' (no plan yet)'}`;
-    this.log(`Started in ${this.timings.startup}`);
+    this.note(`Started in ${this.timings.startup}`);
     this.learnFromHistory().catch(this.error);
     this.learnPeaksFromHistory().catch(this.error);
   }
@@ -410,7 +427,7 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
   async restoreInverter(): Promise<void> {
     await this.setCapabilityValue('solis_control_mode', 'monitor');
     const changes = await this.controller.restoreInverter();
-    this.log('Handed control back to the inverter:', changes.join('; ') || 'nothing to change');
+    this.note('Handed control back to the inverter:', changes.join('; ') || 'nothing to change');
     await this.replan();
   }
 
@@ -539,10 +556,10 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
     }
     if (alarm === this.alarm) return;
     if (alarm) {
-      this.log('Inverter alarm:', alarm);
+      this.note('Inverter alarm:', alarm);
       await this.notify(this.homey.__('alarm.started', { alarm }));
     } else {
-      this.log('Inverter alarm cleared:', this.alarm);
+      this.note('Inverter alarm cleared:', this.alarm);
     }
     this.alarm = alarm;
     await this.setStoreValue('alarm', alarm).catch(this.error);
@@ -569,7 +586,7 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
     this.reportMismatch = { differences, count };
     if (count < 2) return;
     this.reportMismatch = null;
-    this.log(`The inverter reports other settings than expected (${differences}): reading them`);
+    this.note(`The inverter reports other settings than expected (${differences}): reading them`);
     const writtenBefore = this.controller.lastWriteAt;
     this.controller.expireKnown();
     if (this.controlMode === 'auto' && this.canControl()) await this.replan();
@@ -577,7 +594,7 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
     // Nothing written and the settings read still differ from the report: the report is off, not the inverter.
     if (this.controller.lastWriteAt === writtenBefore && report && this.controller.reportedDifferences(report).length > 0) {
       this.dismissedReport = differences;
-      this.log(`Ignoring the reported difference (${differences}): the inverter's settings are as expected`);
+      this.note(`Ignoring the reported difference (${differences}): the inverter's settings are as expected`);
     }
   }
 
@@ -644,6 +661,7 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
       exportPaused: this.controller.exportBlockedByApp,
       offPlan: this.offPlan && this.deviationText(this.offPlan),
       alarm: this.alarm,
+      events: this.events,
       savings: { today: round(this.savedToday(), 2), month: round(this.savedThisMonth(), 0) },
       timings: {
         ...this.timings,
@@ -797,7 +815,7 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
   private createTransport(s: Settings, id: string): FailoverTransport {
     const { primary, fallback, history } = this.connections(s, id);
     return new FailoverTransport(primary, fallback, history, (active, reason) => {
-      this.log(`Connection → ${active.name}: ${reason}`);
+      this.note(`Connection → ${active.name}: ${reason}`);
       this.setSettings({ inverter_connection: this.connectionText() }).catch(this.error);
       this.scheduleLive();
     });
@@ -817,6 +835,7 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
     await this.setStoreValue('loadProfile', this.loadProfile.toJSON());
     await this.setStoreValue('savings', this.savings.toJSON());
     await this.setStoreValue('actualHistory', this.history.toJSON());
+    await this.setStoreValue('events', this.events);
     if (this.powerTariff().enabled) {
       await this.setStoreValue('peaks', this.peaks.toJSON());
       await this.setStoreValue('peaksWithoutBattery', this.peaksWithoutBattery.toJSON());
@@ -905,7 +924,7 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
       await this.publishDashboard();
       await this.updateEnergyDevices(live);
     } catch (err) {
-      this.error('Live data failed:', err);
+      this.note('Live data failed:', err);
       if (!this.live) await this.setUnavailable(`${this.transport?.name ?? '–'}: ${(err as Error).message}`);
     } finally {
       await this.checkPlan().catch(this.error);
@@ -1118,7 +1137,7 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
   }
 
   private async reportOffPlan(reason: string): Promise<void> {
-    this.log('Off plan:', reason);
+    this.note('Off plan:', reason);
     await this.homey.flow.getDeviceTriggerCard('off_plan').trigger(this, { reason }).catch(this.error);
     if (this.getSetting('notify_off_plan') ?? true) await this.notify(this.homey.__('offPlan.notification', { reason }));
   }
@@ -1284,7 +1303,7 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
     }, reserve, this.controlMode === 'auto' && this.currentAction() === 'hold');
     await this.setCapabilityValue('alarm_solis_battery_locked', this.lock.locked);
     if (!changed) return;
-    this.log(this.lock.locked ? 'Battery locked by a remote command' : 'Battery released');
+    this.note(this.lock.locked ? 'Battery locked by a remote command' : 'Battery released');
     await this.homey.flow.getDeviceTriggerCard(this.lock.locked ? 'battery_locked' : 'battery_unlocked')
       .trigger(this, {}).catch(this.error);
   }
@@ -1447,7 +1466,7 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
       if (this.controlMode === 'auto' && this.canControl() && !this.powerCut.active) {
         try {
           const changes = await this.controller.apply(state);
-          if (changes.length > 0) this.log('Inverter updated:', changes.join('; '));
+          if (changes.length > 0) this.note('Inverter updated:', changes.join('; '));
           if (this.controller.externalChange && changes.length > 0) await this.reportOffPlan(this.homey.__('offPlan.settings_changed'));
         } finally {
           await this.saveKnownSettings(); // also after a failed write, which makes the next update read the inverter
@@ -1465,7 +1484,7 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
       this.timings.plan = `${now.toISOString()}: ${lap.summary()}`;
       if (lap.totalMs() > SLOW_PLAN_MS) this.log(`Planning took ${lap.summary()}`);
     } catch (err) {
-      this.error('Planning failed:', err);
+      this.note('Planning failed:', err);
       this.planError = (err as Error).message;
       await this.refreshWarning().catch(this.error);
     } finally {
