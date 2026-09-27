@@ -29,5 +29,9 @@
   "0.2.6": {
     "en": "Notices settings changed outside the app (work mode, current limits, discharge levels) from SolisCloud's regular data, without asking the inverter, and reads them only then. New Inverter alarm capability with a notification when SolisCloud reports an alarm or the inverter goes offline.",
     "sv": "Märker inställningar som ändrats utanför appen (driftläge, strömgränser, urladdningsnivåer) i SolisClouds vanliga data, utan att fråga växelriktaren, och läser dem bara då. Ny förmåga Larm från växelriktaren med en notis när SolisCloud rapporterar ett larm eller växelriktaren är offline."
+  },
+  "0.2.7": {
+    "en": "A new plan no longer waits for the power level and flow triggers, which Homey can be slow to take right after a start.",
+    "sv": "En ny plan väntar inte längre på effektnivån och flödesutlösarna, som Homey kan vara långsam att ta emot direkt efter en start."
   }
 }

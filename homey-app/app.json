@@ -1,7 +1,7 @@
 {
   "_comment": "This file is generated. Please edit .homeycompose/app.json instead.",
   "id": "com.lorkster.solisbattery",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "compatibility": ">=12.4.0",
   "sdk": 3,
   "runtime": "nodejs",
@@ -1577,6 +1577,7 @@
         "measure_solis_peak_now",
         "alarm_solis_battery_locked",
         "alarm_solis_off_plan",
+        "alarm_solis_inverter",
         "alarm_solis_weather",
         "solis_warning",
         "meter_power.charged",
@@ -4220,6 +4221,26 @@
       "insightsTitleFalse": {
         "en": "Battery released",
         "sv": "Batteriet frigjort"
+      }
+    },
+    "alarm_solis_inverter": {
+      "type": "boolean",
+      "title": {
+        "en": "Inverter alarm",
+        "sv": "Larm från växelriktaren"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/icons/warning.svg",
+      "insights": true,
+      "insightsTitleTrue": {
+        "en": "The inverter reported an alarm",
+        "sv": "Växelriktaren rapporterade ett larm"
+      },
+      "insightsTitleFalse": {
+        "en": "The inverter's alarm cleared",
+        "sv": "Växelriktarens larm upphörde"
       }
     },
     "alarm_solis_off_plan": {

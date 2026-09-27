@@ -1435,12 +1435,13 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
       this.history.setDayPlan(now, state.plan.intervals);
       await this.updatePlanCapabilities(state, now);
       lap('plan values');
-      await this.updatePowerCost();
-      lap('power cost');
       // Show the new plan now; writing it to the inverter through the cloud can take a while.
       this.homey.api.realtime('plan', null);
       await this.publishDashboard();
       lap('show');
+      // The power level does not change the plan, and right after an app start Homey can take a
+      // minute to take capability values and flow triggers (27 Sep: 90 s): do not wait for it.
+      this.updatePowerCost().then(() => this.publishDashboard()).catch(this.error);
 
       if (this.controlMode !== 'auto' || !this.canControl()) await this.readInverterLimits().catch(this.error);
       if (this.controlMode === 'auto' && this.canControl() && !this.powerCut.active) {
@@ -1455,7 +1456,7 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
       lap('inverter');
       this.planError = null;
       await this.refreshWarning();
-      await this.homey.flow.getDeviceTriggerCard('plan_updated')
+      this.homey.flow.getDeviceTriggerCard('plan_updated')
         .trigger(this, { summary: this.summarise(state), savings: Math.round(state.plan.savingsSek * 100) / 100 })
         .catch(this.error);
       this.homey.api.realtime('plan', null);
