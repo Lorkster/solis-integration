@@ -1,0 +1,20 @@
+{
+  "type": "boolean",
+  "title": {
+    "en": "Inverter alarm",
+    "sv": "Larm från växelriktaren"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "icon": "/assets/icons/warning.svg",
+  "insights": true,
+  "insightsTitleTrue": {
+    "en": "The inverter reported an alarm",
+    "sv": "Växelriktaren rapporterade ett larm"
+  },
+  "insightsTitleFalse": {
+    "en": "The inverter's alarm cleared",
+    "sv": "Växelriktarens larm upphörde"
+  }
+}

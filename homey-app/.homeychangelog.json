@@ -25,5 +25,9 @@
   "0.2.5": {
     "en": "Faster start and less traffic to the inverter: settings the app wrote itself are not read back (they are checked every 6 hours), model and firmware are read weekly, and a new plan shows before it is written to the inverter.",
     "sv": "Snabbare start och mindre trafik till växelriktaren: inställningar som appen själv skrivit läses inte tillbaka (de kontrolleras var 6:e timme), modell och firmware läses varje vecka, och en ny plan visas innan den skrivs till växelriktaren."
+  },
+  "0.2.6": {
+    "en": "Notices settings changed outside the app (work mode, current limits, discharge levels) from SolisCloud's regular data, without asking the inverter, and reads them only then. New Inverter alarm capability with a notification when SolisCloud reports an alarm or the inverter goes offline.",
+    "sv": "Märker inställningar som ändrats utanför appen (driftläge, strömgränser, urladdningsnivåer) i SolisClouds vanliga data, utan att fråga växelriktaren, och läser dem bara då. Ny förmåga Larm från växelriktaren med en notis när SolisCloud rapporterar ett larm eller växelriktaren är offline."
   }
 }

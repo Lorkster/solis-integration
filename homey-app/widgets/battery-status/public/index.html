@@ -133,6 +133,7 @@
         locked: 'Battery locked by SolisCloud – release it with Quick Control → Discharge (short duration)',
         powerCut: (t) => `Power cut since ${t} – the battery powers the backup output`,
         exportPaused: 'Export paused – selling would cost money right now',
+        alarm: (a) => `Inverter alarm: ${a}`,
         updated: (t) => `Data from ${t}`, stale: (t) => `No new data since ${t}`,
         waiting: 'Waiting for data…', notPaired: 'Add your inverter in Homey to see its status.',
       },
@@ -155,6 +156,7 @@
         locked: 'Batteriet låst av SolisCloud – frigör med Snabbkontroll → Urladdning (kort tid)',
         powerCut: (t) => `Strömavbrott sedan ${t} – batteriet driver reservutgången`,
         exportPaused: 'Export pausad – det kostar att sälja just nu',
+        alarm: (a) => `Larm från växelriktaren: ${a}`,
         updated: (t) => `Data från ${t}`, stale: (t) => `Inga nya data sedan ${t}`,
         waiting: 'Väntar på data…', notPaired: 'Lägg till din växelriktare i Homey för att se status.',
       },
@@ -406,6 +408,7 @@
       const notices = (view.warnings || []).map((w) => ['warning', `${w.title} · ${w.area}`]);
       if (view.exportPaused) notices.push(['tag', t.exportPaused, 'info']);
       if (view.offPlan) notices.unshift(['warning', view.offPlan]);
+      if (view.alarm) notices.unshift(['warning', t.alarm(view.alarm), 'alert']);
       if (view.batteryLocked) notices.unshift(['warning', t.locked]);
       if (view.powerCut) notices.unshift(['plugOff', t.powerCut(fmtTime(view.powerCut.since)), 'alert']);
       for (const [name, text, kind] of notices) {

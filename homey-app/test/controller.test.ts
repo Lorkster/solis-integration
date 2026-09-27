@@ -133,6 +133,21 @@ describe('BatteryController', () => {
     assert.equal(inverter.reads, 2);
   });
 
+  it('finds settings changed outside the app in the live report', async () => {
+    const inverter = new FakeInverter();
+    const controller = solisController(inverter);
+    await controller.apply(await controller.buildPlan(live, new Date('2026-09-24T00:05:00+02:00')));
+    const mode = inverter.settings.storageModeRaw; // 51: time-of-use on
+    const mask = 0xffff & ~2;
+    const report = { storageModeRaw: mode & mask, storageModeMask: mask, overDischargeSoc: 15, forceChargeSoc: 10, maxChargeCurrentA: 16, maxDischargeCurrentA: 25 };
+    assert.deepEqual(controller.reportedDifferences(report), [], 'the report leaves out time-of-use');
+    assert.deepEqual(controller.reportedDifferences({ ...report, storageModeRaw: 33, maxChargeCurrentA: 0 }),
+      ['storage mode 33 ≠ 49', 'maxChargeCurrentA 0 ≠ 16']);
+    controller.expireKnown();
+    await controller.apply(await controller.buildPlan(live, new Date('2026-09-24T00:05:00+02:00')));
+    assert.equal(inverter.reads, 2, 'expired: read again');
+  });
+
   it('hands control back to the inverter', async () => {
     const inverter = new FakeInverter();
     const controller = solisController(inverter);

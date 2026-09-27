@@ -1,6 +1,8 @@
 import Homey from 'homey';
 
-import { BatteryController, type ControllerConfig, currentAction, type KnownSettings, type PlanState } from '../controller/BatteryController.js';
+import {
+  BatteryController, type ControllerConfig, currentAction, type KnownSettings, type PlanState, SETTINGS_MAX_AGE_MS, SETTINGS_MAX_AGE_REPORTED_MS,
+} from '../controller/BatteryController.js';
 import { LoadProfile, type LoadProfileData } from '../forecast/LoadProfile.js';
 import { ModelSkill, type SkillData } from '../forecast/ModelSkill.js';
 import {
@@ -49,6 +51,8 @@ const LIVE_INTERVAL_MS = 5 * 60_000;
 const PLAN_INTERVAL_MS = 30 * 60_000;
 /** Model and firmware are read again after this long (and when the connection settings change). */
 const INFO_MAX_AGE_MS = 7 * 86_400_000;
+/** Live data sampled this soon after the app's last write may not show the write yet. */
+const REPORT_DELAY_MS = 60_000;
 /** Planning slower than this is logged with the time each step took. */
 const SLOW_PLAN_MS = 10_000;
 const HISTORY_DAYS = 14;
@@ -130,6 +134,12 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
   private peakRiskPeriod = 0;
   private peakRisk = false;
   private planError: string | null = null;
+  /** Alarm the inverter reports with its live data (null: none). */
+  private alarm: string | null = null;
+  /** Live reports whose settings differ from what the app expects, counted per difference. */
+  private reportMismatch: { differences: string; count: number } | null = null;
+  /** A difference the inverter's own settings showed to be a reporting quirk: not acted on again. */
+  private dismissedReport: string | null = null;
   /** How long the last start and the last planning took, per step (in the dashboard data, for diagnosis). */
   private timings: { startup?: string; plan?: string } = {};
 
@@ -214,6 +224,7 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
     if (this.hasCapability('alarm_solis_off_plan') && this.getCapabilityValue('alarm_solis_off_plan') !== false) {
       await this.setCapabilityValue('alarm_solis_off_plan', false).catch(this.error);
     }
+    this.alarm = (this.getStoreValue('alarm') as string | null | undefined) ?? null;
     this.createController();
     lap('stores');
 
@@ -521,6 +532,55 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
     await this.setCapabilityValue('solis_dashboard', json).catch(this.error);
   }
 
+  /** An alarm reported with live data: a notification when it starts, the device warning while it lasts. */
+  private async updateAlarm(alarm: string | null): Promise<void> {
+    if (this.hasCapability('alarm_solis_inverter') && this.getCapabilityValue('alarm_solis_inverter') !== (alarm !== null)) {
+      await this.setCapabilityValue('alarm_solis_inverter', alarm !== null).catch(this.error);
+    }
+    if (alarm === this.alarm) return;
+    if (alarm) {
+      this.log('Inverter alarm:', alarm);
+      await this.notify(this.homey.__('alarm.started', { alarm }));
+    } else {
+      this.log('Inverter alarm cleared:', this.alarm);
+    }
+    this.alarm = alarm;
+    await this.setStoreValue('alarm', alarm).catch(this.error);
+  }
+
+  /**
+   * Compares the settings reported with live data (free: SolisCloud's database) with what the app
+   * wrote. A difference seen in two uploads in a row, both made after the app's last write, means a
+   * change outside the app: the settings are read (one read) and, in Automatic mode, the schedule is
+   * written back. A difference the read shows to be a reporting quirk is not acted on again.
+   */
+  private async checkReportedSettings(live: LiveData): Promise<void> {
+    const report = live.reportedSettings;
+    this.controller.settingsMaxAgeMs = report ? SETTINGS_MAX_AGE_REPORTED_MS : SETTINGS_MAX_AGE_MS;
+    const differences = report && live.timestamp.getTime() > this.controller.lastWriteAt + REPORT_DELAY_MS
+      ? this.controller.reportedDifferences(report).join('; ')
+      : '';
+    if (!differences || differences === this.dismissedReport || this.planning) {
+      if (!differences) this.dismissedReport = null;
+      this.reportMismatch = null;
+      return;
+    }
+    const count = this.reportMismatch?.differences === differences ? this.reportMismatch.count + 1 : 1;
+    this.reportMismatch = { differences, count };
+    if (count < 2) return;
+    this.reportMismatch = null;
+    this.log(`The inverter reports other settings than expected (${differences}): reading them`);
+    const writtenBefore = this.controller.lastWriteAt;
+    this.controller.expireKnown();
+    if (this.controlMode === 'auto' && this.canControl()) await this.replan();
+    else await this.readInverterLimits();
+    // Nothing written and the settings read still differ from the report: the report is off, not the inverter.
+    if (this.controller.lastWriteAt === writtenBefore && report && this.controller.reportedDifferences(report).length > 0) {
+      this.dismissedReport = differences;
+      this.log(`Ignoring the reported difference (${differences}): the inverter's settings are as expected`);
+    }
+  }
+
   /** Keeps what the app knows about the inverter's settings, so a restart does not read them again. */
   private async saveKnownSettings(): Promise<void> {
     await this.setStoreValue('inverterSettings', this.controller.known).catch(this.error);
@@ -583,8 +643,13 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
       powerCut: this.powerCut.since && { since: this.powerCut.since.toISOString() },
       exportPaused: this.controller.exportBlockedByApp,
       offPlan: this.offPlan && this.deviationText(this.offPlan),
+      alarm: this.alarm,
       savings: { today: round(this.savedToday(), 2), month: round(this.savedThisMonth(), 0) },
-      timings: this.timings,
+      timings: {
+        ...this.timings,
+        settingsReadAt: this.controller.lastReadAt ? new Date(this.controller.lastReadAt).toISOString() : null,
+        settingsWrittenAt: this.controller.lastWriteAt ? new Date(this.controller.lastWriteAt).toISOString() : null,
+      },
       peak: this.powerTariff().enabled ? {
         monthKw: round(this.peaks.feeLevelKw(), 2),
         thresholdKw: round(this.peaks.thresholdKw(), 2),
@@ -815,6 +880,8 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
         const expected = this.controller.exportBlockedByApp ? null : this.solar?.forecastAt(live.timestamp) ?? null;
         this.throttle.update(live.timestamp, curtailed, expected, live.pvPowerW / 1000);
         await this.persistLearning();
+        await this.updateAlarm(live.alarm ?? null);
+        await this.checkReportedSettings(live).catch((err) => this.error('Settings check failed:', err));
       }
       await this.setAvailable();
       await this.updateExport().catch((err) => this.error('Export control failed:', err));
@@ -1070,6 +1137,8 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
     let text: string | null = null;
     if (this.powerCut.since) {
       text = this.homey.__('powerCut.warning', { time: localHHMM(this.powerCut.since, tz) });
+    } else if (this.alarm) {
+      text = this.homey.__('alarm.warning', { alarm: this.alarm });
     } else if (this.lock.locked) {
       text = this.lockWarning();
     } else if (this.planError) {

@@ -64,6 +64,32 @@ describe('parseLiveData', () => {
   });
 });
 
+describe('settings and alarms in the live data', () => {
+  // Fields from SolisCloud's inverterDetail, 26 Sep 2026 01:57 (CID 636 read 51 at the same time).
+  const detail = {
+    dataTimestamp: '1790384221000', batteryCapacitySoc: 25, energyStorageControl: '31', socDischargeSet: 15,
+    socChargingSet: 10, batteryCMaxiSet: 16, batteryDMaxiSet: 25, state: 1, alarmLevel: 0, stateExceptionFlag: 0,
+    batteryAlarm: '0', warningInfoData: 512, faultCodeDesc: 'Generating',
+  };
+
+  it('reads the storage mode in hex, without the time-of-use bit', () => {
+    const report = parseLiveData(detail).reportedSettings!;
+    assert.equal(report.storageModeRaw, 0x31);
+    assert.equal(51 & report.storageModeMask!, report.storageModeRaw, 'mode 51 (time-of-use on) matches');
+    assert.deepEqual([report.overDischargeSoc, report.forceChargeSoc, report.maxChargeCurrentA, report.maxDischargeCurrentA], [15, 10, 16, 25]);
+  });
+
+  it('reports no alarm in normal operation', () => {
+    assert.equal(parseLiveData(detail).alarm, null);
+  });
+
+  it('reports alarms and an offline logger, but not a power cut', () => {
+    assert.equal(parseLiveData({ ...detail, state: 3, alarmLevel: 2, faultCodeDesc: 'Battery Over Temp' }).alarm, 'Battery Over Temp');
+    assert.equal(parseLiveData({ ...detail, stateExceptionFlag: 1 }).alarm, 'alarm level ?');
+    assert.equal(parseLiveData({ ...detail, state: 2 }).alarm, 'offline in SolisCloud');
+  });
+});
+
 describe('storage mode', () => {
   it('turns plain self-use + grid charge into controlled mode', () => {
     const mode = controlledStorageMode(33, true);

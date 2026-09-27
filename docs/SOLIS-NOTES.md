@@ -87,6 +87,18 @@ don't), run `python tools/modbus_probe.py <logger address> --grid-charge`.
   normal when it ends. `batteryCDEnableSet = 1` with 50 A, or with the slot's current, is normal.
 - Error **B0173** ("device has timed out") and **"Command send fail"** mean the logger did not
   deliver the command. Retry after a minute.
+- **No push, but the inverter detail is free.** Neither SolisCloud nor Modbus can notify the app.
+  `inverterDetail` comes from SolisCloud's database (the logger's upload every 5 minutes), so
+  reading it costs the inverter nothing, unlike `atRead`, `control` and every Modbus request. It
+  carries some settings, checked against 160 snapshots (23–26 Sep 2026):
+  `energyStorageControl` is the storage mode (CID 636) in hex **without the time-of-use bit**
+  (51 → `"31"`, 35 → `"21"`); `socDischargeSet` = CID 158, `socChargingSet` = CID 160,
+  `batteryCMaxiSet` / `batteryDMaxiSet` = CIDs 7224 / 7226. A change shows up after the next upload.
+  Not in it: the time-of-use slots and the reserve (CID 157). The app compares these fields with
+  what it wrote and reads the settings only when they differ in two uploads in a row.
+- Alarm fields in the detail (`state` 3 = alarm, 2 = offline; `alarmLevel`, `stateExceptionFlag`,
+  `batteryAlarm`, `faultCodeDesc`) never showed an alarm in the snapshots; `warningInfoData = 512`
+  appears in normal operation. How a real alarm looks is still unverified.
 
 ## Modbus next to SolisCloud
 
@@ -105,3 +117,4 @@ don't), run `python tools/modbus_probe.py <logger address> --grid-charge`.
 - Writing the schedule over Modbus on the real inverter: only read-back tests and one register write
   (43342) so far.
 - The older 3-slot schedule (CID 103), on an inverter that has it.
+- The alarm fields of the inverter detail during a real alarm.

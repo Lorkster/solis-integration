@@ -40,6 +40,10 @@
     "ended": "The power is back after {{duration}}. Battery {{battery}} %.",
     "warning": "Power cut since {{time}}: the battery powers the backup output."
   },
+  "alarm": {
+    "started": "Home battery: the inverter reports an alarm: {{alarm}}.",
+    "warning": "Inverter alarm: {{alarm}}"
+  },
   "offPlan": {
     "not_charging": "Planned grid charging, but the battery is not charging. Check that the inverter allows charging from the grid (on Solis also the max grid charging current)",
     "discharging_while_saving": "Planned to save the battery, but it is discharging",

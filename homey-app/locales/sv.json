@@ -40,6 +40,10 @@
     "ended": "Strömmen är tillbaka efter {{duration}}. Batteri {{battery}} %.",
     "warning": "Strömavbrott sedan {{time}}: batteriet driver reservutgången."
   },
+  "alarm": {
+    "started": "Hembatteri: växelriktaren rapporterar ett larm: {{alarm}}.",
+    "warning": "Larm från växelriktaren: {{alarm}}"
+  },
   "offPlan": {
     "not_charging": "Planerad nätladdning, men batteriet laddar inte. Kontrollera att växelriktaren tillåter laddning från nätet (på Solis även max nätladdningsström)",
     "discharging_while_saving": "Batteriet skulle sparas, men det laddar ur",

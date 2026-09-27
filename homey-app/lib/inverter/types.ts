@@ -55,6 +55,24 @@ export interface LiveData {
   /** SolisCloud remote-control current limit (EMS / Quick Control), null if not reported. */
   remoteControlEnabled: boolean | null;
   remoteCurrentLimitA: number | null;
+  /**
+   * Settings the connection reports along with its live data, at no extra cost to the inverter
+   * (e.g. SolisCloud's database). Lets the app notice outside changes without reading the settings.
+   */
+  reportedSettings?: ReportedSettings | null;
+  /** A fault or alarm the connection reports; null when there is none (or it cannot tell). */
+  alarm?: string | null;
+}
+
+/** Inverter settings as reported with live data; a field is missing when not reported. */
+export interface ReportedSettings {
+  storageModeRaw?: number;
+  /** Bits of storageModeRaw the report covers (Solis: all but time-of-use). */
+  storageModeMask?: number;
+  overDischargeSoc?: number;
+  forceChargeSoc?: number;
+  maxChargeCurrentA?: number;
+  maxDischargeCurrentA?: number;
 }
 
 export interface InverterSummary {

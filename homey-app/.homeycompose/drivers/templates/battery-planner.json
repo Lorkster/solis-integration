@@ -26,6 +26,7 @@
     "measure_solis_peak_now",
     "alarm_solis_battery_locked",
     "alarm_solis_off_plan",
+    "alarm_solis_inverter",
     "alarm_solis_weather",
     "solis_warning",
     "meter_power.charged",

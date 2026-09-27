@@ -1,5 +1,5 @@
 import {
-  DISABLED_SLOT, type InverterSettings, type InverterTransport, type LiveData, NO_WORK_MODE, type TouSlot, type WorkMode,
+  DISABLED_SLOT, type InverterSettings, type InverterTransport, type LiveData, NO_WORK_MODE, type ReportedSettings, type TouSlot, type WorkMode,
 } from '../inverter/types.js';
 import { type BatteryAction, planBattery, type PlanInterval, type PlanResult } from '../planner/planner.js';
 import { planToSchedule, type Schedule } from '../planner/schedule.js';
@@ -53,12 +53,15 @@ export interface PlanState {
  * the data logger to the inverter.
  */
 export const SETTINGS_MAX_AGE_MS = 6 * 3_600_000;
+/** The same when the connection reports the main settings with its live data (changes show there). */
+export const SETTINGS_MAX_AGE_REPORTED_MS = 24 * 3_600_000;
 
 /** What the controller knows about the inverter's settings, kept across restarts. */
 export interface KnownSettings {
   read: InverterSettings | null;
   readAt: number;
   applied: InverterSettings | null;
+  writtenAt?: number;
 }
 
 /** Charge slots of the schedule format: 6 (TOU v2 firmware) or 3 (older firmware). */
@@ -87,6 +90,10 @@ export class BatteryController {
   workMode: WorkMode = NO_WORK_MODE;
   /** When the settings were last read from the inverter (ms since epoch). */
   lastReadAt = 0;
+  /** When the app last wrote a setting (ms since epoch); live reports from before then are out of date. */
+  lastWriteAt = 0;
+  /** How long settings the app knows are trusted before they are read again. */
+  settingsMaxAgeMs = SETTINGS_MAX_AGE_MS;
   private lastApplied: InverterSettings | null = null;
 
   constructor(
@@ -178,11 +185,38 @@ export class BatteryController {
 
   /** The settings as last read, when that was recently enough; otherwise read them now. */
   async recentSettings(now = Date.now()): Promise<InverterSettings> {
-    return this.lastRead && now - this.lastReadAt < SETTINGS_MAX_AGE_MS ? this.lastRead : this.readSettings();
+    return this.lastRead && now - this.lastReadAt < this.settingsMaxAgeMs ? this.lastRead : this.readSettings();
+  }
+
+  /** Makes the next update read the settings from the inverter. */
+  expireKnown(): void {
+    this.lastReadAt = 0;
+  }
+
+  /**
+   * Settings reported with live data that differ from what the inverter should have (what the app
+   * wrote, or else read), e.g. ["storage mode 49 ≠ 17"]. Empty when they match or nothing is known.
+   */
+  reportedDifferences(report: ReportedSettings): string[] {
+    const expected = this.lastApplied ?? this.lastRead;
+    if (!expected) return [];
+    const out: string[] = [];
+    if (report.storageModeRaw !== undefined) {
+      const mask = report.storageModeMask ?? 0xffff;
+      if ((report.storageModeRaw & mask) !== (expected.storageModeRaw & mask)) {
+        out.push(`storage mode ${report.storageModeRaw} ≠ ${expected.storageModeRaw & mask}`);
+      }
+    }
+    const fields = ['overDischargeSoc', 'forceChargeSoc', 'maxChargeCurrentA', 'maxDischargeCurrentA'] as const;
+    for (const field of fields) {
+      const value = report[field];
+      if (value !== undefined && value !== expected[field]) out.push(`${field} ${value} ≠ ${expected[field]}`);
+    }
+    return out;
   }
 
   get known(): KnownSettings {
-    return { read: this.lastRead, readAt: this.lastReadAt, applied: this.lastApplied };
+    return { read: this.lastRead, readAt: this.lastReadAt, applied: this.lastApplied, writtenAt: this.lastWriteAt };
   }
 
   /** Takes over what an earlier run knew, so a restart does not read the inverter again. */
@@ -190,6 +224,7 @@ export class BatteryController {
     this.lastRead = known.read;
     this.lastReadAt = known.readAt;
     this.lastApplied = known.applied;
+    this.lastWriteAt = known.writtenAt ?? 0;
     if (known.read) this.slotCount = slotsFor(known.read);
   }
 
@@ -228,11 +263,12 @@ export class BatteryController {
    */
   async apply(state: PlanState, now = Date.now()): Promise<string[]> {
     // What the app wrote is what the inverter has, unless it is time to check for outside changes.
-    const known = this.lastApplied && now - this.lastReadAt < SETTINGS_MAX_AGE_MS ? this.lastApplied : null;
+    const known = this.lastApplied && now - this.lastReadAt < this.settingsMaxAgeMs ? this.lastApplied : null;
     const current = known ?? await this.readSettings();
     const changes: string[] = [];
     const failures: string[] = [];
     const attempt = async (what: string, write: () => Promise<void>): Promise<boolean> => {
+      this.lastWriteAt = Date.now();
       try {
         await write();
         changes.push(what);
@@ -300,6 +336,7 @@ export class BatteryController {
    */
   async restoreInverter(): Promise<string[]> {
     this.lastApplied = null;
+    this.lastWriteAt = Date.now();
     const current = await this.readSettings();
     const changes: string[] = [];
     if (this.exportBlockedByApp && this.transport.writeExportAllowed) {

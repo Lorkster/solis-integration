@@ -1,9 +1,10 @@
 import type {
-  HistorySample, InverterInfo, InverterSettings, InverterSummary, InverterTransport, LiveData, TouSlot,
+  HistorySample, InverterInfo, InverterSettings, InverterSummary, InverterTransport, LiveData, ReportedSettings, TouSlot,
 } from '../../inverter/types.js';
 import { gridLost } from '../../inverter/PowerCut.js';
 import { utcOffsetHours } from '../../time.js';
 import { CHARGE_SLOT_CIDS, Cid, DISCHARGE_SLOT_CIDS, EXPORT_REGISTER, SETTINGS_CIDS, type SlotCids, TOU_V2_MARKER } from './cids.js';
+import { StorageBit } from './storageMode.js';
 import { formatTouV1, parseTouV1, setTouV1Slot, touV1Slots } from './touV1.js';
 import { SolisApiError, SolisCloudClient, type SolisCredentials } from './SolisCloudClient.js';
 
@@ -305,5 +306,47 @@ export function parseLiveData(detail: Record<string, unknown>): LiveData {
     backupLoadW: powerW('bypassLoadPower'),
     remoteControlEnabled: detail.batteryCDEnableSet === undefined ? null : Number(detail.batteryCDEnableSet) === 1,
     remoteCurrentLimitA: detail.batteryCDISet === undefined ? null : Number(detail.batteryCDISet),
+    reportedSettings: reportedSettings(detail),
+    alarm: inverterAlarm(detail),
   };
+}
+
+/**
+ * Settings in SolisCloud's inverter detail (from the logger's regular upload, so they cost the
+ * inverter nothing). energyStorageControl is the storage mode (CID 636) in hex, without the
+ * time-of-use bit: 51 shows as "31", 35 as "21" (checked against 160 snapshots, 23–26 Sep 2026).
+ */
+function reportedSettings(detail: Record<string, unknown>): ReportedSettings | null {
+  const n = (key: string) => {
+    const value = detail[key] === undefined || detail[key] === '' ? NaN : Number(detail[key]);
+    return Number.isFinite(value) ? value : undefined;
+  };
+  const mode = /^[0-9a-f]+$/i.test(String(detail.energyStorageControl ?? '')) ? parseInt(String(detail.energyStorageControl), 16) : undefined;
+  const report: ReportedSettings = {
+    storageModeRaw: mode,
+    storageModeMask: mode === undefined ? undefined : 0xffff & ~(1 << StorageBit.timeOfUse),
+    overDischargeSoc: n('socDischargeSet'),
+    forceChargeSoc: n('socChargingSet'),
+    maxChargeCurrentA: n('batteryCMaxiSet'),
+    maxDischargeCurrentA: n('batteryDMaxiSet'),
+  };
+  return Object.values(report).some((v) => v !== undefined) ? report : null;
+}
+
+/** Normal operating texts of faultCodeDesc; anything else during an alarm is shown as it is. */
+const NORMAL_STATUS = /^(generating|normal|standby|waiting|initiali[sz]ing)$/i;
+
+/**
+ * An alarm in the inverter detail: state 3 is "alarm" and 2 "offline" in SolisCloud's API. A lost
+ * grid is not an alarm here: the power cut tracking reports it.
+ */
+function inverterAlarm(detail: Record<string, unknown>): string | null {
+  if (gridLost(detail)) return null;
+  const state = Number(detail.state);
+  if (state === 2) return 'offline in SolisCloud';
+  const status = String(detail.faultCodeDesc ?? '').trim();
+  const raised = state === 3 || Number(detail.alarmLevel) > 0 || (Number(detail.stateExceptionFlag) || 0) !== 0
+    || (detail.batteryAlarm !== undefined && String(detail.batteryAlarm) !== '0');
+  if (!raised) return null;
+  return status && !NORMAL_STATUS.test(status) ? status : `alarm level ${Number(detail.alarmLevel) || '?'}`;
 }
