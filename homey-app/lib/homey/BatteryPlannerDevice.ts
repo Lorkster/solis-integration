@@ -599,7 +599,10 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
    * written back. A difference the read shows to be a reporting quirk is not acted on again.
    */
   private async checkReportedSettings(live: LiveData): Promise<void> {
-    const report = live.reportedSettings;
+    let report = live.reportedSettings;
+    // The app's own Remote Dispatch shows as current limits in SolisCloud's data (0 A charge limit in
+    // standby, 27 Sep 2026): while it runs, only the storage mode and the levels are compared.
+    if (report && this.directActive()) report = { ...report, maxChargeCurrentA: undefined, maxDischargeCurrentA: undefined };
     this.controller.settingsMaxAgeMs = report ? SETTINGS_MAX_AGE_REPORTED_MS : SETTINGS_MAX_AGE_MS;
     const differences = report && live.timestamp.getTime() > this.controller.lastWriteAt + REPORT_DELAY_MS
       ? this.controller.reportedDifferences(report).join('; ')
