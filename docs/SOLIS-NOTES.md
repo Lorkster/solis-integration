@@ -51,6 +51,42 @@ mode, the Solis device sends the Remote Dispatch sequence Quick Control uses, ov
 minutes apart, and only with a Modbus address set up. It is set in the device settings, *Start stuck
 grid charging with a Remote Dispatch pulse*. Reported to Solis support.
 
+### 27 Sep 2026: the block again, and what Quick Control writes
+
+The block was back in the morning: slots written at 11:07 and 11:51 (16 A, all three conditions
+met) took only surplus solar. The app's pulse at 11:59 **did not** clear it. Quick Control → Charge,
+started and stopped in the SolisCloud app at 12:14–12:16, did; from then on slots charged at 16 A,
+including one written 8 minutes after its start (12:38). So a late write is not the cause.
+
+A scan of holding registers 43000–43999 and 44000–44199 and input registers 33000–33299, blocked
+(12:07) and after Quick Control, differed only while Quick Control ran; afterwards every value was
+back to the blocked state. Quick Control, in Remote Dispatch terms (Solis Modbus protocol Ver3.2,
+pp. 132–136):
+
+| Register | Idle | Quick Control | App's pulse |
+|---|---|---|---|
+| 44100 switch | 0 | 1 | 1, then 0 |
+| 44101 failsafe (min) | 5 | 59 | 1 |
+| 44103 / 44104 import / export limit | 0xFFFF (default) | 0 (inactive: 44102 = 0) | – |
+| 44105 real-time mode | 1 (standby) | 2 (charge/discharge) | 2 |
+| 44106–07 power (10 W) | 0 | 500 (5 kW) | 100 (1 kW) |
+| 44108 function bits | 0 | 0x5555 | 0x5555 |
+| 44109–10 SOC window | 0–100 | 0–40 | – |
+| 44112 reserved 2 (and the same field of dispatch periods 4–6) | 10000 | 0 | – |
+
+Input 34502 = 0xAA55 (dispatch supported), 34503 = 3 (function version), 34504 = status
+(0 off, 1 default, 2 real-time, 3 TOU). Dispatch registers are in RAM and not kept over a power cycle.
+
+**The storage mode was reset after Quick Control:** between 12:17 and 12:37, 43110 went from 51 to
+33 (time of use and backup off) without a write by the app. The app's live-data check noticed it
+(12:37) and wrote 51 back (12:38). A Quick Control from the SolisCloud app can therefore undo the
+app's work mode.
+
+A Solis engineer advises against steering the battery by rewriting the time-charging settings,
+which are in flash (about 10,000 writes), and recommends Remote Dispatch
+([solis-sensor #464](https://github.com/hultenvp/solis-sensor/issues/464)). See
+[REMOTE-DISPATCH.md](REMOTE-DISPATCH.md).
+
 ### The 26 Sep 2026 incident
 
 Every planned grid charge had silently done nothing. The diagnosis, step by step:
