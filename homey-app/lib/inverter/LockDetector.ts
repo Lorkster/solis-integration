@@ -8,8 +8,9 @@
  * to its default.
  *
  * To avoid false alarms, the lock is only reported when it persists and actually costs something:
- * the house imports from the grid while the battery is above its reserve. An active 0 A time-of-use
- * slot (the app's own "save") shows the same 0 A limit, so it is never counted as a lock.
+ * the house imports from the grid while the battery is above its reserve. The app's own holds (an
+ * active 0 A time-of-use slot, or a Remote Dispatch command) show the same 0 A limit, so they are
+ * never counted as a lock.
  */
 export interface LockSample {
   time: Date;
@@ -28,7 +29,8 @@ export class LockDetector {
   constructor(private readonly minMinutes = 30, private readonly importThresholdW = 300) {}
 
   /**
-   * Feeds one live sample. `plannedSave` is true while the app's own schedule has a 0 A slot active.
+   * Feeds one live sample. `plannedSave` is true while the app itself holds the battery (a 0 A slot,
+   * or its Remote Dispatch command).
    * Returns true when the locked state changed.
    */
   update(sample: LockSample, reserveSoc: number, plannedSave = false): boolean {

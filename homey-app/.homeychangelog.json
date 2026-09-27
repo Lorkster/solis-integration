@@ -49,5 +49,9 @@
   "0.3.1": {
     "en": "The Battery status widget shows what Remote Dispatch does now, and the energy flow uses arrows that point the way the power flows.",
     "sv": "Widgeten Batteristatus visar vad Remote Dispatch gör just nu, och energiflödet visas med pilar i den riktning effekten går."
+  },
+  "0.3.2": {
+    "en": "A Remote Dispatch hold is no longer reported as a battery locked by SolisCloud.",
+    "sv": "Sparning med Remote Dispatch rapporteras inte längre som ett batteri låst av SolisCloud."
   }
 }

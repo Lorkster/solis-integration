@@ -1344,7 +1344,7 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
       socPct: live.socPct,
       gridW: live.gridPowerW,
       batteryW: live.batteryPowerW,
-    }, reserve, this.controlMode === 'auto' && this.currentAction() === 'hold');
+    }, reserve, this.controlMode === 'auto' && (this.currentAction() === 'hold' || this.directActive()));
     await this.setCapabilityValue('alarm_solis_battery_locked', this.lock.locked);
     if (!changed) return;
     this.note(this.lock.locked ? 'Battery locked by a remote command' : 'Battery released');
@@ -1551,6 +1551,16 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
 
   protected usesDirect(): boolean {
     return !this.directBroken && this.directControl() !== null;
+  }
+
+  /**
+   * True while the app's own direct command steers the battery. SolisCloud reports it as a remote
+   * current limit (0 A in standby), the same as a leftover lock, so it must not count as one
+   * (27 Sep 2026: a hold at 100 % after a finished charge showed as "Battery locked").
+   */
+  private directActive(): boolean {
+    const d = this.direct;
+    return this.usesDirect() && d !== null && d.command.kind !== 'off' && d.expiresAt > Date.now();
   }
 
   /** What a still-running direct command does, for the first plan after a restart. */
