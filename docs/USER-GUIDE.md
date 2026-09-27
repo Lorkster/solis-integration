@@ -261,6 +261,7 @@ chosen as the device's tile indicator, and all numbers and alarms are kept in Ho
 | **Power this hour (expected)** | Effekt denna timme (väntad) | kW | Only with a power fee: the average import this hour (or quarter) is heading for, weighted like the grid company does. |
 | **Battery locked by SolisCloud** | Batteriet låst av SolisCloud |  | On when a leftover SolisCloud command keeps the battery at 0 A. See the troubleshooting section. |
 | **Not following the plan** | Följer inte planen |  | On when the battery has not done what the plan says for 20 minutes, or no data has arrived for 20 minutes. The device’s warning line says what is wrong. |
+| **Inverter alarm** | Larm från växelriktaren |  | On while SolisCloud reports an alarm for the inverter, or reports it offline. A notification is sent when it starts, and the device’s warning line shows the alarm. |
 | **Weather warning** | Vädervarning |  | On while a weather warning covers Homey's location. |
 | **Weather warning** | Vädervarning |  | Text of the active weather warning(s). |
 | **Energy charged** | Laddad energi | kWh | Total energy charged into the battery. Used by Homey Energy. |

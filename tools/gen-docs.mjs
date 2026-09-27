@@ -49,6 +49,7 @@ const MEANING = {
   solis_dashboard: 'Hidden: the data for the dashboard page (see Dashboard in a browser). Not shown in Homey.',
   alarm_solis_power_cut: 'On while the inverter sees no grid voltage: the battery powers the backup output.',
   alarm_solis_off_plan: 'On when the battery has not done what the plan says for 20 minutes, or no data has arrived for 20 minutes. The device’s warning line says what is wrong.',
+  alarm_solis_inverter: 'On while SolisCloud reports an alarm for the inverter, or reports it offline. A notification is sent when it starts, and the device’s warning line shows the alarm.',
   measure_solis_saved_today: 'What the battery saved today: the actual electricity cost compared with the same consumption and solar without a battery. Unit follows the price area’s currency.',
   measure_solis_saved_month: 'What the battery saved this month, including a lower power fee when that is switched on.',
   measure_solis_peak_month: 'Only with a power fee: the average of this month’s highest peaks so far, which the fee is based on.',
