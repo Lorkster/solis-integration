@@ -1,6 +1,6 @@
 # Design: grid charging and holds through Remote Dispatch
 
-Status: **proposal** (27 Sep 2026). Nothing here is built yet.
+Status: **proposal, tested on the inverter** (27 Sep 2026). Not built into the app yet.
 
 ## Why
 
@@ -105,6 +105,29 @@ Remote Dispatch is only reachable over Modbus (SolisCloud rejects these as CIDs,
 7. **Storage mode**: a dispatch charge with 43110 = 33 (time of use off) still charges.
 
 Each is one short Modbus session with the probe tool; results go into SOLIS-NOTES.
+
+### Results (27 Sep 2026, 12:44–12:56, app in Monitor mode, a 16 A slot charging underneath)
+
+Written as the document asks: 44100–44104, then 44105–44112, each one FC16 write.
+
+| Test | Result |
+|---|---|
+| 1 Charge | **Pass.** 3 kW → 3.03 kW (7.1 A) within 20 s, overriding the slot's 16 A; 6 kW → 5.96 kW. Stopped at the upper SOC (35 %): 0 W from then on. At the limit, surplus solar was **exported**, not stored. |
+| 2 Hold | **Pass.** 44105 = 1: 0 W for the whole minute (34504 = 0x0102). Surplus solar exported here too. |
+| 3 Failsafe | **Pass.** 1 min: dispatch ended by itself about a minute after the write; the inverter reset 44100–44112 to their idle values (failsafe 5, mode 1, flags 0) and the slot charged at 16 A again within 30 s. |
+| 4 Reserved 44112 | **Not needed.** All charges above left it at 10000. |
+| 5 Self-use | Not repeated (verified 24 Sep: slots off, time of use on → self-use down to the reserve). |
+| 6 SolisCloud | Live data kept coming, but the 12:49 and 12:54 uploads arrived late (the app saw 12:44 until about 12:57). Short Modbus sessions a few times a day should not matter; polling during a test does. |
+| 7 Storage mode 33 | **Pass.** A 3 kW dispatch charge worked with 43110 = 33 (time of use off). 43110 was written back to 51 afterwards. Side note: the slot kept charging for the 35 s between writing 33 and starting dispatch, so the time-of-use bit may take effect with a delay. |
+
+Consequences for the design:
+
+- A charge must hand back to self-use as soon as it reaches its target (or the plan's end): a
+  dispatch charge that sits at its upper SOC blocks solar charging.
+- A hold through dispatch standby also blocks solar charging. The plan's holds happen when the
+  battery should keep its energy, usually at night; in daylight the plan should prefer self-use.
+- The inverter resets the dispatch registers itself when dispatch ends, so the app always writes
+  the whole general and real-time blocks.
 
 ## Unknowns and risks
 
