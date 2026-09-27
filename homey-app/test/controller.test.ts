@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import { solisWorkMode } from '../lib/brands/solis/storageMode.js';
-import { alignSlots, BatteryController, type ControllerConfig, overlaps, type PlanState } from '../lib/controller/BatteryController.js';
+import { alignSlots, BatteryController, type ControllerConfig, overlaps, type PlanState, SETTINGS_MAX_AGE_MS } from '../lib/controller/BatteryController.js';
 import { DISABLED_SLOT, type InverterSettings, type InverterTransport, type LiveData, type TouSlot } from '../lib/inverter/types.js';
 import type { PriceProvider, SpotPrice } from '../lib/prices/PriceProvider.js';
 import { DEFAULT_TARIFF } from '../lib/tariff.js';
@@ -12,6 +12,7 @@ class FakeInverter implements InverterTransport {
   readonly kind = 'cloud' as const;
   readonly name = 'SolisCloud';
   writes: string[] = [];
+  reads = 0;
   settings: InverterSettings = {
     storageModeRaw: 33,
     reserveSoc: 25,
@@ -27,7 +28,7 @@ class FakeInverter implements InverterTransport {
   };
 
   async getLiveData(): Promise<LiveData> { throw new Error('not used'); }
-  async readSettings(): Promise<InverterSettings> { return structuredClone(this.settings); }
+  async readSettings(): Promise<InverterSettings> { this.reads++; return structuredClone(this.settings); }
   async writeStorageMode(raw: number): Promise<void> { this.writes.push(`mode ${raw}`); this.settings.storageModeRaw = raw; }
   async writeReserveSoc(pct: number): Promise<void> { this.writes.push(`reserve ${pct}`); this.settings.reserveSoc = pct; }
   async writeChargeSlot(i: number, slot: TouSlot): Promise<void> { this.writes.push(`charge ${i}`); this.settings.chargeSlots[i] = { ...slot }; }
@@ -89,6 +90,47 @@ describe('BatteryController', () => {
     inverter.writes = [];
     assert.deepEqual(await controller.apply(state), []);
     assert.deepEqual(inverter.writes, []);
+  });
+
+  it('does not read settings it wrote itself again, until they are 6 hours old', async () => {
+    const inverter = new FakeInverter();
+    const controller = solisController(inverter);
+    const state = await controller.buildPlan(live, new Date('2026-09-24T00:05:00+02:00'));
+    await controller.apply(state);
+    assert.equal(inverter.reads, 1);
+    await controller.apply(state, Date.now() + 5 * 3_600_000);
+    assert.equal(inverter.reads, 1, 'known settings are not read again');
+
+    inverter.settings.reserveSoc = 40; // changed in the SolisCloud app
+    inverter.writes = [];
+    await controller.apply(state, Date.now() + SETTINGS_MAX_AGE_MS + 1);
+    assert.equal(inverter.reads, 2, 'read again after 6 hours');
+    assert.equal(controller.externalChange, true);
+    assert.deepEqual(inverter.writes, ['reserve 25']);
+  });
+
+  it('keeps what it knows across a restart', async () => {
+    const inverter = new FakeInverter();
+    const first = solisController(inverter);
+    const state = await first.buildPlan(live, new Date('2026-09-24T00:05:00+02:00'));
+    await first.apply(state);
+    const second = solisController(inverter);
+    second.restoreKnown(JSON.parse(JSON.stringify(first.known)));
+    assert.deepEqual(await second.apply(state), []);
+    await second.recentSettings();
+    assert.equal(inverter.reads, 1, 'no reads after the restart');
+  });
+
+  it('reads the settings again after a failed write', async () => {
+    const inverter = new FakeInverter();
+    const controller = solisController(inverter);
+    const write = inverter.writeReserveSoc.bind(inverter);
+    inverter.writeReserveSoc = async () => { throw new Error('B0173'); };
+    const state = { ...(await controller.buildPlan(live, new Date('2026-09-24T00:05:00+02:00'))), reserveSoc: 30 };
+    await assert.rejects(controller.apply(state));
+    inverter.writeReserveSoc = write;
+    await controller.apply(state);
+    assert.equal(inverter.reads, 2);
   });
 
   it('hands control back to the inverter', async () => {

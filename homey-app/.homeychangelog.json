@@ -21,5 +21,9 @@
   "0.2.4": {
     "en": "Fixes short, pointless grid charging when the battery sits exactly at the reserve.",
     "sv": "Rättar kort, onödig nätladdning när batteriet ligger precis på reserven."
+  },
+  "0.2.5": {
+    "en": "Faster start and less traffic to the inverter: settings the app wrote itself are not read back (they are checked every 6 hours), model and firmware are read weekly, and a new plan shows before it is written to the inverter.",
+    "sv": "Snabbare start och mindre trafik till växelriktaren: inställningar som appen själv skrivit läses inte tillbaka (de kontrolleras var 6:e timme), modell och firmware läses varje vecka, och en ny plan visas innan den skrivs till växelriktaren."
   }
 }

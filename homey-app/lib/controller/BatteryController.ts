@@ -47,6 +47,20 @@ export interface PlanState {
   negativeExport: Array<{ start: Date; end: Date }>;
 }
 
+/**
+ * Settings the app wrote itself are known without asking the inverter. They are read again after
+ * this long, to notice changes made elsewhere (e.g. in the SolisCloud app); every read goes through
+ * the data logger to the inverter.
+ */
+export const SETTINGS_MAX_AGE_MS = 6 * 3_600_000;
+
+/** What the controller knows about the inverter's settings, kept across restarts. */
+export interface KnownSettings {
+  read: InverterSettings | null;
+  readAt: number;
+  applied: InverterSettings | null;
+}
+
 /** Charge slots of the schedule format: 6 (TOU v2 firmware) or 3 (older firmware). */
 const slotsFor = (settings: InverterSettings) => settings.chargeSlots.length;
 
@@ -71,6 +85,8 @@ export class BatteryController {
   externalChange = false;
   /** How the brand's work mode changes when the app takes or hands back control. */
   workMode: WorkMode = NO_WORK_MODE;
+  /** When the settings were last read from the inverter (ms since epoch). */
+  lastReadAt = 0;
   private lastApplied: InverterSettings | null = null;
 
   constructor(
@@ -155,8 +171,26 @@ export class BatteryController {
 
   async readSettings(): Promise<InverterSettings> {
     this.lastRead = await this.transport.readSettings();
+    this.lastReadAt = Date.now();
     this.slotCount = slotsFor(this.lastRead);
     return this.lastRead;
+  }
+
+  /** The settings as last read, when that was recently enough; otherwise read them now. */
+  async recentSettings(now = Date.now()): Promise<InverterSettings> {
+    return this.lastRead && now - this.lastReadAt < SETTINGS_MAX_AGE_MS ? this.lastRead : this.readSettings();
+  }
+
+  get known(): KnownSettings {
+    return { read: this.lastRead, readAt: this.lastReadAt, applied: this.lastApplied };
+  }
+
+  /** Takes over what an earlier run knew, so a restart does not read the inverter again. */
+  restoreKnown(known: KnownSettings): void {
+    this.lastRead = known.read;
+    this.lastReadAt = known.readAt;
+    this.lastApplied = known.applied;
+    if (known.read) this.slotCount = slotsFor(known.read);
   }
 
   /**
@@ -192,8 +226,10 @@ export class BatteryController {
    * A failed write does not stop the others: the failures are thrown together at the end, so the
    * plan reports them and tries again at the next update.
    */
-  async apply(state: PlanState): Promise<string[]> {
-    const current = await this.readSettings();
+  async apply(state: PlanState, now = Date.now()): Promise<string[]> {
+    // What the app wrote is what the inverter has, unless it is time to check for outside changes.
+    const known = this.lastApplied && now - this.lastReadAt < SETTINGS_MAX_AGE_MS ? this.lastApplied : null;
+    const current = known ?? await this.readSettings();
     const changes: string[] = [];
     const failures: string[] = [];
     const attempt = async (what: string, write: () => Promise<void>): Promise<boolean> => {
@@ -208,7 +244,7 @@ export class BatteryController {
     };
     const desired = this.desiredSettings(current, state);
     desired.chargeSlots = alignSlots(current.chargeSlots, desired.chargeSlots);
-    this.externalChange = this.lastApplied !== null && !settingsEqual(current, this.lastApplied);
+    this.externalChange = !known && this.lastApplied !== null && !settingsEqual(current, this.lastApplied);
     if (this.externalChange) this.log('Inverter settings were changed outside the app since the last update');
 
     // Slots first, so enabling time-of-use never activates stale slots. The inverter refuses to

@@ -1,6 +1,6 @@
 import Homey from 'homey';
 
-import { BatteryController, type ControllerConfig, currentAction, type PlanState } from '../controller/BatteryController.js';
+import { BatteryController, type ControllerConfig, currentAction, type KnownSettings, type PlanState } from '../controller/BatteryController.js';
 import { LoadProfile, type LoadProfileData } from '../forecast/LoadProfile.js';
 import { ModelSkill, type SkillData } from '../forecast/ModelSkill.js';
 import {
@@ -47,6 +47,10 @@ export interface Connections {
 
 const LIVE_INTERVAL_MS = 5 * 60_000;
 const PLAN_INTERVAL_MS = 30 * 60_000;
+/** Model and firmware are read again after this long (and when the connection settings change). */
+const INFO_MAX_AGE_MS = 7 * 86_400_000;
+/** Planning slower than this is logged with the time each step took. */
+const SLOW_PLAN_MS = 10_000;
 const HISTORY_DAYS = 14;
 const OUTAGE_HOURS_WITHOUT_END = 24;
 /** Longest gap between two live samples that still counts as continuous measurement. */
@@ -126,6 +130,8 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
   private peakRiskPeriod = 0;
   private peakRisk = false;
   private planError: string | null = null;
+  /** How long the last start and the last planning took, per step (in the dashboard data, for diagnosis). */
+  private timings: { startup?: string; plan?: string } = {};
 
   // --- what a brand provides ----------------------------------------------------------------
 
@@ -181,6 +187,7 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
   // --- life cycle ----------------------------------------------------------------------------
 
   override async onInit(): Promise<void> {
+    const lap = stopwatch();
     const tz = this.homey.clock.getTimezone();
     this.flowPrices = new FlowPriceProvider(tz, this.getStoreValue('flowPrices') ?? []);
     this.info = (this.getStoreValue('inverterInfo') as InverterInfo | undefined) ?? null;
@@ -208,6 +215,7 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
       await this.setCapabilityValue('alarm_solis_off_plan', false).catch(this.error);
     }
     this.createController();
+    lap('stores');
 
     if (!this.getCapabilityValue('solis_control_mode')) {
       // Start passive: the inverter's own planning (e.g. the SolisCloud EMS) must be off before this app takes control.
@@ -222,10 +230,19 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
 
     this.scheduleLive();
     this.homey.setInterval(() => this.replan().catch(this.error), PLAN_INTERVAL_MS);
-    await this.refreshInfo().catch(this.error);
+    // Model and firmware rarely change: read them when unknown, weekly, or when the connection settings change.
+    const infoAt = Number(this.getStoreValue('inverterInfoAt') ?? 0);
+    if (!this.info || Date.now() - infoAt > INFO_MAX_AGE_MS) await this.refreshInfo().catch(this.error);
+    else this.controller.slotCount = this.scheduleSlots(this.info);
+    lap('info');
     await this.refreshLive().catch(this.error);
+    lap('live');
     await this.readInverterLimits().catch(this.error);
+    lap('limits');
     await this.replan().catch(this.error);
+    lap('plan');
+    this.timings.startup = `${lap.summary()}${this.planState ? '' : ' (no plan yet)'}`;
+    this.log(`Started in ${this.timings.startup}`);
     this.learnFromHistory().catch(this.error);
     this.learnPeaksFromHistory().catch(this.error);
   }
@@ -265,6 +282,7 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
     const info = this.mergeInfo(await this.transport.getInfo(), this.info);
     this.info = info;
     await this.setStoreValue('inverterInfo', info);
+    await this.setStoreValue('inverterInfoAt', Date.now());
     await this.setSettings({
       inverter_model: info.modelCode ? `${info.model} (${info.modelCode})` : info.model,
       inverter_power: info.ratedPowerKw ? `${info.ratedPowerKw} kW` : '–',
@@ -289,8 +307,10 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
     if (this.getSetting('price_source') === 'flow') await this.replan();
   }
 
+  /** The off-grid floor, from the settings the app already knows when they are recent. */
   private async readInverterLimits(): Promise<void> {
-    const settings = await this.controller.readSettings();
+    const settings = await this.controller.recentSettings();
+    await this.saveKnownSettings();
     this.offGridFloorSoc = settings.offGridOverDischargeSoc;
     await this.setStoreValue('offGridFloorSoc', this.offGridFloorSoc);
   }
@@ -501,6 +521,11 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
     await this.setCapabilityValue('solis_dashboard', json).catch(this.error);
   }
 
+  /** Keeps what the app knows about the inverter's settings, so a restart does not read them again. */
+  private async saveKnownSettings(): Promise<void> {
+    await this.setStoreValue('inverterSettings', this.controller.known).catch(this.error);
+  }
+
   /** Latest live values, for the solar panel and grid meter devices. */
   latestLive(): LiveData | null {
     return this.live;
@@ -559,6 +584,7 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
       exportPaused: this.controller.exportBlockedByApp,
       offPlan: this.offPlan && this.deviationText(this.offPlan),
       savings: { today: round(this.savedToday(), 2), month: round(this.savedThisMonth(), 0) },
+      timings: this.timings,
       peak: this.powerTariff().enabled ? {
         monthKw: round(this.peaks.feeLevelKw(), 2),
         thresholdKw: round(this.peaks.thresholdKw(), 2),
@@ -692,7 +718,8 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
     this.controller.pvForecast = (time) => this.solar?.forecastAt(time) ?? null;
     this.controller.peakThresholdKw = () => this.peaks?.thresholdKw() ?? 0;
     this.controller.exportBlockedByApp = previous?.exportBlockedByApp ?? Boolean(this.getStoreValue('exportBlockedByApp'));
-    this.controller.lastRead = previous?.lastRead ?? null;
+    const known = previous?.known ?? (this.getStoreValue('inverterSettings') as KnownSettings | undefined);
+    if (known) this.controller.restoreKnown(known);
     if (previous) {
       this.controller.overrides = previous.overrides;
       this.controller.outage = previous.outage;
@@ -1320,27 +1347,43 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
       return;
     }
     this.planning = true;
+    const lap = stopwatch();
     try {
       const now = new Date();
       await this.updateWarnings(now).catch((err) => this.error('Weather warnings failed:', err));
+      lap('warnings');
       await this.solar?.refresh().catch((err) => this.error('Solar forecast failed:', err));
+      lap('solar');
       await this.refreshOutdoorTemperature().catch((err) => this.error('Outdoor temperature failed:', err));
+      lap('temperature');
       await this.updateSolarCapability(now);
 
       this.controller.exportControl = this.controlMode === 'auto' && this.canControl() && !this.powerCut.active
         && this.getSetting('negative_export_block') !== false;
       const state = await this.controller.buildPlan(this.live, now);
+      lap('prices and plan');
       this.planState = state;
       this.history.setDayPlan(now, state.plan.intervals);
       await this.updatePlanCapabilities(state, now);
+      lap('plan values');
       await this.updatePowerCost();
+      lap('power cost');
+      // Show the new plan now; writing it to the inverter through the cloud can take a while.
+      this.homey.api.realtime('plan', null);
+      await this.publishDashboard();
+      lap('show');
 
       if (this.controlMode !== 'auto' || !this.canControl()) await this.readInverterLimits().catch(this.error);
       if (this.controlMode === 'auto' && this.canControl() && !this.powerCut.active) {
-        const changes = await this.controller.apply(state);
-        if (changes.length > 0) this.log('Inverter updated:', changes.join('; '));
-        if (this.controller.externalChange && changes.length > 0) await this.reportOffPlan(this.homey.__('offPlan.settings_changed'));
+        try {
+          const changes = await this.controller.apply(state);
+          if (changes.length > 0) this.log('Inverter updated:', changes.join('; '));
+          if (this.controller.externalChange && changes.length > 0) await this.reportOffPlan(this.homey.__('offPlan.settings_changed'));
+        } finally {
+          await this.saveKnownSettings(); // also after a failed write, which makes the next update read the inverter
+        }
       }
+      lap('inverter');
       this.planError = null;
       await this.refreshWarning();
       await this.homey.flow.getDeviceTriggerCard('plan_updated')
@@ -1348,6 +1391,9 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
         .catch(this.error);
       this.homey.api.realtime('plan', null);
       await this.publishDashboard();
+      lap('publish');
+      this.timings.plan = `${now.toISOString()}: ${lap.summary()}`;
+      if (lap.totalMs() > SLOW_PLAN_MS) this.log(`Planning took ${lap.summary()}`);
     } catch (err) {
       this.error('Planning failed:', err);
       this.planError = (err as Error).message;
@@ -1395,4 +1441,21 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
     return planSummary(state.plan.intervals, new Date(), state.reserveSoc, this.controller.config.maxSocPct,
       this.homey.clock.getTimezone(), language, live ?? undefined);
   }
+}
+
+/** Times consecutive steps: lap('name') ends a step; summary() reads "12.3 s (info 1.0 s, live 11.3 s)". */
+function stopwatch(): ((name: string) => void) & { summary(): string; totalMs(): number } {
+  const start = Date.now();
+  let last = start;
+  const laps: string[] = [];
+  const sec = (ms: number) => `${(ms / 1000).toFixed(1)} s`;
+  const lap = (name: string) => {
+    const now = Date.now();
+    laps.push(`${name} ${sec(now - last)}`);
+    last = now;
+  };
+  return Object.assign(lap, {
+    summary: () => `${sec(Date.now() - start)} (${laps.join(', ')})`,
+    totalMs: () => Date.now() - start,
+  });
 }
