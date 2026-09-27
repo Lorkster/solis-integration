@@ -1448,7 +1448,9 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
 
       this.controller.exportControl = this.controlMode === 'auto' && this.canControl() && !this.powerCut.active
         && this.getSetting('negative_export_block') !== false;
-      const state = await this.controller.buildPlan(this.live, now);
+      // In Automatic mode the inverter runs the previous plan; otherwise it does its own thing.
+      const running = this.controlMode === 'auto' ? currentAction(this.planState, now) ?? this.controller.scheduledAction(now) : null;
+      const state = await this.controller.buildPlan(this.live, now, running);
       lap('prices and plan');
       this.planState = state;
       this.history.setDayPlan(now, state.plan.intervals);

@@ -148,6 +148,26 @@ describe('BatteryController', () => {
     assert.equal(inverter.reads, 2, 'expired: read again');
   });
 
+  it('compares with what it wrote, also after forgetting it (27 Sep 12:54)', async () => {
+    const inverter = new FakeInverter();
+    const controller = solisController(inverter);
+    await controller.apply(await controller.buildPlan(live, new Date('2026-09-24T00:05:00+02:00')));
+    controller.forgetApplied(); // switching to Monitor mode
+    const s = inverter.settings;
+    const report = { storageModeRaw: s.storageModeRaw & ~2, storageModeMask: 0xffff & ~2, maxChargeCurrentA: s.maxChargeCurrentA };
+    assert.deepEqual(controller.reportedDifferences(report), [], 'not the settings from before the write');
+  });
+
+  it('knows what the written schedule does now, for the first plan after a restart', async () => {
+    const inverter = new FakeInverter();
+    const controller = new BatteryController(inverter, new FakePrices(), config);
+    assert.equal(controller.scheduledAction(new Date('2026-09-27T13:00:00+02:00')), null, 'nothing written yet');
+    await controller.apply(planWith(slot('12:30', '17:15', 16, 100), slot('22:00', '02:00', 0, 40)));
+    assert.equal(controller.scheduledAction(new Date('2026-09-27T13:00:00+02:00')), 'charge');
+    assert.equal(controller.scheduledAction(new Date('2026-09-27T01:00:00+02:00')), 'hold', 'past midnight');
+    assert.equal(controller.scheduledAction(new Date('2026-09-27T18:00:00+02:00')), 'self_use');
+  });
+
   it('hands control back to the inverter', async () => {
     const inverter = new FakeInverter();
     const controller = solisController(inverter);

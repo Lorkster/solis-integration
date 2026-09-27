@@ -37,5 +37,9 @@
   "0.2.9": {
     "en": "Keeps the latest important events (inverter updates, grid charging pulses, failures) for diagnosis. Fixes 0.2.8, which did not start.",
     "sv": "Sparar de senaste viktiga händelserna (uppdateringar av växelriktaren, knuffar för nätladdning, fel) för felsökning. Rättar 0.2.8, som inte startade."
+  },
+  "0.2.10": {
+    "en": "A new plan keeps a running charge or hold unless changing really pays, so the inverter's schedule is rewritten less often. Fixes an unneeded settings read after switching to Monitor mode.",
+    "sv": "En ny plan behåller en pågående laddning eller sparning om det inte verkligen lönar sig att ändra, så växelriktarens schema skrivs om mer sällan. Rättar en onödig läsning av inställningarna efter byte till Övervaka."
   }
 }

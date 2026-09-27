@@ -6,7 +6,7 @@ import { planToSchedule, type Schedule } from '../planner/schedule.js';
 import { NO_POWER_TARIFF, peakWeight, type PowerTariffConfig } from '../energy/PowerTariff.js';
 import type { PriceArea, PriceProvider, SpotPrice } from '../prices/PriceProvider.js';
 import { buyPrice, sellPrice, type TariffConfig } from '../tariff.js';
-import { addDays, localDate, localParts } from '../time.js';
+import { addDays, localDate, localHHMM, localParts } from '../time.js';
 
 export interface ControllerConfig {
   timeZone: string;
@@ -111,7 +111,12 @@ export class BatteryController {
   }
 
   /** Fetches prices for today and (when published) tomorrow and computes a fresh plan. */
-  async buildPlan(live: LiveData, now: Date): Promise<PlanState> {
+  /**
+   * @param running What the inverter carries out now (the previous plan's action), so that a
+   *   running charge or hold continues unless changing pays more than the switch costs. Without it,
+   *   a near tie could stop a running charge and rewrite the slots for nothing (27 Sep 12:57).
+   */
+  async buildPlan(live: LiveData, now: Date, running?: BatteryAction | null): Promise<PlanState> {
     this.overrides = this.overrides.filter((o) => o.until > now);
     if (this.outage && this.outage.until <= now) this.outage = null;
 
@@ -158,6 +163,7 @@ export class BatteryController {
       cyclingCostPerKwh: this.config.cyclingCostPerKwh,
       minGainPerKwh: this.config.minGainPerKwh,
       fixedActions,
+      initialAction: running ?? undefined,
       peak: tariff.enabled ? {
         costPerKw: tariff.pricePerKwMonth / Math.max(1, tariff.peaks),
         thresholdKw: this.peakThresholdKw(),
@@ -186,6 +192,17 @@ export class BatteryController {
   /** The settings as last read, when that was recently enough; otherwise read them now. */
   async recentSettings(now = Date.now()): Promise<InverterSettings> {
     return this.lastRead && now - this.lastReadAt < this.settingsMaxAgeMs ? this.lastRead : this.readSettings();
+  }
+
+  /**
+   * What the schedule the app wrote does now: charge (a slot with current), hold (a 0 A slot) or
+   * self-use. For the first plan after a restart, when there is no previous plan yet.
+   */
+  scheduledAction(now: Date): BatteryAction | null {
+    if (!this.lastApplied) return null;
+    const t = minutes(localHHMM(now, this.config.timeZone));
+    const slot = this.lastApplied.chargeSlots.find((s) => s.enabled && ranges(s).some(([a, b]) => t >= a && t < b));
+    return slot ? (slot.currentA > 0 ? 'charge' : 'hold') : 'self_use';
   }
 
   /** Makes the next update read the settings from the inverter. */
@@ -327,6 +344,8 @@ export class BatteryController {
       throw new Error(`Not written: ${failures.join('; ')}`);
     }
     this.lastApplied = desired;
+    // The inverter now has what was written. lastReadAt stays: the periodic check still reads it.
+    this.lastRead = desired;
     return changes;
   }
 

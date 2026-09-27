@@ -32,6 +32,14 @@ describe('planBattery', () => {
     assert.ok(Math.abs(plan.savingsSek) < 0.01);
   });
 
+  it('keeps a running charge when charging now or later costs the same', () => {
+    // Flat cheap hours, then expensive ones: when to charge is a tie (27 Sep 12:57).
+    const prices = [...Array(16).fill(1.18), ...Array(32).fill(3)];
+    const from = (initialAction: BatteryAction) =>
+      planBattery({ ...base, initialAction, intervals: intervals('2026-09-24T12:00:00+02:00', prices) }).intervals[0].action;
+    assert.equal(from('charge'), 'charge');
+  });
+
   it('does not charge a battery that sits exactly at the reserve', () => {
     // 25 % of 21.68 kWh is 5.42 kWh, between two 0.05 kWh steps of the planner.
     const plan = planBattery({ ...base, socPct: 25, intervals: intervals('2026-09-24T00:00:00+02:00', Array(96).fill(3)) });
