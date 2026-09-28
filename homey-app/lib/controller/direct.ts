@@ -13,7 +13,16 @@ export interface DirectOptions {
   maxSoc: number;
   /** The battery's level now, from live data; a charge that has reached its target stops charging. */
   socPct?: number | null;
+  /**
+   * The inverter holds now (the last command). A charge block that has reached its target then only
+   * charges again when the level has dropped by RECHARGE_BELOW_PCT: SolisCloud's level moves between
+   * 99 and 100 % at the top, which otherwise switched hold and charge back and forth (28 Sep 04:49).
+   */
+  holding?: boolean;
 }
+
+/** How far below its target a finished charge block must drop before it charges again. */
+export const RECHARGE_BELOW_PCT = 3;
 
 const OFF: DirectCommand = { kind: 'off' };
 
@@ -70,7 +79,8 @@ function commandAt(plan: PlannedInterval[], i: number, opts: DirectOptions, socP
     const block = plan.slice(start, end + 1);
     const targetSoc = Math.min(opts.maxSoc, Math.ceil(plan[end].socEndPct));
     const kw = Math.min(...block.map((b) => b.chargeKw).filter((k) => k > 0));
-    const reached = (socPct ?? iv.socStartPct) >= targetSoc - 0.5;
+    const margin = socPct !== null && opts.holding ? RECHARGE_BELOW_PCT : 0.5;
+    const reached = (socPct ?? iv.socStartPct) >= targetSoc - margin;
     if (!reached && Number.isFinite(kw)) return { kind: 'charge', powerW: Math.round(kw * 100) * 10, targetSoc };
     return holdOrSelfUse(iv);
   }

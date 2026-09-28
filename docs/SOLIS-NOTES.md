@@ -129,9 +129,13 @@ don't), run `python tools/modbus_probe.py <logger address> --grid-charge`.
   carries some settings, checked against 160 snapshots (23–26 Sep 2026):
   `energyStorageControl` is the storage mode (CID 636) in hex **without the time-of-use bit**
   (51 → `"31"`, 35 → `"21"`); `socDischargeSet` = CID 158, `socChargingSet` = CID 160,
-  `batteryCMaxiSet` / `batteryDMaxiSet` = CIDs 7224 / 7226. A change shows up after the next upload.
-  Not in it: the time-of-use slots and the reserve (CID 157). The app compares these fields with
-  what it wrote and reads the settings only when they differ in two uploads in a row.
+  `batteryCMaxiSet` / `batteryDMaxiSet` matched CIDs 7224 / 7226 in the snapshots, **but are not the
+  settings**: during a Remote Dispatch standby the charge value reads 0, and after dispatch it read
+  12.2 A (27 Sep 2026) while CID 7224 stayed 16 A, so the app does not compare them. A change shows
+  up after the next upload.
+  Not in it: the time-of-use slots and the reserve (CID 157). The app compares the storage mode and
+  the two levels with what it wrote and reads the settings only when they differ in two uploads in a
+  row.
 - Alarm fields in the detail (`state` 3 = alarm, 2 = offline; `alarmLevel`, `stateExceptionFlag`,
   `batteryAlarm`, `faultCodeDesc`) never showed an alarm in the snapshots; `warningInfoData = 512`
   appears in normal operation. How a real alarm looks is still unverified.

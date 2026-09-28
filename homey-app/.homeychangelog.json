@@ -53,5 +53,9 @@
   "0.3.2": {
     "en": "A Remote Dispatch hold is no longer reported as a battery locked by SolisCloud, nor as a changed charge current.",
     "sv": "Sparning med Remote Dispatch rapporteras inte längre som ett batteri låst av SolisCloud eller som en ändrad laddström."
+  },
+  "0.3.3": {
+    "en": "A finished Remote Dispatch charge no longer starts again when the battery level moves between 99 and 100 %. The check for settings changed outside the app no longer uses the charge currents in SolisCloud's data, which are not the settings.",
+    "sv": "En avslutad laddning med Remote Dispatch startar inte längre om när batterinivån växlar mellan 99 och 100 %. Kontrollen av inställningar som ändrats utanför appen använder inte längre laddströmmarna i SolisClouds data, som inte är inställningarna."
   }
 }

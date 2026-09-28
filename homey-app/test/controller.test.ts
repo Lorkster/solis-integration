@@ -139,10 +139,10 @@ describe('BatteryController', () => {
     await controller.apply(await controller.buildPlan(live, new Date('2026-09-24T00:05:00+02:00')));
     const mode = inverter.settings.storageModeRaw; // 51: time-of-use on
     const mask = 0xffff & ~2;
-    const report = { storageModeRaw: mode & mask, storageModeMask: mask, overDischargeSoc: 15, forceChargeSoc: 10, maxChargeCurrentA: 16, maxDischargeCurrentA: 25 };
+    const report = { storageModeRaw: mode & mask, storageModeMask: mask, overDischargeSoc: 15, forceChargeSoc: 10 };
     assert.deepEqual(controller.reportedDifferences(report), [], 'the report leaves out time-of-use');
-    assert.deepEqual(controller.reportedDifferences({ ...report, storageModeRaw: 33, maxChargeCurrentA: 0 }),
-      ['storage mode 33 ≠ 49', 'maxChargeCurrentA 0 ≠ 16']);
+    assert.deepEqual(controller.reportedDifferences({ ...report, storageModeRaw: 33, overDischargeSoc: 20 }),
+      ['storage mode 33 ≠ 49', 'overDischargeSoc 20 ≠ 15']);
     controller.expireKnown();
     await controller.apply(await controller.buildPlan(live, new Date('2026-09-24T00:05:00+02:00')));
     assert.equal(inverter.reads, 2, 'expired: read again');
@@ -154,7 +154,7 @@ describe('BatteryController', () => {
     await controller.apply(await controller.buildPlan(live, new Date('2026-09-24T00:05:00+02:00')));
     controller.forgetApplied(); // switching to Monitor mode
     const s = inverter.settings;
-    const report = { storageModeRaw: s.storageModeRaw & ~2, storageModeMask: 0xffff & ~2, maxChargeCurrentA: s.maxChargeCurrentA };
+    const report = { storageModeRaw: s.storageModeRaw & ~2, storageModeMask: 0xffff & ~2, overDischargeSoc: s.overDischargeSoc };
     assert.deepEqual(controller.reportedDifferences(report), [], 'not the settings from before the write');
   });
 

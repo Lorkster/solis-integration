@@ -327,8 +327,8 @@ function reportedSettings(detail: Record<string, unknown>): ReportedSettings | n
     storageModeMask: mode === undefined ? undefined : 0xffff & ~(1 << StorageBit.timeOfUse),
     overDischargeSoc: n('socDischargeSet'),
     forceChargeSoc: n('socChargingSet'),
-    maxChargeCurrentA: n('batteryCMaxiSet'),
-    maxDischargeCurrentA: n('batteryDMaxiSet'),
+    // batteryCMaxiSet / batteryDMaxiSet are not the settings: they follow Remote Dispatch (0 A in
+    // standby) and the battery's own limit (12.2 A after dispatch ended, 27 Sep 2026).
   };
   return Object.values(report).some((v) => v !== undefined) ? report : null;
 }

@@ -76,7 +76,8 @@ describe('settings and alarms in the live data', () => {
     const report = parseLiveData(detail).reportedSettings!;
     assert.equal(report.storageModeRaw, 0x31);
     assert.equal(51 & report.storageModeMask!, report.storageModeRaw, 'mode 51 (time-of-use on) matches');
-    assert.deepEqual([report.overDischargeSoc, report.forceChargeSoc, report.maxChargeCurrentA, report.maxDischargeCurrentA], [15, 10, 16, 25]);
+    assert.deepEqual([report.overDischargeSoc, report.forceChargeSoc], [15, 10]);
+    assert.ok(!('maxChargeCurrentA' in report), 'the current limits in the detail are not the settings');
   });
 
   it('reports no alarm in normal operation', () => {

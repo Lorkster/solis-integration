@@ -599,10 +599,7 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
    * written back. A difference the read shows to be a reporting quirk is not acted on again.
    */
   private async checkReportedSettings(live: LiveData): Promise<void> {
-    let report = live.reportedSettings;
-    // The app's own Remote Dispatch shows as current limits in SolisCloud's data (0 A charge limit in
-    // standby, 27 Sep 2026): while it runs, only the storage mode and the levels are compared.
-    if (report && this.directActive()) report = { ...report, maxChargeCurrentA: undefined, maxDischargeCurrentA: undefined };
+    const report = live.reportedSettings;
     this.controller.settingsMaxAgeMs = report ? SETTINGS_MAX_AGE_REPORTED_MS : SETTINGS_MAX_AGE_MS;
     const differences = report && live.timestamp.getTime() > this.controller.lastWriteAt + REPORT_DELAY_MS
       ? this.controller.reportedDifferences(report).join('; ')
@@ -1587,7 +1584,12 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
     // Right after a start there is no plan yet: leave a running command alone until there is one.
     if (!state && this.controlMode === 'auto' && !this.powerCut.active) return;
     const step: DirectStep = state && this.controlMode === 'auto' && this.canControl() && !this.powerCut.active
-      ? directStep(state.plan.intervals, now, { reserveSoc: state.reserveSoc, maxSoc: this.controller.config.maxSocPct, socPct: this.live?.socPct })
+      ? directStep(state.plan.intervals, now, {
+        reserveSoc: state.reserveSoc,
+        maxSoc: this.controller.config.maxSocPct,
+        socPct: this.live?.socPct,
+        holding: this.direct?.command.kind === 'hold',
+      })
       : { command: { kind: 'off' }, until: null };
     const last = this.direct;
     // Covered: the same command, with a failsafe that lasts until the block ends (or at least an hour).

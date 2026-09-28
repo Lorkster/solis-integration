@@ -230,7 +230,7 @@ export class BatteryController {
         out.push(`storage mode ${report.storageModeRaw} ≠ ${expected.storageModeRaw & mask}`);
       }
     }
-    const fields = ['overDischargeSoc', 'forceChargeSoc', 'maxChargeCurrentA', 'maxDischargeCurrentA'] as const;
+    const fields = ['overDischargeSoc', 'forceChargeSoc'] as const;
     for (const field of fields) {
       const value = report[field];
       if (value !== undefined && value !== expected[field]) out.push(`${field} ${value} ≠ ${expected[field]}`);

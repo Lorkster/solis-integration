@@ -89,8 +89,6 @@ export interface ReportedSettings {
   storageModeMask?: number;
   overDischargeSoc?: number;
   forceChargeSoc?: number;
-  maxChargeCurrentA?: number;
-  maxDischargeCurrentA?: number;
 }
 
 export interface InverterSummary {

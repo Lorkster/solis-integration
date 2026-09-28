@@ -49,6 +49,14 @@ describe('direct control from the plan', () => {
     assert.deepEqual(directStep(sunny, at(0), { ...opts, socPct: 60 }).command, { kind: 'off' }, 'surplus: self-use stores it');
   });
 
+  it('does not start charging again when the level wobbles at the top (28 Sep 04:49)', () => {
+    const charge = plan([['charge', 94, 97, 6.5, 2], ['charge', 97, 100, 6.5, 2]]);
+    assert.deepEqual(directStep(charge, at(1), { ...opts, socPct: 100 }).command, { kind: 'hold' }, 'reached: hold');
+    assert.deepEqual(directStep(charge, at(1), { ...opts, socPct: 99, holding: true }).command, { kind: 'hold' }, '99 %: still hold');
+    assert.equal(directStep(charge, at(1), { ...opts, socPct: 96, holding: true }).command.kind, 'charge', 'dropped: charge again');
+    assert.equal(directStep(charge, at(1), { ...opts, socPct: 99 }).command.kind, 'charge', 'not reached yet: charge to the end');
+  });
+
   it('lets surplus solar charge the battery during a daytime hold', () => {
     const sunnyHold = plan([['hold', 60, 61, 0, 0, 0.3], ['hold', 61, 61]]);
     assert.deepEqual(directStep(sunnyHold, at(0), opts), { command: { kind: 'off' }, until: sunnyHold[1].start });
