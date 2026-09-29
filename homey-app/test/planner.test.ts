@@ -40,6 +40,17 @@ describe('planBattery', () => {
     assert.equal(from('charge'), 'charge');
   });
 
+  it('keeps grid charging within the import limit (main fuse)', () => {
+    // Cheap first hour, then expensive: charge at full power unless the house leaves less room.
+    const prices = [...Array(4).fill(1), ...Array(44).fill(3)];
+    const busy = intervals('2026-09-29T01:00:00+02:00', prices, 11); // 11 kW house load
+    const plan = planBattery({ ...base, maxImportKw: 15, intervals: busy });
+    assert.ok(plan.intervals[0].action === 'charge');
+    assert.ok(Math.abs(plan.intervals[0].chargeKw - 4) < 1e-9, `charges at 15 - 11 = 4 kW, not ${plan.intervals[0].chargeKw}`);
+    const calm = planBattery({ ...base, maxImportKw: 15, intervals: intervals('2026-09-29T01:00:00+02:00', prices, 2) });
+    assert.equal(calm.intervals[0].chargeKw, 6.5, 'room enough: full power');
+  });
+
   it('does not charge a battery that sits exactly at the reserve', () => {
     // 25 % of 21.68 kWh is 5.42 kWh, between two 0.05 kWh steps of the planner.
     const plan = planBattery({ ...base, socPct: 25, intervals: intervals('2026-09-24T00:00:00+02:00', Array(96).fill(3)) });

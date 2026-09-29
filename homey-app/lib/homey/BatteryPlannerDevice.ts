@@ -118,7 +118,7 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
   protected inverterBusy = false;
   private chargeStall: { period: number; since: number } | null = null;
   /** The last direct command the inverter confirmed, and when its failsafe ends it (ms). */
-  private direct: { command: DirectCommand; at: number; expiresAt: number; until?: number | null } | null = null;
+  private direct: { command: DirectCommand; at: number; expiresAt: number; until?: number | null; importLimitW?: number | null } | null = null;
   private directFailures = 0;
   /** After repeated failures the time slots carry out the plan, until the settings change or the app restarts. */
   private directBroken = false;
@@ -796,6 +796,7 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
       capacityKwh: Number(s.capacity_kwh),
       maxChargeKw: Number(s.max_charge_kw),
       maxDischargeKw: Number(s.max_discharge_kw),
+      maxImportKw: num(s.max_import_kw, 0),
       roundTripEfficiency: Number(s.round_trip_efficiency) / 100,
       cyclingCostPerKwh: Number(s.cycling_cost),
       minGainPerKwh: Number(s.min_gain),
@@ -1594,8 +1595,9 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
     const last = this.direct;
     // Covered: the same command, with a failsafe that lasts until the block ends (or at least an hour).
     const wanted = step.until ? Math.min(step.until.getTime() - now.getTime(), 3_600_000) : 3_600_000;
+    const importLimitW = this.controller.config.maxImportKw ? this.controller.config.maxImportKw * 1000 : null;
     const covered = last !== null && sameCommand(last.command, step.command)
-      && (step.command.kind === 'off' || last.expiresAt - now.getTime() >= wanted);
+      && (step.command.kind === 'off' || (last.expiresAt - now.getTime() >= wanted && (last.importLimitW ?? null) === importLimitW));
     if (covered && !force) {
       last.until = step.until?.getTime() ?? null; // a replan can move the end without a new write
       this.scheduleDirect(step.until);
@@ -1604,16 +1606,18 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
     const failsafe = failsafeMinutes(step, now);
     this.inverterBusy = true;
     try {
-      await control.writeDirect(step.command, failsafe);
+      await control.writeDirect(step.command, failsafe, importLimitW);
       this.direct = {
         command: step.command,
         at: Date.now(),
         expiresAt: step.command.kind === 'off' ? 0 : Date.now() + failsafe * 60_000,
         until: step.until?.getTime() ?? null,
+        importLimitW,
       };
       this.directFailures = 0;
       await this.setStoreValue('direct', this.direct).catch(this.error);
-      this.note(`Remote Dispatch: ${describeCommand(step.command)}${step.command.kind === 'off' ? '' : ` (failsafe ${failsafe} min)`}`);
+      const extras = step.command.kind === 'off' ? '' : ` (failsafe ${failsafe} min${importLimitW ? `, grid import ≤ ${importLimitW / 1000} kW` : ''})`;
+      this.note(`Remote Dispatch: ${describeCommand(step.command)}${extras}`);
       this.scheduleDirect(step.until);
     } catch (err) {
       this.directFailures++;

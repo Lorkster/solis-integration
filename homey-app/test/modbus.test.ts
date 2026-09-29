@@ -144,6 +144,14 @@ describe('Solis over Modbus', () => {
     assert.deepEqual(inv.writes, [[Reg.dispatchSwitch, [0, 5, 0, 0xffff, 0xffff]]]);
   });
 
+  it('sets the grid import limit of the inverter with a dispatch command', async () => {
+    const inv = dispatchInverter();
+    const t = new SolisModbusTransport(inv);
+    t.dispatchSettleMs = 0;
+    await t.writeDirect({ kind: 'charge', powerW: 6500, targetSoc: 100 }, 175, 15_000);
+    assert.deepEqual(inv.writes[0], [Reg.dispatchSwitch, [1, 175, 1, 150, 0xffff]], 'import limit on, 15 kW; export as installed');
+  });
+
   it('fails when the inverter does not confirm the command', async () => {
     const inv = new FakeInverter(); // status stays 0: not in real-time control
     const t = new SolisModbusTransport(inv);

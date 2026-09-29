@@ -49,6 +49,8 @@ export interface PlanInput {
   maxSocPct: number;
   maxChargeKw: number; // AC power drawn when charging from grid
   maxDischargeKw: number;
+  /** Grid import (house plus charging) that grid charging must stay below, e.g. for the main fuse. */
+  maxImportKw?: number;
   roundTripEfficiency: number;
   cyclingCostPerKwh: number; // wear cost per kWh discharged from the battery
   minGainPerKwh: number; // extra margin required before grid charging is worth it
@@ -152,7 +154,9 @@ export function planBattery(input: PlanInput): PlanResult {
     } else if (action === 'charge') {
       // With a power fee, charge only in the headroom below the peak level.
       const headroomKw = weight > 0 ? Math.max(0, peak!.thresholdKw / weight - netKwh / hours) : Infinity;
-      chargeKw = Math.min(input.maxChargeKw, headroomKw);
+      // With a grid import limit (main fuse), charging only uses what the house leaves.
+      const importRoomKw = input.maxImportKw ? Math.max(0, input.maxImportKw - netKwh / hours) : Infinity;
+      chargeKw = Math.min(input.maxChargeKw, headroomKw, importRoomKw);
       delta = Math.max(0, Math.min(chargeKw * hours * eff, maxE - e));
     }
 

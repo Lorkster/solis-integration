@@ -720,6 +720,7 @@ Open the device and tap the gear icon.
 | Capacity | 21.68 kWh |  |
 | Grid charge power | 6.5 kW | Limited by the inverter's max charge current (16 A ≈ 6.7 kW at 420 V). |
 | Max discharge power | 10 kW |  |
+| Max grid import | 0 kW | Grid charging is kept below this total, together with the house's own use, to protect the main fuse. A 25 A three-phase fuse allows about 17 kW; leave a margin, since the house's loads are not spread evenly over the phases (e.g. 15 kW). With Remote Dispatch the inverter also enforces it in real time. 0 = no limit. |
 | Max charge level | 100 % |  |
 | Round-trip efficiency | 90 % |  |
 | Battery wear cost | 0.2 SEK/kWh | Cost per kWh discharged. Qapasity Arctic: 10 years / 8000 cycles; about 240 cycles per year makes age the limit, so wear per cycle is low. |

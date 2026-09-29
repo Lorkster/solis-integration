@@ -163,6 +163,14 @@ Consequences for the design:
 - **Slots**: switched off by the next plan update in this mode (through SolisCloud), then left alone.
   The storage mode, reserve and export flag are handled as before. The grid-charging pulse is off.
 
+## Grid import limit (0.3.4)
+
+With the device setting *Max grid import* (e.g. 15 kW for a 25 A fuse), every charge or hold command
+also sets the inverter's system import limit: 44102 = 1 (bit 0), 44103 = the limit in 100 W steps.
+Solis' document says the inverter then keeps the grid import at or below it. The planner also plans
+charges within the limit, using the forecast house load. *To verify on the inverter: during a charge,
+a limit just below the current import must lower the charge power, while the house keeps its power.*
+
 ## Phase 2 (later, optional)
 
 Remote Dispatch also has six TOU periods in RAM (44116–44199). The app could load the whole day's

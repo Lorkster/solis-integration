@@ -15,6 +15,8 @@ export interface ControllerConfig {
   capacityKwh: number;
   maxChargeKw: number;
   maxDischargeKw: number;
+  /** Grid import limit for charging (house plus charge), 0 or undefined = none. */
+  maxImportKw?: number;
   roundTripEfficiency: number;
   cyclingCostPerKwh: number;
   minGainPerKwh: number;
@@ -164,6 +166,7 @@ export class BatteryController {
       maxSocPct: this.config.maxSocPct,
       maxChargeKw: this.config.maxChargeKw,
       maxDischargeKw: this.config.maxDischargeKw,
+      maxImportKw: this.config.maxImportKw || undefined,
       roundTripEfficiency: this.config.roundTripEfficiency,
       cyclingCostPerKwh: this.config.cyclingCostPerKwh,
       minGainPerKwh: this.config.minGainPerKwh,

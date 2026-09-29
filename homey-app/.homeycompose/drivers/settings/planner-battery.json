@@ -51,6 +51,25 @@
       }
     },
     {
+      "id": "max_import_kw",
+      "type": "number",
+      "label": {
+        "en": "Max grid import",
+        "sv": "Max effekt från nätet"
+      },
+      "value": 0,
+      "min": 0,
+      "max": 100,
+      "step": 0.5,
+      "units": {
+        "en": "kW"
+      },
+      "hint": {
+        "en": "Grid charging is kept below this total, together with the house's own use, to protect the main fuse. A 25 A three-phase fuse allows about 17 kW; leave a margin, since the house's loads are not spread evenly over the phases (e.g. 15 kW). With Remote Dispatch the inverter also enforces it in real time. 0 = no limit.",
+        "sv": "Nätladdning hålls under denna summa tillsammans med husets egen förbrukning, för att skydda huvudsäkringen. En trefasig säkring på 25 A tillåter ungefär 17 kW; lämna marginal, eftersom husets laster inte är jämnt fördelade på faserna (t.ex. 15 kW). Med Remote Dispatch håller även växelriktaren gränsen i realtid. 0 = ingen gräns."
+      }
+    },
+    {
       "id": "max_soc",
       "type": "number",
       "label": {

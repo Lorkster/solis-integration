@@ -77,9 +77,10 @@ export type DirectCommand =
 export interface DirectControl {
   /**
    * Carries out the command until another one replaces it. Without a new write within
-   * failsafeMin minutes the inverter ends it by itself. Throws when the inverter does not confirm it.
+   * failsafeMin minutes the inverter ends it by itself. With importLimitW the inverter also keeps the
+   * grid import (house plus charging) below that, in real time. Throws when not confirmed.
    */
-  writeDirect(command: DirectCommand, failsafeMin: number): Promise<void>;
+  writeDirect(command: DirectCommand, failsafeMin: number, importLimitW?: number | null): Promise<void>;
 }
 
 /** Inverter settings as reported with live data; a field is missing when not reported. */

@@ -57,5 +57,9 @@
   "0.3.3": {
     "en": "A finished Remote Dispatch charge no longer starts again when the battery level moves between 99 and 100 %. The check for settings changed outside the app no longer uses the charge currents in SolisCloud's data, which are not the settings.",
     "sv": "En avslutad laddning med Remote Dispatch startar inte längre om när batterinivån växlar mellan 99 och 100 %. Kontrollen av inställningar som ändrats utanför appen använder inte längre laddströmmarna i SolisClouds data, som inte är inställningarna."
+  },
+  "0.3.4": {
+    "en": "New setting Max grid import: grid charging is planned so that the house's use plus the charge stays below it, to protect the main fuse. With Remote Dispatch the inverter also enforces it in real time.",
+    "sv": "Ny inställning Max effekt från nätet: nätladdning planeras så att husets förbrukning plus laddningen håller sig under den, för att skydda huvudsäkringen. Med Remote Dispatch håller även växelriktaren gränsen i realtid."
   }
 }

@@ -126,7 +126,7 @@ export class SolisModbusTransport implements InverterTransport, DirectControl {
    * RAM, so the stored time-of-use schedule is not worn by frequent changes. When dispatch ends (off,
    * failsafe, power cycle) the inverter resets the block and runs its own mode.
    */
-  async writeDirect(command: DirectCommand, failsafeMin: number): Promise<void> {
+  async writeDirect(command: DirectCommand, failsafeMin: number, importLimitW?: number | null): Promise<void> {
     await this.modbus.session(async (m) => {
       if (command.kind === 'off') {
         await m.writeMultiple(Reg.dispatchSwitch, [0, 5, 0, 0xffff, 0xffff]);
@@ -136,8 +136,10 @@ export class SolisModbusTransport implements InverterTransport, DirectControl {
         const power = command.kind === 'charge' ? Math.max(0, Math.round(command.powerW / 10)) : 0;
         const mode = command.kind === 'charge' ? 2 : 1;
         const upper = command.kind === 'charge' ? Math.min(100, Math.max(1, Math.round(command.targetSoc))) : 100;
-        // 44102 = 0: no import or export limit; 0xFFFF keeps the limits at their defaults.
-        await m.writeMultiple(Reg.dispatchSwitch, [1, failsafe, 0, 0xffff, 0xffff]);
+        // 44102 bit 0 switches the system import limit (44103, 100 W steps) on; 0xFFFF = default.
+        // The export limit stays as the installer set it (EPM, CID 499).
+        const limit = importLimitW && importLimitW > 0 ? Math.max(1, Math.round(importLimitW / 100)) : null;
+        await m.writeMultiple(Reg.dispatchSwitch, [1, failsafe, limit ? 1 : 0, limit ?? 0xffff, 0xffff]);
         await m.writeMultiple(Reg.dispatchControl, [mode, (power >>> 16) & 0xffff, power & 0xffff, DISPATCH_FLAGS, 0, upper, reserved1, reserved2]);
       }
       await new Promise((resolve) => setTimeout(resolve, this.dispatchSettleMs));
