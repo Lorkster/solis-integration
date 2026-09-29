@@ -168,8 +168,14 @@ Consequences for the design:
 With the device setting *Max grid import* (e.g. 15 kW for a 25 A fuse), every charge or hold command
 also sets the inverter's system import limit: 44102 = 1 (bit 0), 44103 = the limit in 100 W steps.
 Solis' document says the inverter then keeps the grid import at or below it. The planner also plans
-charges within the limit, using the forecast house load. *To verify on the inverter: during a charge,
-a limit just below the current import must lower the charge power, while the house keeps its power.*
+charges within the limit, using the forecast house load.
+
+**Tested 30 Sep 2026 01:15, during a 6.5 kW dispatch charge (mode 2), house 2.0 kW, grid 8.7 kW: not
+enforced.** With 44102 = 1 and 44103 = 57 (5.7 kW), the inverter kept both registers but went on
+charging at 6.57 kW; the grid import stayed at 8.7–8.8 kW for the whole minute. So in mode 2 the limit
+does nothing on this firmware (function version 3), and only the planner's cap protects the fuse.
+Worth testing next: real-time mode 3 (grid connection point control) with an import target, in which
+the inverter itself sets the battery power to keep the grid import at the target.
 
 ## Phase 2 (later, optional)
 

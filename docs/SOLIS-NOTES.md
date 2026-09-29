@@ -141,7 +141,8 @@ don't), run `python tools/modbus_probe.py <logger address> --grid-charge`.
   `isSupportEpmIn = 0`: nothing caps the grid *import*, so a grid charge plus the house's own use is
   limited only by the main fuse (25 A, about 17 kW). On 29 Sep 01:13 a 6.5 kW charge with 5 kW of
   house load drew 11.7 kW. The app's *Max grid import* setting (0.3.4) keeps planned charging below
-  a limit, and with Remote Dispatch the inverter enforces it (44102 bit 0, 44103).
+  a limit. **The Remote Dispatch import limit (44102 bit 0, 44103) is not enforced during a dispatch
+  charge** (tested 30 Sep 01:15, see REMOTE-DISPATCH.md), so the planner's cap is the only one.
 - Alarm fields in the detail (`state` 3 = alarm, 2 = offline; `alarmLevel`, `stateExceptionFlag`,
   `batteryAlarm`, `faultCodeDesc`) never showed an alarm in the snapshots; `warningInfoData = 512`
   appears in normal operation. How a real alarm looks is still unverified.
