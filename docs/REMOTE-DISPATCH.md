@@ -163,19 +163,25 @@ Consequences for the design:
 - **Slots**: switched off by the next plan update in this mode (through SolisCloud), then left alone.
   The storage mode, reserve and export flag are handled as before. The grid-charging pulse is off.
 
-## Grid import limit (0.3.4)
+## Grid import limit (0.3.4, inverter side removed in 0.3.5)
 
-With the device setting *Max grid import* (e.g. 15 kW for a 25 A fuse), every charge or hold command
-also sets the inverter's system import limit: 44102 = 1 (bit 0), 44103 = the limit in 100 W steps.
-Solis' document says the inverter then keeps the grid import at or below it. The planner also plans
-charges within the limit, using the forecast house load.
+The device setting *Max grid import* (e.g. 15 kW for a 25 A fuse) makes the planner plan charges
+within the limit, using the forecast house load. In 0.3.4 every charge or hold command also set the
+inverter's system import limit: 44102 = 1 (bit 0), 44103 = the limit in 100 W steps, which Solis'
+document says the inverter keeps the grid import below. It does not (test below), so **from 0.3.5 the
+app no longer sends it** (44102 = 0, 44103 = 0xFFFF); the planner's cap is the protection.
 
 **Tested 30 Sep 2026 01:15, during a 6.5 kW dispatch charge (mode 2), house 2.0 kW, grid 8.7 kW: not
 enforced.** With 44102 = 1 and 44103 = 57 (5.7 kW), the inverter kept both registers but went on
 charging at 6.57 kW; the grid import stayed at 8.7–8.8 kW for the whole minute. So in mode 2 the limit
 does nothing on this firmware (function version 3), and only the planner's cap protects the fuse.
-Worth testing next: real-time mode 3 (grid connection point control) with an import target, in which
-the inverter itself sets the battery power to keep the grid import at the target.
+
+**When large loads during charging arrive** (an EV charger, a sauna at night), the planner's cap is not
+enough, since it relies on the load forecast. Then real-time protection is the way: real-time mode 3
+(grid connection point control) with an import target, in which the inverter itself sets the battery
+power to keep the grid import at the target. It charges at the battery's maximum while the house is
+quiet and backs off when it is not. To be tested on the inverter first (sign of the target, reaction
+time, no oscillation), and only for charges: a hold stays standby (mode 1).
 
 ## Phase 2 (later, optional)
 

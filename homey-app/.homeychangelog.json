@@ -61,5 +61,9 @@
   "0.3.4": {
     "en": "New setting Max grid import: grid charging is planned so that the house's use plus the charge stays below it, to protect the main fuse. With Remote Dispatch the inverter also enforces it in real time.",
     "sv": "Ny inställning Max effekt från nätet: nätladdning planeras så att husets förbrukning plus laddningen håller sig under den, för att skydda huvudsäkringen. Med Remote Dispatch håller även växelriktaren gränsen i realtid."
+  },
+  "0.3.5": {
+    "en": "The app no longer sends the inverter's grid import limit with Remote Dispatch commands: the inverter does not enforce it during a charge. Max grid import stays a limit for the plan.",
+    "sv": "Appen skickar inte längre växelriktarens gräns för effekt från nätet med Remote Dispatch-kommandon: växelriktaren håller den inte under en laddning. Max effekt från nätet är fortsatt en gräns för planen."
   }
 }

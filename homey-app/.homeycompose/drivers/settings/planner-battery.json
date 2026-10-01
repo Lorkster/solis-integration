@@ -65,8 +65,8 @@
         "en": "kW"
       },
       "hint": {
-        "en": "Grid charging is kept below this total, together with the house's own use, to protect the main fuse. A 25 A three-phase fuse allows about 17 kW; leave a margin, since the house's loads are not spread evenly over the phases (e.g. 15 kW). With Remote Dispatch the inverter also enforces it in real time. 0 = no limit.",
-        "sv": "Nätladdning hålls under denna summa tillsammans med husets egen förbrukning, för att skydda huvudsäkringen. En trefasig säkring på 25 A tillåter ungefär 17 kW; lämna marginal, eftersom husets laster inte är jämnt fördelade på faserna (t.ex. 15 kW). Med Remote Dispatch håller även växelriktaren gränsen i realtid. 0 = ingen gräns."
+        "en": "Grid charging is kept below this total, together with the house's own use, to protect the main fuse. A 25 A three-phase fuse allows about 17 kW; leave a margin, since the house's loads are not spread evenly over the phases (e.g. 15 kW). The plan keeps grid charging plus the house's expected use below it; the inverter does not limit it by itself, so a large load switched on during a charge is not caught. 0 = no limit.",
+        "sv": "Nätladdning hålls under denna summa tillsammans med husets egen förbrukning, för att skydda huvudsäkringen. En trefasig säkring på 25 A tillåter ungefär 17 kW; lämna marginal, eftersom husets laster inte är jämnt fördelade på faserna (t.ex. 15 kW). Planen håller nätladdning plus husets förväntade förbrukning under gränsen; växelriktaren begränsar inte själv, så en stor last som slås på under en laddning fångas inte. 0 = ingen gräns."
       }
     },
     {
