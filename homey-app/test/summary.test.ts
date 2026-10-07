@@ -24,6 +24,12 @@ const RESERVE = 25;
 const MAX = 100;
 
 describe('planPeriods', () => {
+  it('names a hold that stores surplus solar (direct control) solar charging (7 Oct noon)', () => {
+    const day = plan('2026-10-07T10:00:00+02:00', [['hold', 4, 67, 0.8], ['hold', 4, 80]]);
+    assert.deepEqual(planPeriods(day, RESERVE, MAX).map((p) => p.state), ['solar_charge', 'save']);
+  });
+
+
   it('names every period by what powers what (24–25 Sep plan)', () => {
     const day = plan('2026-09-24T18:45:00+02:00', [
       ['self_use', 9, 61, -0.6], // battery powers the house until 21:00
@@ -86,9 +92,11 @@ describe('live state', () => {
       'At reserve · grid powers house until 10:00 · Grid charging 12:00–13:45', 'as planned');
   });
 
-  it('never overrides planned charging or saving', () => {
+  it('does not override planned charging, nor a hold that holds', () => {
     assert.equal(liveState('grid_charge', { socPct: 50, batteryW: 0 }, RESERVE, MAX), null);
     assert.equal(liveState('save', { socPct: 50, batteryW: -2000 }, RESERVE, MAX), null);
+    assert.equal(liveState('save', { socPct: 50, batteryW: 0 }, RESERVE, MAX), null, 'a real hold');
+    assert.equal(liveState('save', { socPct: 70, batteryW: 3000 }, RESERVE, MAX), 'solar_charge', 'sunny hold run as self-use (7 Oct)');
     assert.equal(liveState('at_reserve', { socPct: 60, batteryW: -2000 }, RESERVE, MAX), 'battery');
     assert.equal(liveState('battery', { socPct: 60, batteryW: 0 }, RESERVE, MAX), null, 'idle mid-range: undecided');
   });

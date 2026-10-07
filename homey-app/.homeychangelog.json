@@ -65,5 +65,9 @@
   "0.3.5": {
     "en": "The app no longer sends the inverter's grid import limit with Remote Dispatch commands: the inverter does not enforce it during a charge. Max grid import stays a limit for the plan.",
     "sv": "Appen skickar inte längre växelriktarens gräns för effekt från nätet med Remote Dispatch-kommandon: växelriktaren håller den inte under en laddning. Max effekt från nätet är fortsatt en gräns för planen."
+  },
+  "0.3.6": {
+    "en": "With Remote Dispatch, a planned hold in sunny hours, which lets solar charge the battery, is shown as solar charging instead of \"grid powers the house\"; live data also shows it when the battery charges from solar during a hold.",
+    "sv": "Med Remote Dispatch visas en planerad sparning under soliga timmar, då solen laddar batteriet, som solladdning i stället för \"nätet driver huset\"; livedata visar det också när batteriet laddas av solen under en sparning."
   }
 }

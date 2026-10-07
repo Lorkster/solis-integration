@@ -52,9 +52,13 @@ export interface LiveSample {
  * What is happening right now according to the inverter, for a period the plan expects to be plain
  * self-use. The plan's forecast can be off (a sunnier morning than expected); reality wins then.
  * Planned grid charging and saving are commands, so they are not overridden (the plan check
- * reports when the inverter does not follow them). Returns null when live data does not decide.
+ * reports when the inverter does not follow them), with one exception: a save while the battery
+ * charges from solar. With direct control a save in a sunny quarter runs as self-use, so surplus
+ * solar charges the battery; it is shown as that rather than as "grid powers the house"
+ * (7 Oct 2026, around noon). Returns null when live data does not decide.
  */
 export function liveState(planned: PeriodState, live: LiveSample, reserveSoc: number, maxSoc: number): PeriodState | null {
+  if (planned === 'save') return live.batteryW > LIVE_MOVING_W ? 'solar_charge' : null;
   if (!SELF_USE.has(planned)) return null;
   if (live.batteryW > LIVE_MOVING_W) return 'solar_charge';
   if (live.batteryW < -LIVE_MOVING_W) return 'battery';
@@ -87,7 +91,8 @@ export function displayAction(iv: PlannedInterval, reserveSoc: number): BatteryA
 export function intervalState(iv: PlannedInterval, reserveSoc: number, maxSoc: number): PeriodState {
   const action = displayAction(iv, reserveSoc);
   if (action === 'charge') return 'grid_charge';
-  if (action === 'hold') return 'save';
+  // A hold that stores surplus solar (direct control runs it as self-use) charges from the sun.
+  if (action === 'hold') return iv.batteryKwh >= MOVING_KWH_PER_QUARTER ? 'solar_charge' : 'save';
   if (iv.batteryKwh <= -MOVING_KWH_PER_QUARTER) return 'battery';
   if (iv.batteryKwh >= MOVING_KWH_PER_QUARTER) return 'solar_charge';
   // The battery rests: full, at the reserve, or in between because solar just covers the house.
