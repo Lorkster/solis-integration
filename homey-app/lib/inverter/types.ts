@@ -62,6 +62,21 @@ export interface LiveData {
   reportedSettings?: ReportedSettings | null;
   /** A fault or alarm the connection reports; null when there is none (or it cannot tell). */
   alarm?: string | null;
+  /** What the battery's own management system reports through the inverter; null when not reported. */
+  bms?: BmsData | null;
+}
+
+/**
+ * The battery management system's (BMS) values as the inverter passes them on. The limits are what
+ * the battery accepts right now: they fall near full or empty and when the cells are cold.
+ */
+export interface BmsData {
+  /** State of health: capacity left compared with new (%). */
+  sohPct: number;
+  chargeLimitA: number;
+  dischargeLimitA: number;
+  /** The BMS's fault words as reported; all 0 when there is no fault. */
+  faults: number[];
 }
 
 /**

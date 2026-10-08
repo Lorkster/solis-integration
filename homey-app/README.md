@@ -65,7 +65,8 @@ User-facing descriptions of device values live in `tools/gen-docs.mjs` (`MEANING
 ## User interface
 
 - **Device**: battery level and power (Homey Energy home battery), solar, house and grid power,
-  current price, solar forecast today, backup reserve, backup time at current load, SMHI warning alarm,
+  current price, solar forecast today, backup reserve, backup time at current load, battery health and
+  charge/discharge limits from the BMS, SMHI warning alarm,
   plan summary and control mode. All `measure_*` values can be pinned as tile indicators.
 - **Widget "Battery plan"**: status in words, three stacked charts on one time axis (price with
   charge/save periods, solar and load forecast, battery level with reserve), touch/keyboard

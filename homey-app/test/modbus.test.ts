@@ -62,6 +62,29 @@ describe('Solis over Modbus', () => {
     assert.deepEqual([live.pvTotalKwh, live.gridImportTotalKwh, live.gridExportTotalKwh], [8556, 20421, 2497]);
   });
 
+  it('reads the battery, its BMS values and the loads in one request', async () => {
+    const inv = new FakeInverter();
+    // 33133-33152 as SolisCloud reported them on 23 Sep 22:02: charging at 15.3 A, BMS limits 36.2 / 48.4 A.
+    [4296, 153, 0, 0, 0, 0, 22, 98, 42960, 153, 362, 484, 0, 0, 2100, 0, 0, 6573].forEach((v, i) => inv.input.set(Reg.battery + i, v));
+    const reads: number[] = [];
+    const readInput = inv.readInput.bind(inv);
+    inv.readInput = async (start, count) => { reads.push(start); return readInput(start, count); };
+    const live = await new SolisModbusTransport(inv).getLiveData();
+    assert.deepEqual(live.bms, { sohPct: 98, chargeLimitA: 36.2, dischargeLimitA: 48.4, faults: [0, 0] });
+    assert.equal(live.loadPowerW, 2100);
+    assert.equal(live.batteryPowerW, 6573);
+    assert.equal(live.alarm, null);
+    assert.ok(!reads.includes(Reg.loads), 'the loads come with the battery block');
+  });
+
+  it('reports a BMS fault word as an alarm', () => {
+    const bat = [4200, 0, 0, 0, 0, 0, 50, 98, 42000, 0, 360, 480, 0x0008, 0];
+    const live = parseModbusLive({
+      pv: Array(10).fill(0), grid: [2300, 2300, 2300], bat, loads: [1000, 0, 0, 0, 0, 0], energy: Array(6).fill(0), meter: [0, 0],
+    }, new Date());
+    assert.equal(live.alarm, 'Battery (BMS) fault 0x0008 0x0000');
+  });
+
   it('reads the schedule and switches from the shared bit register', async () => {
     const inv = new FakeInverter();
     inv.holding.set(Reg.slotSwitches, 0b1); // charge slot 1 on

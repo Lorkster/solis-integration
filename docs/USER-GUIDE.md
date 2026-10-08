@@ -254,6 +254,9 @@ chosen as the device's tile indicator, and all numbers and alarms are kept in Ho
 | **Solar forecast today** | Solprognos idag | kWh | Expected solar production for the whole day, from the forecast calibrated against your panels. |
 | **Backup reserve** | Reservnivå | % | Battery level kept for power outages right now (seasonal, raised during weather warnings). |
 | **Backup time at current load** | Reservtid vid nuvarande förbrukning | h | How long the battery would last in a power outage at the current consumption, down to the inverter's outage limit. |
+| **Battery health (BMS)** | Batterihälsa (BMS) | % | The battery's state of health as its management system (BMS) reports it: capacity left compared with new. |
+| **Battery charge limit (BMS)** | Batteriets laddgräns (BMS) | kW | The most power the battery accepts right now, as its BMS reports it. Lower near full and when the cells are cold. The inverter's own charge current setting can limit charging further. |
+| **Battery discharge limit (BMS)** | Batteriets urladdningsgräns (BMS) | kW | The most power the battery delivers right now, as its BMS reports it. Lower near empty and when the cells are cold. |
 | **Power cut** | Strömavbrott |  | On while the inverter sees no grid voltage: the battery powers the backup output. |
 | **Saved by the battery today** | Sparat med batteriet i dag | kr | What the battery saved today: the actual electricity cost compared with the same consumption and solar without a battery. Unit follows the price area’s currency. |
 | **Saved by the battery this month** | Sparat med batteriet denna månad | kr | What the battery saved this month, including a lower power fee when that is switched on. |

@@ -1,4 +1,5 @@
 import { gridLost } from '../../inverter/PowerCut.js';
+import { bmsFaultText } from './bms.js';
 import type { DirectCommand, DirectControl, InverterInfo, InverterSettings, InverterTransport, LiveData, TouSlot } from '../../inverter/types.js';
 import { type ModbusConnector, ModbusError, type ModbusSession } from '../../modbus/ModbusTcpClient.js';
 
@@ -17,6 +18,7 @@ export const Reg = {
   gridVoltage: 33073, // phase A..C, 0.1 V
   gridFrequency: 33094, // 0.01 Hz
   battery: 33133, // voltage 0.1 V, current 0.1 A, direction (0 charge / 1 discharge) ... SOC at 33139
+  bms: 33140, // from the battery: SOH %, voltage 0.01 V, current, charge / discharge limit 0.1 A, fault words 33145-6
   loads: 33147, // house load W, backup load W, battery power u32 W, grid port power s32 W
   batteryEnergy: 33161, // total charged u32 kWh (33161-2), total discharged (33165-6)
   pvTotal: 33029, // lifetime PV generation u32 kWh
@@ -169,8 +171,10 @@ export class SolisModbusTransport implements InverterTransport, DirectControl {
     return this.modbus.session(async (m) => {
       const pv = await m.readInput(Reg.pv, 10);
       const grid = await m.readInput(Reg.gridVoltage, 3);
-      const bat = await m.readInput(Reg.battery, 7);
-      const loads = await m.readInput(Reg.loads, 6);
+      // The battery, BMS and load registers follow each other: one request for all three.
+      const block = await m.readInput(Reg.battery, Reg.loads + 6 - Reg.battery);
+      const bat = block.slice(0, Reg.loads - Reg.battery);
+      const loads = block.slice(Reg.loads - Reg.battery);
       const energy = await m.readInput(Reg.batteryEnergy, 6);
       const meter = await m.readInput(Reg.meterPower, 2);
       const totals = [...await m.readInput(Reg.pvTotal, 2), ...await m.readInput(Reg.gridTotals, 6)];
@@ -266,7 +270,7 @@ async function writeChecked(m: ModbusSession, register: number, value: number): 
 export interface ModbusLiveRegisters {
   pv: number[]; // 33049-33058
   grid: number[]; // 33073-33075
-  bat: number[]; // 33133-33139
+  bat: number[]; // 33133-33139, with the BMS block 33140-33146 when read
   loads: number[]; // 33147-33152
   energy: number[]; // 33161-33166
   meter: number[]; // 33263-33264
@@ -277,6 +281,10 @@ export function parseModbusLive(r: ModbusLiveRegisters, time: Date): LiveData {
   const batteryW = u32(r.loads[2], r.loads[3]);
   const discharging = r.bat[2] === 1;
   const volts = r.grid.map((v) => v / 10);
+  const b = Reg.bms - Reg.battery;
+  const bms = r.bat.length >= b + 7
+    ? { sohPct: r.bat[b], chargeLimitA: r.bat[b + 3] / 10, dischargeLimitA: r.bat[b + 4] / 10, faults: [r.bat[b + 5], r.bat[b + 6]] }
+    : null;
   return {
     timestamp: time,
     socPct: r.bat[6],
@@ -294,5 +302,7 @@ export function parseModbusLive(r: ModbusLiveRegisters, time: Date): LiveData {
     backupLoadW: r.loads[1],
     remoteControlEnabled: null, // SolisCloud's remote limit is not visible over Modbus
     remoteCurrentLimitA: null,
+    alarm: bmsFaultText(bms),
+    bms,
   };
 }

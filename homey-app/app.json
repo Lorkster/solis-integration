@@ -1,7 +1,7 @@
 {
   "_comment": "This file is generated. Please edit .homeycompose/app.json instead.",
   "id": "com.lorkster.solisbattery",
-  "version": "0.3.6",
+  "version": "0.3.7",
   "compatibility": ">=12.4.0",
   "sdk": 3,
   "runtime": "nodejs",
@@ -1570,6 +1570,9 @@
         "measure_solis_pv_forecast",
         "measure_solis_reserve",
         "measure_solis_backup_hours",
+        "measure_solis_battery_health",
+        "measure_solis_charge_limit",
+        "measure_solis_discharge_limit",
         "alarm_solis_power_cut",
         "measure_solis_saved_today",
         "measure_solis_saved_month",
@@ -4367,6 +4370,22 @@
       "decimals": 1,
       "insights": true
     },
+    "measure_solis_battery_health": {
+      "type": "number",
+      "title": {
+        "en": "Battery health (BMS)",
+        "sv": "Batterihälsa (BMS)"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/icons/battery-health.svg",
+      "units": {
+        "en": "%"
+      },
+      "decimals": 0,
+      "insights": true
+    },
     "measure_solis_battery_share": {
       "type": "number",
       "title": {
@@ -4382,6 +4401,38 @@
       "setable": false,
       "uiComponent": "sensor",
       "icon": "/assets/icons/reserve.svg"
+    },
+    "measure_solis_charge_limit": {
+      "type": "number",
+      "title": {
+        "en": "Battery charge limit (BMS)",
+        "sv": "Batteriets laddgräns (BMS)"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/icons/battery-limit.svg",
+      "units": {
+        "en": "kW"
+      },
+      "decimals": 1,
+      "insights": true
+    },
+    "measure_solis_discharge_limit": {
+      "type": "number",
+      "title": {
+        "en": "Battery discharge limit (BMS)",
+        "sv": "Batteriets urladdningsgräns (BMS)"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/icons/battery-limit.svg",
+      "units": {
+        "en": "kW"
+      },
+      "decimals": 1,
+      "insights": true
     },
     "measure_solis_grid": {
       "type": "number",

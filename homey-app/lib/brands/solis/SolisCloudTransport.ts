@@ -1,7 +1,8 @@
 import type {
-  HistorySample, InverterInfo, InverterSettings, InverterSummary, InverterTransport, LiveData, ReportedSettings, TouSlot,
+  BmsData, HistorySample, InverterInfo, InverterSettings, InverterSummary, InverterTransport, LiveData, ReportedSettings, TouSlot,
 } from '../../inverter/types.js';
 import { gridLost } from '../../inverter/PowerCut.js';
+import { bmsFaultText } from './bms.js';
 import { utcOffsetHours } from '../../time.js';
 import { CHARGE_SLOT_CIDS, Cid, DISCHARGE_SLOT_CIDS, EXPORT_REGISTER, SETTINGS_CIDS, type SlotCids, TOU_V2_MARKER } from './cids.js';
 import { StorageBit } from './storageMode.js';
@@ -289,6 +290,7 @@ export function parseLiveData(detail: Record<string, unknown>): LiveData {
 
   const dcW = dcPvPowerW(detail);
   const pvW = Number.isFinite(dcW) ? dcW : powerW('dcPac');
+  const bms = bmsData(detail);
   return {
     timestamp: new Date(Number(detail.dataTimestamp)),
     socPct: Number(detail.batteryCapacitySoc),
@@ -307,8 +309,25 @@ export function parseLiveData(detail: Record<string, unknown>): LiveData {
     remoteControlEnabled: detail.batteryCDEnableSet === undefined ? null : Number(detail.batteryCDEnableSet) === 1,
     remoteCurrentLimitA: detail.batteryCDISet === undefined ? null : Number(detail.batteryCDISet),
     reportedSettings: reportedSettings(detail),
-    alarm: inverterAlarm(detail),
+    alarm: inverterAlarm(detail) ?? bmsFaultText(bms),
+    bms,
   };
+}
+
+/**
+ * The battery's BMS values in the inverter detail. batteryChargingCurrent is the BMS charge limit,
+ * not the current: it read 24.5 A at 99 % and 36-42 A mid-way while the battery stood still or
+ * charged at 15.3 A (23-26 Sep 2026). Modbus has it at 33143.
+ */
+function bmsData(detail: Record<string, unknown>): BmsData | null {
+  const n = (key: string) => (detail[key] === undefined || detail[key] === '' ? NaN : Number(detail[key]));
+  const bms = {
+    sohPct: n('batteryHealthSoh'),
+    chargeLimitA: n('batteryChargingCurrent'),
+    dischargeLimitA: n('batteryDischargeLimiting'),
+    faults: [n('batteryFailureInformation01'), n('batteryFailureInformation02')].map((f) => (Number.isFinite(f) ? f : 0)),
+  };
+  return [bms.sohPct, bms.chargeLimitA, bms.dischargeLimitA].some(Number.isFinite) ? bms : null;
 }
 
 /**

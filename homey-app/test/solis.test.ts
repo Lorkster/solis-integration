@@ -84,6 +84,15 @@ describe('settings and alarms in the live data', () => {
     assert.equal(parseLiveData(detail).alarm, null);
   });
 
+  it('reads the BMS values: health, limits and fault words', () => {
+    const bms = { batteryHealthSoh: 98, batteryChargingCurrent: 24.5, batteryDischargeLimiting: 48.4,
+      batteryFailureInformation01: '0', batteryFailureInformation02: '0' }; // 24 Sep 03:11, full battery
+    assert.deepEqual(parseLiveData({ ...detail, ...bms }).bms, { sohPct: 98, chargeLimitA: 24.5, dischargeLimitA: 48.4, faults: [0, 0] });
+    assert.equal(parseLiveData({ ...detail, ...bms }).alarm, null);
+    assert.equal(parseLiveData({ ...detail, ...bms, batteryFailureInformation02: '16' }).alarm, 'Battery (BMS) fault 0x0000 0x0010');
+    assert.equal(parseLiveData(detail).bms, null, 'not reported');
+  });
+
   it('reports alarms and an offline logger, but not a power cut', () => {
     assert.equal(parseLiveData({ ...detail, state: 3, alarmLevel: 2, faultCodeDesc: 'Battery Over Temp' }).alarm, 'Battery Over Temp');
     assert.equal(parseLiveData({ ...detail, stateExceptionFlag: 1 }).alarm, 'alarm level ?');

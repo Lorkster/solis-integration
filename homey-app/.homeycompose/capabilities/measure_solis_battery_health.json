@@ -1,0 +1,16 @@
+{
+  "type": "number",
+  "title": {
+    "en": "Battery health (BMS)",
+    "sv": "Batterihälsa (BMS)"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "icon": "/assets/icons/battery-health.svg",
+  "units": {
+    "en": "%"
+  },
+  "decimals": 0,
+  "insights": true
+}

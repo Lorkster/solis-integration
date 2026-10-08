@@ -1,0 +1,16 @@
+{
+  "type": "number",
+  "title": {
+    "en": "Battery discharge limit (BMS)",
+    "sv": "Batteriets urladdningsgräns (BMS)"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "icon": "/assets/icons/battery-limit.svg",
+  "units": {
+    "en": "kW"
+  },
+  "decimals": 1,
+  "insights": true
+}

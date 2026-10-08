@@ -1,0 +1,16 @@
+{
+  "type": "number",
+  "title": {
+    "en": "Battery charge limit (BMS)",
+    "sv": "Batteriets laddgräns (BMS)"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "icon": "/assets/icons/battery-limit.svg",
+  "units": {
+    "en": "kW"
+  },
+  "decimals": 1,
+  "insights": true
+}

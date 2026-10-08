@@ -69,5 +69,9 @@
   "0.3.6": {
     "en": "With Remote Dispatch, a planned hold in sunny hours, which lets solar charge the battery, is shown as solar charging instead of \"grid powers the house\"; live data also shows it when the battery charges from solar during a hold.",
     "sv": "Med Remote Dispatch visas en planerad sparning under soliga timmar, då solen laddar batteriet, som solladdning i stället för \"nätet driver huset\"; livedata visar det också när batteriet laddas av solen under en sparning."
+  },
+  "0.3.7": {
+    "en": "The battery's own values, as its management system (BMS) reports them through the inverter: battery health, and how much power the battery accepts and delivers right now (lower near full or empty and when it is cold). A BMS fault raises the inverter alarm. Over Modbus, battery and load values are now read in one request.",
+    "sv": "Batteriets egna värden, som dess styrsystem (BMS) rapporterar dem via växelriktaren: batterihälsa, och hur mycket effekt batteriet tar emot och levererar just nu (lägre nära fullt eller tomt och när det är kallt). Ett BMS-fel löser ut växelriktarlarmet. Över Modbus läses batteri- och lastvärden nu i en enda förfrågan."
   }
 }

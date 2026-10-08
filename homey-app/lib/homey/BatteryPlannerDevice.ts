@@ -954,7 +954,11 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
       // The tile's "now" follows live data between plan updates.
       if (this.planState) await this.setCapabilityValue('solis_plan_status', this.summarise(this.planState));
       const set = (cap: string, value: number) => (Number.isFinite(value) ? this.setCapabilityValue(cap, value) : undefined);
+      const bmsKw = (amps: number | undefined) => ((amps ?? NaN) * live.batteryVoltageV) / 1000;
       await Promise.all([
+        set('measure_solis_battery_health', live.bms?.sohPct ? live.bms.sohPct : NaN), // 0 = not reported
+        set('measure_solis_charge_limit', bmsKw(live.bms?.chargeLimitA)),
+        set('measure_solis_discharge_limit', bmsKw(live.bms?.dischargeLimitA)),
         set('measure_battery', live.socPct),
         set('measure_power', live.batteryPowerW),
         set('meter_power.charged', live.batteryChargedTotalKwh),
