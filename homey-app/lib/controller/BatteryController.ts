@@ -6,7 +6,7 @@ import { planToSchedule, type Schedule } from '../planner/schedule.js';
 import { NO_POWER_TARIFF, peakWeight, type PowerTariffConfig } from '../energy/PowerTariff.js';
 import type { PriceArea, PriceProvider, SpotPrice } from '../prices/PriceProvider.js';
 import { buyPrice, sellPrice, type TariffConfig } from '../tariff.js';
-import { addDays, localDate, localHHMM, localParts } from '../time.js';
+import { localDateOffset, localHHMM, localParts } from '../time.js';
 
 export interface ControllerConfig {
   timeZone: string;
@@ -413,7 +413,7 @@ export class BatteryController {
    */
   private async loadPrices(now: Date): Promise<SpotPrice[]> {
     const tz = this.config.timeZone;
-    const [yesterday, today, tomorrow] = [-1, 0, 1].map((d) => localDate(addDays(now, d), tz));
+    const [yesterday, today, tomorrow] = [-1, 0, 1].map((d) => localDateOffset(now, d, tz));
     const optional = (date: string) => this.prices.getDay(date, this.config.priceArea).catch((err) => {
       this.log(`Prices for ${date} unavailable:`, err);
       return null;

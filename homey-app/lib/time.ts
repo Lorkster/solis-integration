@@ -56,6 +56,16 @@ export function localDate(date: Date, timeZone: string): string {
   return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
+/**
+ * The local date `days` calendar days from `date` ("YYYY-MM-DD"). Not date + 24 h: around a
+ * daylight-saving change a day has 23 or 25 hours, and 24 h from late evening can skip a day
+ * (spring) or stay on the same one (autumn).
+ */
+export function localDateOffset(date: Date, days: number, timeZone: string): string {
+  const { year, month, day } = localParts(date, timeZone);
+  return new Date(Date.UTC(year, month - 1, day + days)).toISOString().slice(0, 10);
+}
+
 /** Offset from UTC in hours at the given instant (e.g. 2 for Stockholm in summer). */
 export function utcOffsetHours(date: Date, timeZone: string): number {
   const p = localParts(date, timeZone);

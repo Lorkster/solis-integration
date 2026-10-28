@@ -31,7 +31,7 @@ import {
   createPriceProvider, currencyForArea, FlowPriceProvider, parseFlowPrices, type PriceArea, type PriceSource,
 } from '../prices/PriceProvider.js';
 import { FailoverTransport } from '../inverter/FailoverTransport.js';
-import { addDays, addMinutes, localDate, localHHMM } from '../time.js';
+import { addMinutes, localDate, localDateOffset, localHHMM } from '../time.js';
 import { fetchMetNoWarnings } from '../warnings/MetNoWarnings.js';
 import { fetchWarnings, type WarningLevel, type WeatherWarning } from '../warnings/SmhiWarnings.js';
 import { energyChildren } from './EnergyChildDevice.js';
@@ -1071,7 +1071,7 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
     const without = new PeakTracker(tz, tariff);
     const month = localDate(new Date(), tz).slice(0, 7);
     for (let d = HISTORY_DAYS; d >= 1; d--) {
-      const date = localDate(addDays(new Date(), -d), tz);
+      const date = localDateOffset(new Date(), -d, tz);
       if (!date.startsWith(month)) continue;
       try {
         for (const sample of await this.transport.getHistory(date, tz)) {
@@ -1374,7 +1374,7 @@ export abstract class BatteryPlannerDevice extends Homey.Device {
     const quarters: Array<[Date, number]> = [];
     const pv = new QuarterAverager((start, kw) => quarters.push([start, kw]));
     for (let d = HISTORY_DAYS; d >= 1; d--) {
-      const date = localDate(addDays(new Date(), -d), tz);
+      const date = localDateOffset(new Date(), -d, tz);
       try {
         for (const sample of await this.transport.getHistory(date, tz)) {
           load.addSample(sample.time, sample.loadW / 1000);

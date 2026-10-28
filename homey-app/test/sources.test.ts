@@ -6,7 +6,7 @@ import { type InverterInfo, supportLevel } from '../lib/inverter/types.js';
 import { currencyForArea, FlowPriceProvider, parseFlowPrices, parseNordPool, toQuarters } from '../lib/prices/PriceProvider.js';
 import { SolisCloudClient } from '../lib/brands/solis/SolisCloudClient.js';
 import { inspectInverter } from '../lib/brands/solis/SolisCloudTransport.js';
-import { addDays, localDate } from '../lib/time.js';
+import { localDateOffset, utcOffsetHours } from '../lib/time.js';
 import { parseMetNoWarnings } from '../lib/warnings/MetNoWarnings.js';
 import { TZ } from './helpers.js';
 
@@ -54,12 +54,17 @@ describe('price sources', () => {
   });
 
   it('serves flow prices per local day', async () => {
-    // Today and tomorrow: the provider keeps only the last three days, counted from now.
-    const [today, tomorrow, after] = [0, 1, 2].map((d) => localDate(addDays(new Date(), d), TZ));
+    // Today and tomorrow: the provider keeps only the last three days, counted from now. Local
+    // times with each date's own offset, so the test holds in summer and in winter time.
+    const [today, tomorrow, after] = [0, 1, 2].map((d) => localDateOffset(new Date(), d, TZ));
+    const at = (date: string, hhmm: string) => {
+      const offset = utcOffsetHours(new Date(`${date}T12:00:00Z`), TZ);
+      return `${date}T${hhmm}:00+${String(offset).padStart(2, '0')}:00`;
+    };
     const flow = new FlowPriceProvider(TZ);
     flow.merge(parseFlowPrices(JSON.stringify([
-      { start: `${today}T23:00:00+02:00`, price: 1 },
-      { start: `${tomorrow}T00:00:00+02:00`, price: 2 },
+      { start: at(today, '23:00'), price: 1 },
+      { start: at(tomorrow, '00:00'), price: 2 },
     ])));
     assert.equal((await flow.getDay(today))?.length, 4);
     assert.equal((await flow.getDay(tomorrow))?.[0].perKwh, 2);
