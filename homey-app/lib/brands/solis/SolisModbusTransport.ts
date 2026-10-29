@@ -138,20 +138,36 @@ export class SolisModbusTransport implements InverterTransport, DirectControl {
         const power = command.kind === 'charge' ? Math.max(0, Math.round(command.powerW / 10)) : 0;
         const mode = command.kind === 'charge' ? 2 : 1;
         const upper = command.kind === 'charge' ? Math.min(100, Math.max(1, Math.round(command.targetSoc))) : 100;
+        // A charge's lower SOC is one below its target. Above the upper SOC the inverter covers the
+        // house from the battery down to the lower SOC (2.4-5 kW with 0 %, tested 29 Oct 2026), so a
+        // reached target the app has not seen yet costs at most 1 %. Below it, it charges at the set
+        // power. A window with lower = upper is ignored without an error.
+        const lower = command.kind === 'charge' ? upper - 1 : 0;
         // 44102 = 0: no import or export limit (0xFFFF keeps both at their defaults). The import
         // limit (bit 0, 44103) is not enforced during a dispatch charge (tested 30 Sep 2026), and the
         // export limit stays as the installer set it (EPM, CID 499).
         await m.writeMultiple(Reg.dispatchSwitch, [1, failsafe, 0, 0xffff, 0xffff]);
-        await m.writeMultiple(Reg.dispatchControl, [mode, (power >>> 16) & 0xffff, power & 0xffff, DISPATCH_FLAGS, 0, upper, reserved1, reserved2]);
+        await m.writeMultiple(Reg.dispatchControl, [mode, (power >>> 16) & 0xffff, power & 0xffff, DISPATCH_FLAGS, lower, upper, reserved1, reserved2]);
       }
-      await new Promise((resolve) => setTimeout(resolve, this.dispatchSettleMs));
-      const [on] = await m.readHolding(Reg.dispatchSwitch, 1);
-      const [status] = await m.readInput(Reg.dispatchStatus, 1);
-      const confirmed = command.kind === 'off'
-        ? on === 0
-        : on === 1 && (status & 0xff) === 2 && status >> 8 === (command.kind === 'charge' ? 2 : 1);
-      if (!confirmed) throw new ModbusError(`Remote Dispatch not confirmed: switch ${on}, status 0x${status.toString(16)}`);
+      // The status can lag the write (28 Oct 22:30: still hold a second after a charge): one more
+      // read, three seconds later, before the write counts as failed.
+      let state = { on: -1, status: 0 };
+      for (let read = 0; read < 2 && !this.confirms(command, state); read++) {
+        await new Promise((resolve) => setTimeout(resolve, (read === 0 ? 1 : 3) * this.dispatchSettleMs));
+        const [on] = await m.readHolding(Reg.dispatchSwitch, 1);
+        const [status] = await m.readInput(Reg.dispatchStatus, 1);
+        state = { on, status };
+      }
+      if (!this.confirms(command, state)) {
+        throw new ModbusError(`Remote Dispatch not confirmed: switch ${state.on}, status 0x${state.status.toString(16)}`);
+      }
     });
+  }
+
+  private confirms(command: DirectCommand, { on, status }: { on: number; status: number }): boolean {
+    return command.kind === 'off'
+      ? on === 0
+      : on === 1 && (status & 0xff) === 2 && status >> 8 === (command.kind === 'charge' ? 2 : 1);
   }
 
   /** Max grid charging current in A (register 43342), which SolisCloud cannot read on hybrids. */

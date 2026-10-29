@@ -77,5 +77,9 @@
   "0.3.8": {
     "en": "Prices for today and tomorrow are found by calendar date, so the evening before summer time starts no longer misses tomorrow's prices.",
     "sv": "Priser för i dag och i morgon hittas efter kalenderdatum, så kvällen innan sommartiden börjar missas inte längre morgondagens priser."
+  },
+  "0.3.9": {
+    "en": "Remote Dispatch: a charge that has reached its target no longer lets the battery run the house while the app waits for fresh data; at most 1 % is used before the inverter stops. A command the inverter confirms a moment late no longer counts as failed.",
+    "sv": "Remote Dispatch: en laddning som nått sitt mål låter inte längre batteriet driva huset medan appen väntar på färska data; högst 1 % används innan växelriktaren stannar. Ett kommando som växelriktaren bekräftar en stund för sent räknas inte längre som misslyckat."
   }
 }

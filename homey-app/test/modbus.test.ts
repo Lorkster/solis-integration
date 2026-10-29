@@ -157,7 +157,7 @@ describe('Solis over Modbus', () => {
     await t.writeDirect({ kind: 'charge', powerW: 6500, targetSoc: 80 }, 55);
     assert.deepEqual(inv.writes, [
       [Reg.dispatchSwitch, [1, 55, 0, 0xffff, 0xffff]], // on, failsafe, no limits
-      [Reg.dispatchControl, [2, 0, 650, 0x5555, 0, 80, 40, 10000]], // charge 6.5 kW up to 80 %, reserved kept
+      [Reg.dispatchControl, [2, 0, 650, 0x5555, 79, 80, 40, 10000]], // charge 6.5 kW up to 80 %, not below 79 %, reserved kept
     ]);
     inv.writes = [];
     await t.writeDirect({ kind: 'hold' }, 600);
@@ -180,6 +180,18 @@ describe('Solis over Modbus', () => {
     const t = new SolisModbusTransport(inv);
     t.dispatchSettleMs = 0;
     await assert.rejects(t.writeDirect({ kind: 'hold' }, 10), /not confirmed/);
+  });
+
+  it('reads the status once more when it lags the write (28 Oct 22:30)', async () => {
+    const inv = dispatchInverter();
+    const t = new SolisModbusTransport(inv);
+    t.dispatchSettleMs = 0;
+    await t.writeDirect({ kind: 'hold' }, 600);
+    const readInput = inv.readInput.bind(inv);
+    let reads = 0;
+    inv.readInput = async (start, count) => (++reads === 1 ? [0x102] : readInput(start, count)); // still hold at first
+    await t.writeDirect({ kind: 'charge', powerW: 6500, targetSoc: 89 }, 144);
+    assert.equal(reads, 2);
   });
 
   it('reads the serial number', async () => {

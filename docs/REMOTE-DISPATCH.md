@@ -35,7 +35,7 @@ Letting the app use it directly does what works, without the slots.
 | 44105 | 1 battery standby (no charge, no discharge), 2 charge/discharge, 3/4 grid-point control | 1 = hold, 2 = charge |
 | 44106–07 | power, S32, 10 W, positive = charge | planned charge power |
 | 44108 | function bits; 0x5555 = grid charging allowed, PV and off-grid standby not disabled | always 0x5555 |
-| 44109–10 | SOC window, lower and upper | upper = the charge's target SOC |
+| 44109–10 | SOC window, lower and upper | upper = the charge's target SOC, lower = one below it (from 0.3.9) |
 | 44111–15 | reserved (Quick Control writes 44112 = 0; idle 10000) | see *Unknowns* |
 | 44116–44199 | 6 dispatch TOU periods, 14 registers each, same fields plus start/end | not in phase 1 |
 
@@ -48,7 +48,7 @@ target). The app turns the *current* action into one command:
 
 | Plan action | Command |
 |---|---|
-| charge | 44105 = 2, power = planned kW (at most the battery's limit), 44108 = 0x5555, 44109–10 = 0 – target SOC |
+| charge | 44105 = 2, power = planned kW (at most the battery's limit), 44108 = 0x5555, 44109–10 = target − 1 – target SOC |
 | hold (a save that keeps energy above the reserve) | 44105 = 1 (standby) |
 | self-use | 44100 = 0 (dispatch off: the inverter runs its own self-use) |
 
@@ -182,6 +182,33 @@ enough, since it relies on the load forecast. Then real-time protection is the w
 power to keep the grid import at the target. It charges at the battery's maximum while the house is
 quiet and backs off when it is not. To be tested on the inverter first (sign of the target, reaction
 time, no oscillation), and only for charges: a hold stays standby (mode 1).
+
+## The SOC window at a charge's target (0.3.9)
+
+**29 Oct 2026, 00:13:** a dispatch charge to 87 % (window 0–87) had reached its target with no solar,
+and the battery covered the house at 2.9 kW until the planned hold at 00:15. The app switches to a
+hold when live data shows the target, but SolisCloud returned 502s and its data was minutes old.
+
+**Tested 29 Oct 2026, 02:40–02:46, no solar, SOC 86 %, house 1.6–5 kW, 1 kW dispatch charges of about
+45 s each (with a 3 min failsafe), the app's hold written back afterwards:**
+
+| Window (44109–10) | Battery |
+|---|---|
+| 0–85 (SOC above the upper) | covers the whole house, 1.4–5.3 kW out, grid at 0: self-use down to the lower SOC |
+| 86–86 | **not applied**: no error, but 44109–10 kept the previous values |
+| 85–86 (SOC at the upper) | covers the house, 2.4–2.9 kW out, until the lower SOC |
+| 86–87 (SOC inside) | charges at 0.8–1.0 kW, the set power |
+| 88–89 (SOC below the lower) | charges at 0.8–0.9 kW, the set power, not the maximum |
+
+So above its upper SOC a dispatch charge behaves like self-use down to its lower SOC, and below its
+lower SOC it charges at the set power. From 0.3.9 a charge's window is *target − 1* to *target*: a
+reached target the app has not seen yet costs at most 1 % (about 0.2 kWh) instead of running the
+house from the battery until the next command. In daylight the September result still holds: at
+the upper SOC the surplus is exported, which is why a reached charge hands over to self-use.
+
+The same release reads the dispatch status a second time, 3 s later, before a write counts as failed:
+on 28 Oct at 22:30 the status still showed the previous hold a second after a charge was written,
+and the retry a minute later succeeded.
 
 ## Phase 2 (later, optional)
 
